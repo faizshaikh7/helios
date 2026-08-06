@@ -1,0 +1,7 @@
+# Read by Vercel's Python runtime at build time.
+# Keep in sync with pyproject.toml [project.dependencies].
+fastapi>=0.115
+pydantic>=2.9
+astropy>=6.1
+skyfield>=1.49
+sgp4>=2.23

@@ -1,0 +1,13 @@
+# Normalize line endings. Development is on Windows, CI runs on Linux -- without this,
+# checked-in CRLF causes spurious diffs and lint failures across the two.
+* text=auto eol=lf
+
+# Binary
+*.ico binary
+*.png binary
+*.jpg binary
+*.woff2 binary
+
+# Large ephemeris/kernel formats, if ever committed deliberately
+*.bsp binary
+*.bpc binary
