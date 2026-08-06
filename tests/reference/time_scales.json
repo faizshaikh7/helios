@@ -1,0 +1,37 @@
+{
+  "_provenance": {
+    "source": "orekit",
+    "orekit_jpype_version": "13.1.7.0",
+    "generated_utc": "2026-08-06T14:20:49+00:00",
+    "generator": "tools/reference/generate_time_scales.py",
+    "note": "Independent implementation used as ground truth for astropy time-scale handling. Regenerate only deliberately; a changed value here means either Orekit changed or the data bundle did.",
+    "orekit_wgs84_mu_m3_s2": 398600441800000.0
+  },
+  "epochs": [
+    {
+      "epoch_utc": "2000-01-01T00:00:00",
+      "tai_minus_utc_s": 32.0,
+      "tt_minus_utc_s": 64.184
+    },
+    {
+      "epoch_utc": "2012-07-02T00:00:00",
+      "tai_minus_utc_s": 35.0,
+      "tt_minus_utc_s": 67.184
+    },
+    {
+      "epoch_utc": "2016-12-31T00:00:00",
+      "tai_minus_utc_s": 36.0,
+      "tt_minus_utc_s": 68.184
+    },
+    {
+      "epoch_utc": "2017-01-02T00:00:00",
+      "tai_minus_utc_s": 37.0,
+      "tt_minus_utc_s": 69.184
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "tai_minus_utc_s": 37.0,
+      "tt_minus_utc_s": 69.184
+    }
+  ]
+}

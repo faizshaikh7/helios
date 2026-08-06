@@ -19,6 +19,11 @@ dev = [
     "httpx>=0.27",          # FastAPI test client transport
     "ruff>=0.7",
     "uvicorn>=0.32",        # local run of the ASGI app
+    # Independent ground truth. Orekit is a mature, flight-proven Java library from a separate
+    # codebase and community, so it can grade astropy without the check being circular.
+    # DEV ONLY -- deliberately absent from requirements.txt so no JVM ships to Vercel. It
+    # generates committed reference files under tests/reference/; CI consumes those.
+    "orekit-jpype>=13.1.7.0",
 ]
 
 [tool.ruff]

@@ -34,6 +34,10 @@ kernels/
 # Cached external orbital data
 data/cache/
 
+# Orekit data bundle (leap seconds, EOP) — large, versioned, fetched on demand by
+# tools/reference/. The generated reference files in tests/reference/ ARE committed.
+data/orekit-data*
+
 # Vercel
 .vercel/
 
