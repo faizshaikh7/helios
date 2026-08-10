@@ -4,6 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:web": "next dev --port 3002",
+    "dev:api": "uv run uvicorn api.main:app --host 127.0.0.1 --port 8787 --reload",
     "build": "next build",
     "start": "next start",
     "lint": "eslint",

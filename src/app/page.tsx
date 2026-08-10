@@ -1,124 +1,489 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { GroundTrack } from "@/components/GroundTrack";
+import { TierLegend, TieredValue } from "@/components/TieredValue";
+import type {
+  ApiError,
+  GroundTrackResponse,
+  PassesResponse,
+  SatelliteResponse,
+  SatellitePass,
+} from "@/lib/types";
 
-/** Result of the deployed science service's time-scale self-check. */
-type TimeScaleCheck = {
-  measured_tt_minus_utc_s?: number;
-  expected_tt_minus_utc_s?: number;
-  within_tolerance: boolean;
-  error?: string;
-};
+/** A few well-known objects, so the tool is usable without looking up catalog numbers. */
+const SATELLITE_PRESETS = [
+  { norad: 25544, label: "ISS (ZARYA)" },
+  { norad: 20580, label: "Hubble Space Telescope" },
+  { norad: 48274, label: "Tiangong" },
+  { norad: 33591, label: "NOAA 19" },
+  { norad: 25338, label: "NOAA 15" },
+];
 
-/** Payload returned by the Python science service at `/api/health`. */
-type Health = {
-  status: "ok" | "degraded";
-  service: string;
-  python: string;
-  platform: string;
-  libraries: Record<string, string>;
-  checks: { time_scales: TimeScaleCheck };
-};
+/** Ground-station presets covering a spread of latitudes. */
+const STATION_PRESETS = [
+  { name: "Bangalore", lat: 12.9716, lon: 77.5946, elevation: 920 },
+  { name: "London", lat: 51.5072, lon: -0.1276, elevation: 11 },
+  { name: "Svalbard", lat: 78.2297, lon: 15.4076, elevation: 450 },
+  { name: "Quito", lat: -0.1807, lon: -78.4678, elevation: 2850 },
+  { name: "Sydney", lat: -33.8688, lon: 151.2093, elevation: 58 },
+];
 
 /**
- * Renders a labelled value in the status grid.
+ * Format an ISO timestamp for display, keeping UTC explicit.
  *
- * @param label - Field name shown in muted text.
- * @param children - The value, rendered monospaced.
+ * Local-time rendering would be a silent source of confusion here: every number the service
+ * returns is UTC, and mission work is done in UTC.
  */
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
+function formatUtc(iso: string): string {
+  return new Date(iso).toISOString().replace("T", " ").slice(0, 19) + "Z";
+}
+
+/** Format a duration in seconds as minutes and seconds. */
+function formatDuration(seconds: number): string {
+  const minutes = Math.floor(seconds / 60);
+  return `${minutes}m ${Math.round(seconds - minutes * 60)}s`;
+}
+
+/** Small labelled input. */
+function Field({
+  label,
+  hint,
+  children,
+}: {
+  label: string;
+  hint?: string;
+  children: React.ReactNode;
+}) {
   return (
-    <div className="flex items-baseline justify-between gap-6 border-b border-white/5 py-2 last:border-0">
-      <span className="text-sm text-zinc-500">{label}</span>
-      <span className="font-mono text-sm text-zinc-200">{children}</span>
+    <label className="flex flex-col gap-1.5">
+      <span className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</span>
+      {children}
+      {hint && <span className="text-[11px] text-zinc-600">{hint}</span>}
+    </label>
+  );
+}
+
+const inputClass =
+  "rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 font-mono text-sm " +
+  "text-zinc-200 outline-none focus:border-sky-500/50 focus:bg-white/[0.05]";
+
+/**
+ * Visual timeline of passes across the search window.
+ *
+ * This is the artifact an operator would actually screenshot: it answers "when can I talk to my
+ * satellite, and where are the gaps" at a glance, which a table of timestamps does not.
+ */
+function PassTimeline({
+  passes,
+  fromUtc,
+  days,
+}: {
+  passes: SatellitePass[];
+  fromUtc: string;
+  days: number;
+}) {
+  const start = new Date(fromUtc).getTime();
+  const span = days * 86400 * 1000;
+
+  return (
+    <div className="mt-1">
+      <div className="relative h-9 overflow-hidden rounded-md border border-white/10 bg-white/[0.02]">
+        {passes.map((item, index) => {
+          const left = ((new Date(item.rise_utc).getTime() - start) / span) * 100;
+          const width = Math.max(((item.duration_s * 1000) / span) * 100, 0.35);
+          // Higher passes are better passes; opacity encodes elevation so the strongest
+          // opportunities are visible without reading the table.
+          const strength = Math.min(item.max_elevation_deg / 90, 1);
+
+          return (
+            <div
+              key={index}
+              className="absolute top-0 h-full bg-sky-400"
+              style={{
+                left: `${left}%`,
+                width: `${width}%`,
+                opacity: 0.35 + strength * 0.65,
+              }}
+              title={`${formatUtc(item.rise_utc)} — ${item.max_elevation_deg.toFixed(1)}° max`}
+            />
+          );
+        })}
+      </div>
+      <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+        <span>{formatUtc(fromUtc)}</span>
+        <span>+{days} day{days === 1 ? "" : "s"}</span>
+      </div>
     </div>
   );
 }
 
 /**
- * M0 status page.
+ * Pass-prediction interface.
  *
- * M0's definition of done is that both runtimes are live on one URL, so this page exists to
- * demonstrate exactly that: it is served by Next.js and reports the state of the Python
- * science service it fetched. It is replaced by the real interface at M5.
+ * Answers one question end to end: when can a given ground station work a given satellite, with
+ * every number carrying its provenance.
  */
 export default function Home() {
-  const [health, setHealth] = useState<Health | null>(null);
+  const [noradId, setNoradId] = useState(25544);
+  const [station, setStation] = useState(STATION_PRESETS[0]);
+  const [minElevation, setMinElevation] = useState(10);
+  const [days, setDays] = useState(2);
+
+  const [satellite, setSatellite] = useState<SatelliteResponse | null>(null);
+  const [passes, setPasses] = useState<PassesResponse | null>(null);
+  const [track, setTrack] = useState<GroundTrackResponse | null>(null);
+
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [health, setHealth] = useState<"ok" | "degraded" | "unreachable" | "checking">("checking");
 
   useEffect(() => {
     fetch("/api/health")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then(setHealth)
-      .catch((err: Error) => setError(err.message));
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((body) => setHealth(body.status))
+      .catch(() => setHealth("unreachable"));
   }, []);
 
-  const ok = health?.status === "ok";
+  const run = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const [satelliteResponse, passesResponse, trackResponse] = await Promise.all([
+        fetch(`/api/satellite/${noradId}`),
+        fetch("/api/passes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            norad_id: noradId,
+            latitude_deg: station.lat,
+            longitude_deg: station.lon,
+            elevation_m: station.elevation,
+            station_name: station.name,
+            min_elevation_deg: minElevation,
+            days,
+          }),
+        }),
+        fetch("/api/groundtrack", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ norad_id: noradId, minutes: 100, step_seconds: 30 }),
+        }),
+      ]);
+
+      for (const response of [satelliteResponse, passesResponse, trackResponse]) {
+        if (!response.ok) {
+          const body = (await response.json().catch(() => null)) as ApiError | null;
+          throw new Error(body?.error?.message ?? `HTTP ${response.status}`);
+        }
+      }
+
+      setSatellite(await satelliteResponse.json());
+      setPasses(await passesResponse.json());
+      setTrack(await trackResponse.json());
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : String(caught));
+      setSatellite(null);
+      setPasses(null);
+      setTrack(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [noradId, station, minElevation, days]);
 
   return (
-    <div className="flex flex-1 items-center justify-center bg-black px-6 py-20">
-      <main className="w-full max-w-xl">
-        <h1 className="text-2xl font-medium tracking-tight text-zinc-100">space-sim</h1>
-        <p className="mt-2 max-w-md text-sm leading-6 text-zinc-500">
-          Orbital mechanics answers computed by real tools, with explicit assumptions,
-          uncertainty, and sources.
-        </p>
-
-        <section className="mt-10 rounded-lg border border-white/10 bg-white/[0.02] p-5">
-          <div className="mb-4 flex items-center gap-2.5">
-            <span
-              className={`inline-block h-2 w-2 rounded-full ${
-                error ? "bg-red-500" : ok ? "bg-emerald-500" : "bg-zinc-600"
-              }`}
-              aria-hidden
-            />
-            <h2 className="text-sm font-medium text-zinc-300">Science service</h2>
-            <span className="ml-auto font-mono text-xs text-zinc-500">
-              {error ? "unreachable" : (health?.status ?? "checking…")}
-            </span>
-          </div>
-
-          {error && (
-            <p className="font-mono text-sm text-red-400">
-              {error} — is the Python function running?
+    <div className="min-h-full bg-black px-6 py-10 text-zinc-200">
+      <main className="mx-auto w-full max-w-5xl">
+        <header className="flex flex-wrap items-baseline justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-medium tracking-tight text-zinc-100">Helios</h1>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-zinc-500">
+              Ground-station pass prediction, computed by real orbital mechanics — every value
+              carrying its frame, time scale, uncertainty, and source.
             </p>
-          )}
+          </div>
+          <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
+            <span
+              className={`h-2 w-2 rounded-full ${
+                health === "ok"
+                  ? "bg-emerald-500"
+                  : health === "checking"
+                    ? "bg-zinc-600"
+                    : "bg-red-500"
+              }`}
+            />
+            science service {health}
+          </span>
+        </header>
 
-          {health && (
-            <>
-              <Row label="Python">{health.python}</Row>
-              {Object.entries(health.libraries).map(([name, version]) => (
-                <Row key={name} label={name}>
-                  {version}
-                </Row>
-              ))}
-              <Row label="TT − UTC">
-                {health.checks.time_scales.measured_tt_minus_utc_s !== undefined ? (
-                  <span
-                    className={
-                      health.checks.time_scales.within_tolerance
-                        ? "text-emerald-400"
-                        : "text-red-400"
-                    }
-                  >
-                    {health.checks.time_scales.measured_tt_minus_utc_s} s
-                  </span>
-                ) : (
-                  <span className="text-red-400">{health.checks.time_scales.error}</span>
-                )}
-              </Row>
-            </>
-          )}
+        {/* Controls */}
+        <section className="mt-8 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Field label="Satellite">
+              <select
+                className={inputClass}
+                value={noradId}
+                onChange={(e) => setNoradId(Number(e.target.value))}
+              >
+                {SATELLITE_PRESETS.map((preset) => (
+                  <option key={preset.norad} value={preset.norad} className="bg-zinc-900">
+                    {preset.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="NORAD ID" hint="Any catalog number">
+              <input
+                type="number"
+                className={inputClass}
+                value={noradId}
+                min={1}
+                onChange={(e) => setNoradId(Number(e.target.value))}
+              />
+            </Field>
+
+            <Field label="Ground station">
+              <select
+                className={inputClass}
+                value={station.name}
+                onChange={(e) =>
+                  setStation(
+                    STATION_PRESETS.find((s) => s.name === e.target.value) ?? STATION_PRESETS[0],
+                  )
+                }
+              >
+                {STATION_PRESETS.map((preset) => (
+                  <option key={preset.name} value={preset.name} className="bg-zinc-900">
+                    {preset.name}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Latitude / Longitude" hint="degrees north / east">
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  step="0.0001"
+                  className={`${inputClass} w-full`}
+                  value={station.lat}
+                  onChange={(e) => setStation({ ...station, lat: Number(e.target.value) })}
+                />
+                <input
+                  type="number"
+                  step="0.0001"
+                  className={`${inputClass} w-full`}
+                  value={station.lon}
+                  onChange={(e) => setStation({ ...station, lon: Number(e.target.value) })}
+                />
+              </div>
+            </Field>
+
+            <Field label="Elevation mask" hint="degrees above horizon">
+              <input
+                type="number"
+                className={inputClass}
+                value={minElevation}
+                min={0}
+                max={89}
+                onChange={(e) => setMinElevation(Number(e.target.value))}
+              />
+            </Field>
+
+            <Field label="Search window" hint="days ahead">
+              <input
+                type="number"
+                className={inputClass}
+                value={days}
+                min={1}
+                max={10}
+                onChange={(e) => setDays(Number(e.target.value))}
+              />
+            </Field>
+
+            <div className="flex items-end sm:col-span-2">
+              <button
+                type="button"
+                onClick={run}
+                disabled={loading}
+                className="w-full rounded-md bg-sky-500 px-4 py-2 text-sm font-medium text-black transition hover:bg-sky-400 disabled:opacity-50"
+              >
+                {loading ? "Computing…" : "Predict passes"}
+              </button>
+            </div>
+          </div>
         </section>
 
-        <p className="mt-6 text-xs leading-5 text-zinc-600">
-          Milestone M0 — skeleton. The TT − UTC check verifies the deployed environment
-          converts time scales correctly; a 69-second error here would move a low-Earth-orbit
-          satellite roughly 500 km along-track.
-        </p>
+        {error && (
+          <p className="mt-4 rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 font-mono text-sm text-red-300">
+            {error}
+          </p>
+        )}
+
+        {/* Satellite identity */}
+        {satellite && (
+          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-3">
+              <h2 className="text-sm font-medium text-zinc-300">
+                {satellite.name}{" "}
+                <span className="font-mono text-xs text-zinc-500">#{satellite.norad_id}</span>
+              </h2>
+              <TierLegend />
+            </div>
+
+            <div className="mt-4 grid gap-5 sm:grid-cols-2">
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  Element set epoch
+                </p>
+                <TieredValue
+                  value={satellite.epoch}
+                  format={(raw) => formatUtc(String(raw))}
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  Element set age
+                </p>
+                <TieredValue value={satellite.element_set_age} />
+              </div>
+            </div>
+
+            <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-zinc-500">
+              {satellite.tle.line1}
+              {"\n"}
+              {satellite.tle.line2}
+            </pre>
+          </section>
+        )}
+
+        {/* Passes */}
+        {passes && (
+          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-sm font-medium text-zinc-300">
+                {passes.count} pass{passes.count === 1 ? "" : "es"} over {station.name}
+              </h2>
+              <span className="text-[11px] text-zinc-500">
+                mask {passes.min_elevation_deg}° · next {passes.searched_days} day
+                {passes.searched_days === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            <div className="mt-4">
+              <PassTimeline
+                passes={passes.passes}
+                fromUtc={passes.searched_from_utc}
+                days={passes.searched_days}
+              />
+            </div>
+
+            {passes.count === 0 ? (
+              <p className="mt-4 text-sm text-zinc-500">
+                No passes clear a {passes.min_elevation_deg}° mask from this site in the search
+                window. Lower the mask or extend the window — or the orbit may simply never reach
+                this latitude.
+              </p>
+            ) : (
+              <div className="mt-4 overflow-x-auto">
+                <table className="w-full min-w-[36rem] text-left text-sm">
+                  <thead>
+                    <tr className="border-b border-white/10 text-[11px] uppercase tracking-wide text-zinc-500">
+                      <th className="py-2 pr-4 font-normal">Rise (UTC)</th>
+                      <th className="py-2 pr-4 font-normal">Culmination</th>
+                      <th className="py-2 pr-4 font-normal">Set</th>
+                      <th className="py-2 pr-4 font-normal">Max elev.</th>
+                      <th className="py-2 font-normal">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody className="font-mono text-xs text-zinc-300">
+                    {passes.passes.map((item, index) => (
+                      <tr key={index} className="border-b border-white/5 last:border-0">
+                        <td className="py-2 pr-4">{formatUtc(item.rise_utc)}</td>
+                        <td className="py-2 pr-4 text-zinc-500">
+                          {formatUtc(item.culmination_utc).slice(11)}
+                        </td>
+                        <td className="py-2 pr-4 text-zinc-500">
+                          {formatUtc(item.set_utc).slice(11)}
+                        </td>
+                        <td className="py-2 pr-4 text-amber-300">
+                          {item.max_elevation_deg.toFixed(1)}°
+                        </td>
+                        <td className="py-2">{formatDuration(item.duration_s)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+
+            <details className="mt-5 group">
+              <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-300">
+                How these were computed — assumptions, frame, uncertainty
+              </summary>
+              <div className="mt-2">
+                <TieredValue
+                  value={{
+                    value: `${passes.count} predicted passes`,
+                    unit: "none",
+                    tier: passes.tier,
+                    receipt: passes.receipt,
+                  }}
+                />
+              </div>
+            </details>
+          </section>
+        )}
+
+        {/* Ground track */}
+        {track && (
+          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-sm font-medium text-zinc-300">
+                Ground track — next {track.minutes} minutes
+              </h2>
+              <span className="text-[11px] text-zinc-500">
+                from {formatUtc(track.start_utc)}
+              </span>
+            </div>
+
+            <div className="mt-4">
+              <GroundTrack
+                samples={track.samples}
+                station={{ lat: station.lat, lon: station.lon, name: station.name }}
+                current={{
+                  lat: Number(track.current.latitude.value),
+                  lon: Number(track.current.longitude.value),
+                }}
+              />
+            </div>
+
+            <div className="mt-4 grid gap-5 sm:grid-cols-3">
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Latitude</p>
+                <TieredValue value={track.current.latitude} />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Longitude</p>
+                <TieredValue value={track.current.longitude} />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Altitude</p>
+                <TieredValue value={track.current.altitude} />
+              </div>
+            </div>
+          </section>
+        )}
+
+        <footer className="mt-8 border-t border-white/5 pt-5 text-[11px] leading-5 text-zinc-600">
+          {passes?.notice ??
+            "Research and educational use only. Do not use for mission operations, collision " +
+              "avoidance, or launch decisions. Verify independently before acting."}
+          <br />
+          Orbital data from Celestrak. Propagation verified against Orekit.
+        </footer>
       </main>
     </div>
   );

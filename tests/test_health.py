@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
-from api.health import EXPECTED_TT_MINUS_UTC_SECONDS, app
+from api.main import EXPECTED_TT_MINUS_UTC_SECONDS, app
 
 client = TestClient(app)
 
