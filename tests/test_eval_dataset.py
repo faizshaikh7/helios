@@ -18,6 +18,7 @@ Two distinct risks are covered:
 from __future__ import annotations
 
 import json
+import time
 from pathlib import Path
 from typing import Any
 
@@ -163,3 +164,64 @@ def test_ground_truth_is_not_self_generated() -> None:
     assert dataset["_provenance"]["source"] == "orekit"
     for question in dataset["questions"]:
         assert question["ground_truth_source"] == "orekit"
+
+
+# --------------------------------------------------------------------------------------------
+# Evaluation fixture pinning
+# --------------------------------------------------------------------------------------------
+
+
+def test_fixtures_can_pin_the_catalog() -> None:
+    """Frozen element sets load into the catalog and are served instead of live data.
+
+    Ground truth was computed from these exact element sets. A system answering with fresher ones
+    is graded against a target it was never given, and loses accuracy it did not actually lose --
+    an error that grows silently as element sets age. That would make the accuracy chart quietly
+    wrong rather than visibly broken, which is the worse failure.
+    """
+    from science import catalog
+
+    fixtures_path = DATASET_PATH.parent / "tle_fixtures.json"
+    if not fixtures_path.exists():
+        pytest.skip("tle_fixtures.json not generated")
+
+    catalog.clear_cache()
+    try:
+        count = catalog.load_fixtures(str(fixtures_path))
+        assert count > 0
+
+        # Served from the pin, with no network call: a live fetch would set a different source.
+        tle = catalog.get_tle(25544)
+        assert tle.source == "eval-fixture"
+
+        expected = json.loads(fixtures_path.read_text(encoding="utf-8"))["satellites"]
+        pinned = next(item for item in expected if item["norad_id"] == 25544)
+        assert tle.line1 == pinned["line1"]
+        assert tle.line2 == pinned["line2"]
+    finally:
+        catalog.clear_cache()
+
+
+def test_pinned_fixtures_do_not_expire_mid_run() -> None:
+    """Pinned element sets outlive an evaluation run.
+
+    The normal cache lives an hour. A long run crossing that boundary would silently switch to
+    live data partway through, so half the questions would be graded against different inputs
+    from the other half -- and nothing would report that it happened.
+    """
+    from science import catalog
+
+    fixtures_path = DATASET_PATH.parent / "tle_fixtures.json"
+    if not fixtures_path.exists():
+        pytest.skip("tle_fixtures.json not generated")
+
+    catalog.clear_cache()
+    try:
+        catalog.load_fixtures(str(fixtures_path))
+        expires_at, _ = catalog._cache[25544]
+        remaining_days = (expires_at - time.time()) / 86400
+        assert remaining_days > 1, (
+            f"pinned fixtures expire in {remaining_days:.2f} days; a long run could outlive them"
+        )
+    finally:
+        catalog.clear_cache()

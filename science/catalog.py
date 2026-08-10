@@ -201,3 +201,43 @@ def seed_cache(tle: TLE, *, ttl_s: float = CACHE_TTL_S) -> None:
 def clear_cache() -> None:
     """Empty the cache. Intended for tests."""
     _cache.clear()
+
+
+def load_fixtures(path: str) -> int:
+    """Pin the catalog to a frozen set of element sets from a JSON file.
+
+    Used only for evaluation. Ground truth is computed from specific element sets, so a system
+    answering with *fresher* ones is measured against the wrong target and loses accuracy it did
+    not actually lose. That error grows silently as element sets age, which would make the
+    accuracy chart quietly wrong rather than visibly broken -- the worst failure mode available.
+
+    Enabled by setting ``EVAL_FIXTURES`` to a fixtures path. Never set in production, where live
+    data is the whole point.
+
+    Args:
+        path: Path to a fixtures file with a ``satellites`` array.
+
+    Returns:
+        How many element sets were pinned.
+    """
+    import json
+    from pathlib import Path
+
+    document = json.loads(Path(path).read_text(encoding="utf-8"))
+
+    for entry in document["satellites"]:
+        seed_cache(
+            TLE(
+                name=entry["name"],
+                line1=entry["line1"],
+                line2=entry["line2"],
+                norad_id=int(entry["norad_id"]),
+                source="eval-fixture",
+                # Far-future expiry: pinned element sets must not silently fall back to live data
+                # partway through an evaluation run.
+                fetched_at_unix=time.time(),
+            ),
+            ttl_s=365 * 86400,
+        )
+
+    return len(document["satellites"])

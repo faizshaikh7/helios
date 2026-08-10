@@ -12,6 +12,7 @@ Contract rules, per .agent/rules.md:
 
 from __future__ import annotations
 
+import os
 import platform
 import sys
 from datetime import UTC, datetime
@@ -39,6 +40,14 @@ OPERATIONAL_NOTICE = (
 
 EXPECTED_TT_MINUS_UTC_SECONDS = 69.184
 TIME_SCALE_TOLERANCE_SECONDS = 1e-6
+
+# Evaluation only: pin the catalog to the same frozen element sets the ground truth was computed
+# from. Without this the system is graded against a target it was never given, and the resulting
+# error grows silently as element sets age. Never set in production.
+_EVAL_FIXTURES = os.environ.get("EVAL_FIXTURES")
+if _EVAL_FIXTURES:
+    _pinned = catalog.load_fixtures(_EVAL_FIXTURES)
+    print(f"[eval mode] catalog pinned to {_pinned} frozen element sets from {_EVAL_FIXTURES}")
 
 
 def _error(code: str, message: str, status: int) -> JSONResponse:
