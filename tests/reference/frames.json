@@ -1,0 +1,300 @@
+{
+  "_provenance": {
+    "source": "orekit",
+    "orekit_jpype_version": "13.1.7.0",
+    "generated_utc": "2026-08-10T09:55:04+00:00",
+    "generator": "tools/reference/generate_frames.py",
+    "itrf_convention": "IERS_2010, simpleEOP=False",
+    "note": "Independent implementation used as ground truth for astropy frame handling. Regenerate only deliberately; a changed value here means Orekit, its data bundle, or the Earth-orientation parameters changed."
+  },
+  "transforms": [
+    {
+      "epoch_utc": "2020-06-15T12:00:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "leo_x_axis",
+      "source_xyz_m": [
+        7000000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        735467.492739,
+        -6961242.77534,
+        13659.791445
+      ]
+    },
+    {
+      "epoch_utc": "2020-06-15T12:00:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "leo_off_axis",
+      "source_xyz_m": [
+        3500000.0,
+        -4200000.0,
+        4900000.0
+      ],
+      "target_xyz_m": [
+        -3809993.803977,
+        -3912390.497242,
+        4906847.033559
+      ]
+    },
+    {
+      "epoch_utc": "2020-06-15T12:00:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "geo_x_axis",
+      "source_xyz_m": [
+        42164000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        4430035.909121,
+        -41930548.625633,
+        82278.778068
+      ]
+    },
+    {
+      "epoch_utc": "2020-06-15T12:00:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "leo_x_axis",
+      "source_xyz_m": [
+        7000000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        703618.256795,
+        -6964547.461856,
+        -16.223724
+      ]
+    },
+    {
+      "epoch_utc": "2020-06-15T12:00:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "leo_off_axis",
+      "source_xyz_m": [
+        3500000.0,
+        -4200000.0,
+        4900000.0
+      ],
+      "target_xyz_m": [
+        -3826915.948888,
+        -3904455.755946,
+        4899993.83367
+      ]
+    },
+    {
+      "epoch_utc": "2020-06-15T12:00:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "geo_x_axis",
+      "source_xyz_m": [
+        42164000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        4238194.311355,
+        -41950454.168813,
+        -97.722443
+      ]
+    },
+    {
+      "epoch_utc": "2024-03-01T06:30:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "leo_x_axis",
+      "source_xyz_m": [
+        7000000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -1604541.695313,
+        6813602.389928,
+        16383.527462
+      ]
+    },
+    {
+      "epoch_utc": "2024-03-01T06:30:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "leo_off_axis",
+      "source_xyz_m": [
+        3500000.0,
+        -4200000.0,
+        4900000.0
+      ],
+      "target_xyz_m": [
+        3288710.66463,
+        4358408.520234,
+        4908019.695875
+      ]
+    },
+    {
+      "epoch_utc": "2024-03-01T06:30:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "geo_x_axis",
+      "source_xyz_m": [
+        42164000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -9664842.291596,
+        41041247.309845,
+        98685.007415
+      ]
+    },
+    {
+      "epoch_utc": "2024-03-01T06:30:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "leo_x_axis",
+      "source_xyz_m": [
+        7000000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -1567703.560953,
+        6822192.136323,
+        8.062168
+      ]
+    },
+    {
+      "epoch_utc": "2024-03-01T06:30:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "leo_off_axis",
+      "source_xyz_m": [
+        3500000.0,
+        -4200000.0,
+        4900000.0
+      ],
+      "target_xyz_m": [
+        3309463.451981,
+        4351712.40279,
+        4900005.186059
+      ]
+    },
+    {
+      "epoch_utc": "2024-03-01T06:30:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "geo_x_axis",
+      "source_xyz_m": [
+        42164000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -9442950.420576,
+        41092987.033704,
+        48.561891
+      ]
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "leo_x_axis",
+      "source_xyz_m": [
+        7000000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -1254980.189232,
+        -6886560.082579,
+        17746.933874
+      ]
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "leo_off_axis",
+      "source_xyz_m": [
+        3500000.0,
+        -4200000.0,
+        4900000.0
+      ],
+      "target_xyz_m": [
+        -4757360.834251,
+        -2678041.184959,
+        4908728.277711
+      ]
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "source_frame": "GCRF",
+      "target_frame": "ITRF",
+      "vector_name": "geo_x_axis",
+      "source_xyz_m": [
+        42164000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -7559283.528396,
+        -41480702.760267,
+        106897.38855
+      ]
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "leo_x_axis",
+      "source_xyz_m": [
+        7000000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -1295004.788458,
+        -6879168.743223,
+        -11.342803
+      ]
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "leo_off_axis",
+      "source_xyz_m": [
+        3500000.0,
+        -4200000.0,
+        4900000.0
+      ],
+      "target_xyz_m": [
+        -4775001.14438,
+        -2662590.0478,
+        4899997.786583
+      ]
+    },
+    {
+      "epoch_utc": "2026-01-01T00:00:00",
+      "source_frame": "TEME",
+      "target_frame": "ITRF",
+      "vector_name": "geo_x_axis",
+      "source_xyz_m": [
+        42164000.0,
+        0.0,
+        0.0
+      ],
+      "target_xyz_m": [
+        -7800368.842933,
+        -41436181.555611,
+        -68.322563
+      ]
+    }
+  ]
+}
