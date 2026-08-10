@@ -50,22 +50,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const provider = (parsed.data.provider ?? defaultProvider()) as ProviderId | null;
-
-  if (!provider) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "no_provider_configured",
-          message:
-            "No model provider is configured. Set GOOGLE_GENERATIVE_AI_API_KEY or XAI_API_KEY, " +
-            "or run a local Ollama server and select the ollama provider.",
-        },
-      },
-      { status: 503 },
-    );
-  }
-
+  const provider: ProviderId = parsed.data.provider ?? defaultProvider();
   const model = parsed.data.model ?? DEFAULT_MODELS[provider];
 
   try {
@@ -105,20 +90,40 @@ export async function POST(request: Request): Promise<Response> {
       usage: result.usage,
     });
   } catch (caught) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "agent_failed",
-          message: caught instanceof Error ? caught.message : String(caught),
+    const detail = caught instanceof Error ? caught.message : String(caught);
+
+    // A refused connection to a local Ollama is the commonest first-run failure, and the raw
+    // ECONNREFUSED says nothing about how to fix it. Translate it into the actual next step.
+    if (provider === "ollama" && /ECONNREFUSED|fetch failed|Cannot connect/i.test(detail)) {
+      return NextResponse.json(
+        {
+          error: {
+            code: "ollama_unreachable",
+            message:
+              "No local Ollama server is running, and no hosted provider key is set. Either run " +
+              "`ollama serve` and `ollama pull qwen3`, or set GOOGLE_GENERATIVE_AI_API_KEY or " +
+              "XAI_API_KEY in .env.local.",
+          },
         },
-      },
+        { status: 503 },
+      );
+    }
+
+    return NextResponse.json(
+      { error: { code: "agent_failed", message: detail } },
       { status: 502 },
     );
   }
 }
 
-/** Pick a provider from whatever is configured, preferring hosted models over a local one. */
-function defaultProvider(): ProviderId | null {
+/**
+ * Pick a provider from whatever is configured, preferring hosted models over a local one.
+ *
+ * Falls back to Ollama rather than null because it needs no key, so it is always *selectable*
+ * even when it is not running. Whether it actually answers is handled at call time, where a
+ * refused connection can be translated into a message naming the fix.
+ */
+function defaultProvider(): ProviderId {
   if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) return "gemini";
   if (process.env.XAI_API_KEY) return "grok";
   return "ollama";
