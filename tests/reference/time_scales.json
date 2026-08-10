@@ -2,10 +2,9 @@
   "_provenance": {
     "source": "orekit",
     "orekit_jpype_version": "13.1.7.0",
-    "generated_utc": "2026-08-06T14:20:49+00:00",
+    "generated_utc": "2026-08-10T09:54:03+00:00",
     "generator": "tools/reference/generate_time_scales.py",
-    "note": "Independent implementation used as ground truth for astropy time-scale handling. Regenerate only deliberately; a changed value here means either Orekit changed or the data bundle did.",
-    "orekit_wgs84_mu_m3_s2": 398600441800000.0
+    "note": "Independent implementation used as ground truth for astropy time-scale handling. Regenerate only deliberately; a changed value here means either Orekit changed or the data bundle did."
   },
   "epochs": [
     {
