@@ -336,6 +336,77 @@ def groundtrack(request: GroundTrackRequest) -> dict[str, Any]:
 
 
 # --------------------------------------------------------------------------------------------
+# State at an instant
+# --------------------------------------------------------------------------------------------
+
+
+class StateRequest(BaseModel):
+    """Parameters for a state-at-an-instant query."""
+
+    norad_id: int = Field(default=25544, ge=1)
+    at_utc: str | None = Field(
+        default=None,
+        description=(
+            "ISO-8601 UTC instant, e.g. 2026-08-12T00:00:00Z. Omit for now. Any instant is "
+            "accepted; accuracy degrades with distance from the element set's epoch."
+        ),
+    )
+
+
+@app.post("/api/state")
+def state_at(request: StateRequest) -> dict[str, Any]:
+    """Return where a satellite is, and how fast, at a specific instant.
+
+    Distinct from `/api/groundtrack`, which samples forward from now. Questions are frequently
+    about a stated moment -- "where was it at 03:00Z" -- and without this the only way to answer
+    one is to sample a track and hope it covers the instant.
+
+    Args:
+        request: Satellite and instant.
+
+    Returns:
+        Sub-satellite point, altitude, and speed, each with provenance.
+
+    Raises:
+        HTTPException: If the timestamp cannot be parsed.
+    """
+    tle = catalog.get_tle(request.norad_id)
+
+    if request.at_utc:
+        try:
+            # Python 3.11+ parses a trailing "Z" directly.
+            when = datetime.fromisoformat(request.at_utc)
+        except ValueError as exc:
+            raise RequestValidationError(
+                [
+                    {
+                        "loc": ("body", "at_utc"),
+                        "msg": f"not a valid ISO-8601 timestamp: {request.at_utc}",
+                        "type": "value_error",
+                    }
+                ]
+            ) from exc
+
+        if when.tzinfo is None:
+            when = when.replace(tzinfo=UTC)
+    else:
+        when = datetime.now(UTC)
+
+    point = orbit.subpoint(tle, when)
+    state = elements.state_vector(tle, when)
+
+    return {
+        "satellite": {"norad_id": tle.norad_id, "name": tle.name},
+        "at_utc": when.isoformat(),
+        "latitude": point["latitude"],
+        "longitude": point["longitude"],
+        "altitude": point["altitude"],
+        "speed": state["speed"],
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
 # Orbital elements
 # --------------------------------------------------------------------------------------------
 

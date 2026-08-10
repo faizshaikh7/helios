@@ -99,6 +99,22 @@ export const scienceTools = {
     execute: async (input) => callScience("/api/passes", input),
   }),
 
+  stateAtTime: tool({
+    description:
+      "Get where a satellite is at a SPECIFIC instant: sub-satellite latitude and longitude in " +
+      "degrees, altitude in kilometres above the WGS84 ellipsoid, and speed in metres per " +
+      "second. Use this whenever a question names a time, such as 'at 2026-08-12T00:00:00Z'. " +
+      "Omit at_utc for the current moment. Prefer this over groundTrack for a single instant.",
+    inputSchema: z.object({
+      norad_id: noradId,
+      at_utc: z
+        .string()
+        .optional()
+        .describe("ISO-8601 UTC instant, e.g. 2026-08-12T00:00:00Z. Omit for now."),
+    }),
+    execute: async (input) => callScience("/api/state", input),
+  }),
+
   groundTrack: tool({
     description:
       "Sample a satellite's sub-satellite point (latitude, longitude, altitude) over time, " +

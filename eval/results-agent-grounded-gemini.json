@@ -1,0 +1,115 @@
+{
+  "solver": "agent-grounded-gemini",
+  "run_utc": "2026-08-10T13:39:03+00:00",
+  "total": 6,
+  "correct": 1,
+  "accuracy": 0.1667,
+  "accuracy_unmemorizable": 0.0,
+  "declined": 0,
+  "by_category": {
+    "altitude": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "inclination": {
+      "n": 1,
+      "correct": 1,
+      "accuracy": 1.0
+    },
+    "orbital_period": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "speed": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "subpoint_latitude": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+    },
+    "subpoint_longitude": {
+      "n": 1,
+      "correct": 0,
+      "accuracy": 0.0
+    }
+  },
+  "results": [
+    {
+      "id": "orbital_period-0000",
+      "category": "orbital_period",
+      "memorizable": true,
+      "expected": 92.939114,
+      "produced": null,
+      "abs_error": null,
+      "tolerance": 0.5,
+      "correct": false,
+      "declined": false,
+      "error": "HTTPError: HTTP Error 502: Bad Gateway"
+    },
+    {
+      "id": "inclination-0001",
+      "category": "inclination",
+      "memorizable": true,
+      "expected": 51.6326,
+      "produced": 51.652535289,
+      "abs_error": 0.019935,
+      "tolerance": 0.1,
+      "correct": true,
+      "declined": false,
+      "error": null
+    },
+    {
+      "id": "subpoint_latitude-0002",
+      "category": "subpoint_latitude",
+      "memorizable": false,
+      "expected": 46.870409,
+      "produced": null,
+      "abs_error": null,
+      "tolerance": 0.5,
+      "correct": false,
+      "declined": false,
+      "error": "HTTPError: HTTP Error 502: Bad Gateway"
+    },
+    {
+      "id": "subpoint_longitude-0003",
+      "category": "subpoint_longitude",
+      "memorizable": false,
+      "expected": 120.589176,
+      "produced": null,
+      "abs_error": null,
+      "tolerance": 0.5,
+      "correct": false,
+      "declined": false,
+      "error": "HTTPError: HTTP Error 502: Bad Gateway"
+    },
+    {
+      "id": "altitude-0004",
+      "category": "altitude",
+      "memorizable": false,
+      "expected": 419.030993,
+      "produced": null,
+      "abs_error": null,
+      "tolerance": 10.0,
+      "correct": false,
+      "declined": false,
+      "error": "HTTPError: HTTP Error 502: Bad Gateway"
+    },
+    {
+      "id": "speed-0005",
+      "category": "speed",
+      "memorizable": false,
+      "expected": 7.668121,
+      "produced": null,
+      "abs_error": null,
+      "tolerance": 0.05,
+      "correct": false,
+      "declined": false,
+      "error": "HTTPError: HTTP Error 502: Bad Gateway"
+    }
+  ]
+}

@@ -22,10 +22,12 @@ import argparse
 import json
 import re
 import sys
+import time
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
+from urllib import error as urlerror
 from urllib import request as urlrequest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -138,6 +140,28 @@ class ToolCeilingSolver:
         return None
 
 
+RATE_LIMIT_ATTEMPTS = 6
+DEFAULT_RETRY_WAIT_S = 30.0
+
+
+def _is_rate_limited(detail: str) -> bool:
+    """Detect a provider quota rejection inside an error body."""
+    lowered = detail.lower()
+    return "quota" in lowered or "rate limit" in lowered or "429" in lowered
+
+
+def _retry_after_seconds(detail: str) -> float:
+    """Extract the provider's own suggested wait, falling back to a fixed pause.
+
+    Providers state how long to wait; honouring that is both faster and politer than a guess.
+    """
+    match = re.search(r"retry in ([0-9.]+)s", detail, re.IGNORECASE)
+    if match:
+        # A small margin, since the quota window is measured on their clock, not ours.
+        return float(match.group(1)) + 2.0
+    return DEFAULT_RETRY_WAIT_S
+
+
 class AgentSolver:
     """Asks the deployed agent, in either grounded or baseline mode.
 
@@ -150,11 +174,51 @@ class AgentSolver:
     correct answer.
     """
 
-    def __init__(self, base_url: str, mode: str, provider: str | None = None) -> None:
+    def __init__(
+        self,
+        base_url: str,
+        mode: str,
+        provider: str | None = None,
+        delay_s: float = 0.0,
+    ) -> None:
         self.base_url = base_url.rstrip("/")
         self.mode = mode
         self.provider = provider
+        self.delay_s = delay_s
         self.name = f"agent-{mode}" + (f"-{provider}" if provider else "")
+
+    def _post(self, payload: dict[str, Any]) -> dict[str, Any]:
+        """POST to the agent, waiting out provider rate limits.
+
+        Free-tier quotas are per minute, and a grounded question costs several model calls
+        because of the tool loop -- so a naive run saturates the quota within seconds and every
+        subsequent question fails. Those failures would be scored as wrong answers, which would
+        silently understate the system's accuracy and make the chart a lie.
+
+        The provider states how long to wait; that value is used rather than a guess.
+        """
+        request = urlrequest.Request(
+            f"{self.base_url}/api/agent",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+
+        for attempt in range(1, RATE_LIMIT_ATTEMPTS + 1):
+            try:
+                with urlrequest.urlopen(request, timeout=600) as response:
+                    return json.loads(response.read().decode("utf-8"))
+
+            except urlerror.HTTPError as exc:
+                detail = exc.read().decode("utf-8", errors="replace")
+
+                if not _is_rate_limited(detail) or attempt == RATE_LIMIT_ATTEMPTS:
+                    raise
+
+                wait = _retry_after_seconds(detail)
+                print(f"    rate limited; waiting {wait:.0f}s", flush=True)
+                time.sleep(wait)
+
+        raise RuntimeError("unreachable")
 
     def answer(self, question: dict[str, Any]) -> float | None:
         """Ask the agent and parse a numeric answer, or None if it declined."""
@@ -169,14 +233,10 @@ class AgentSolver:
         if self.provider:
             payload["provider"] = self.provider
 
-        request = urlrequest.Request(
-            f"{self.base_url}/api/agent",
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
-        )
+        if self.delay_s:
+            time.sleep(self.delay_s)
 
-        with urlrequest.urlopen(request, timeout=300) as response:
-            body = json.loads(response.read().decode("utf-8"))
+        body = self._post(payload)
 
         text = (body.get("answer") or "").strip()
         if "UNKNOWN" in text.upper():
@@ -285,6 +345,12 @@ def main() -> int:
     parser.add_argument("--provider", default=None, help="Model provider for agent solvers.")
     parser.add_argument("--base-url", default="http://localhost:3002", help="Where the app runs.")
     parser.add_argument("--limit", type=int, default=None, help="Score only the first N questions.")
+    parser.add_argument(
+        "--delay",
+        type=float,
+        default=0.0,
+        help="Seconds to pause between questions, to stay inside provider rate limits.",
+    )
     args = parser.parse_args()
 
     if not DATASET_PATH.exists():
@@ -302,7 +368,7 @@ def main() -> int:
     if args.solver == "ceiling":
         solver = ToolCeilingSolver()
     else:
-        solver = AgentSolver(args.base_url, args.solver, args.provider)
+        solver = AgentSolver(args.base_url, args.solver, args.provider, args.delay)
 
     report = score(solver, questions)
 
