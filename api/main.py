@@ -18,6 +18,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
@@ -54,10 +55,37 @@ def _error(code: str, message: str, status: int) -> JSONResponse:
     return JSONResponse(status_code=status, content={"error": {"code": code, "message": message}})
 
 
+@app.exception_handler(catalog.CatalogNotFound)
+async def _catalog_not_found_handler(_: Request, exc: catalog.CatalogNotFound) -> JSONResponse:
+    """An unknown catalog number is the caller's mistake, so 404 rather than 502.
+
+    Registered before the broader `CatalogError` handler because it is a subclass; the more
+    specific handler must win.
+    """
+    return _error("satellite_not_found", str(exc), 404)
+
+
 @app.exception_handler(catalog.CatalogError)
 async def _catalog_error_handler(_: Request, exc: catalog.CatalogError) -> JSONResponse:
-    """Turn catalog failures into a typed 502 rather than an unhandled 500."""
+    """Turn catalog outages into a typed 502 rather than an unhandled 500."""
     return _error("catalog_unavailable", str(exc), 502)
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
+    """Return readable validation failures in the project's error shape.
+
+    FastAPI's default body is a nested list of pydantic error dicts, which reaches a user as a
+    bare "HTTP 422" with nothing actionable in it. Rejecting bad input is correct; failing to say
+    which field and why is not.
+    """
+    problems = []
+    for item in exc.errors():
+        # loc is like ("body", "min_elevation_deg"); the leading source is noise to a user.
+        field = ".".join(str(part) for part in item.get("loc", ()) if part != "body")
+        problems.append(f"{field or 'request'}: {item.get('msg', 'invalid')}")
+
+    return _error("invalid_input", "; ".join(problems), 422)
 
 
 # --------------------------------------------------------------------------------------------

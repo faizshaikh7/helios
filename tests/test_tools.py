@@ -276,3 +276,78 @@ def test_now_is_after_the_fixture_epoch() -> None:
     exercising backward propagation without anyone noticing.
     """
     assert orbit.tle_epoch(FIXTURE_TLE) < datetime.now(UTC)
+
+
+# --------------------------------------------------------------------------------------------
+# Error-message quality
+#
+# Found by an external review of the running app: an unknown catalog number surfaced a raw
+# "HTTP Error 404" and an out-of-range elevation mask surfaced a bare "HTTP 422". The rejections
+# were correct; the messages were not actionable. These lock in the fixes.
+# --------------------------------------------------------------------------------------------
+
+
+def test_unknown_satellite_returns_404_with_a_readable_message() -> None:
+    """An unknown catalog number is the caller's mistake, so 404 and a useful message."""
+    catalog.clear_cache()
+
+    def _not_found(_url: str) -> str:
+        return "No GP data found"
+
+    original = catalog._fetch_text
+    catalog._fetch_text = _not_found  # type: ignore[assignment]
+    try:
+        response = client.get("/api/satellite/99999999")
+    finally:
+        catalog._fetch_text = original  # type: ignore[assignment]
+
+    assert response.status_code == 404, "an unknown satellite is not a server failure"
+
+    body = response.json()
+    assert body["error"]["code"] == "satellite_not_found"
+    assert "99999999" in body["error"]["message"]
+    assert "HTTP" not in body["error"]["message"], "raw transport detail leaked to the user"
+
+
+def test_a_missing_satellite_is_not_retried() -> None:
+    """A 404 is not transient, so it must not be retried.
+
+    Retrying an unknown catalog number three times delays the answer and is impolite to
+    Celestrak, for a result that cannot change.
+    """
+    catalog.clear_cache()
+    attempts = 0
+
+    def _counting(_url: str) -> str:
+        nonlocal attempts
+        attempts += 1
+        return "No GP data found"
+
+    original = catalog._fetch_text
+    catalog._fetch_text = _counting  # type: ignore[assignment]
+    try:
+        client.get("/api/satellite/99999999")
+    finally:
+        catalog._fetch_text = original  # type: ignore[assignment]
+
+    assert attempts == 1, f"expected a single attempt for a missing object, made {attempts}"
+
+
+def test_out_of_range_elevation_mask_explains_itself() -> None:
+    """A rejected elevation mask names the field and the reason, not just a status code."""
+    response = client.post(
+        "/api/passes",
+        json={
+            "norad_id": 25544,
+            "latitude_deg": 12.97,
+            "longitude_deg": 77.59,
+            "min_elevation_deg": 95.0,
+        },
+    )
+
+    assert response.status_code == 422
+
+    body = response.json()
+    assert body["error"]["code"] == "invalid_input"
+    assert "min_elevation_deg" in body["error"]["message"], "the failing field must be named"
+    assert len(body["error"]["message"]) > 20, "the message must say more than that it failed"

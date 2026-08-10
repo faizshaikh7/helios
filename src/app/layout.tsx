@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import Script from "next/script";
 import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
@@ -26,15 +27,22 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <head>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
         {/*
-         * Runs before first paint so a stored theme is applied without a flash. React would
-         * otherwise only correct the theme after hydration, showing a full white screen first to
-         * anyone who chose dark.
+         * Applies a stored theme before hydration, so someone who chose dark never sees a white
+         * flash first.
+         *
+         * Must go through next/script rather than a raw <script> tag: React 19 treats a bare
+         * script element in the tree as a rendering error, which surfaces as a dev overlay.
+         * `beforeInteractive` injects it into the document head regardless of placement here.
          */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-      </head>
-      <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
+        <Script
+          id="helios-theme-init"
+          strategy="beforeInteractive"
+          dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }}
+        />
+        {children}
+      </body>
     </html>
   );
 }

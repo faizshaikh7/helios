@@ -24,7 +24,17 @@ USER_AGENT = "helios/0.1 (orbital mechanics research tool)"
 
 
 class CatalogError(RuntimeError):
-    """Raised when a satellite cannot be retrieved."""
+    """Raised when the catalog cannot be reached."""
+
+
+class CatalogNotFound(CatalogError):
+    """Raised when the catalog is reachable but has no such object.
+
+    Distinct from `CatalogError` because the two need different responses: an unknown catalog
+    number is the caller's mistake and should be a 404, while an unreachable catalog is the
+    service's problem and should be a 502. Collapsing them tells the user to retry something that
+    will never work.
+    """
 
 
 @dataclass(frozen=True)
@@ -53,6 +63,21 @@ class TLE:
 _cache: dict[int, tuple[float, TLE]] = {}
 
 
+def _not_found_message(norad_id: int) -> str:
+    """The single message shown for an unknown catalog number.
+
+    Args:
+        norad_id: The number that was requested.
+
+    Returns:
+        A message naming the number and offering a known one to try instead.
+    """
+    return (
+        f"No satellite with NORAD catalog number {norad_id} was found in the catalog. "
+        "Check the number, or try a known one such as 25544 (ISS)."
+    )
+
+
 def _fetch_text(url: str) -> str:
     """Fetch a URL as text, with timeout and retry.
 
@@ -72,12 +97,25 @@ def _fetch_text(url: str) -> str:
             request = urlrequest.Request(url, headers={"User-Agent": USER_AGENT})
             with urlrequest.urlopen(request, timeout=REQUEST_TIMEOUT_S) as response:
                 return response.read().decode("utf-8", errors="replace")
+
+        except urlerror.HTTPError as exc:
+            # A 4xx is a statement about the request, not a transient fault: an unknown catalog
+            # number will still be unknown on the third attempt. Retrying wastes the caller's
+            # time and is impolite to Celestrak.
+            if 400 <= exc.code < 500:
+                raise CatalogNotFound(str(exc.code)) from exc
+            last_error = exc
+
         except (urlerror.URLError, TimeoutError, OSError) as exc:
             last_error = exc
-            if attempt < REQUEST_ATTEMPTS:
-                time.sleep(1.0 * attempt)
 
-    raise CatalogError(f"could not reach Celestrak after {REQUEST_ATTEMPTS} attempts: {last_error}")
+        if attempt < REQUEST_ATTEMPTS:
+            time.sleep(1.0 * attempt)
+
+    raise CatalogError(
+        f"Could not reach Celestrak after {REQUEST_ATTEMPTS} attempts. "
+        f"The catalog may be temporarily unavailable. ({last_error})"
+    )
 
 
 def _parse_tle_response(text: str, norad_id: int) -> TLE:
@@ -95,10 +133,10 @@ def _parse_tle_response(text: str, norad_id: int) -> TLE:
     """
     lines = [line.strip() for line in text.splitlines() if line.strip()]
 
-    # Celestrak returns a plain-text error rather than an HTTP error for unknown objects.
+    # Celestrak often returns 200 with a plain-text message rather than an HTTP error for unknown
+    # objects, so a successful response is not evidence the satellite exists.
     if len(lines) < 3 or not lines[1].startswith("1 ") or not lines[2].startswith("2 "):
-        detail = lines[0] if lines else "empty response"
-        raise CatalogError(f"no element set for NORAD {norad_id}: {detail}")
+        raise CatalogNotFound(_not_found_message(norad_id))
 
     return TLE(
         name=lines[0],
@@ -131,7 +169,16 @@ def get_tle(norad_id: int, *, use_cache: bool = True) -> TLE:
             return cached[1]
 
     url = f"{CELESTRAK_GP_URL}?CATNR={int(norad_id)}&FORMAT=TLE"
-    tle = _parse_tle_response(_fetch_text(url), norad_id)
+
+    # Celestrak signals an unknown object two different ways -- an HTTP 4xx, or a 200 carrying a
+    # plain-text message. Both mean the same thing to a user, so both produce the same message
+    # here rather than leaking which path happened to be taken.
+    try:
+        body = _fetch_text(url)
+    except CatalogNotFound as exc:
+        raise CatalogNotFound(_not_found_message(norad_id)) from exc
+
+    tle = _parse_tle_response(body, norad_id)
 
     _cache[norad_id] = (now + CACHE_TTL_S, tle)
     return tle
