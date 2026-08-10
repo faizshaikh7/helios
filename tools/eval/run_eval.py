@@ -249,60 +249,25 @@ class AgentSolver:
         return float(match.group()) if match else None
 
 
-def score(solver: Solver, questions: list[dict[str, Any]]) -> dict[str, Any]:
-    """Run a solver over the question set and score it.
-
-    Longitude is compared with wraparound: -179.9 and 180.1 differ by 0.2 degrees, not 360.
+def _summarise(solver_name: str, results: list[dict[str, Any]]) -> dict[str, Any]:
+    """Build the results document from scored answers.
 
     Args:
-        solver: The system under test.
-        questions: The evaluation questions.
+        solver_name: Name of the system under test.
+        results: One entry per scored question.
 
     Returns:
         A results document with per-category and overall accuracy.
     """
-    results = []
     by_category: dict[str, list[bool]] = defaultdict(list)
-
-    for question in questions:
-        expected = question["answer"]["value"]
-        tolerance = question["answer"]["tolerance_abs"]
-
-        try:
-            produced = solver.answer(question)
-            error: str | None = None
-        except Exception as exc:  # noqa: BLE001 - a solver crash is a scoreable outcome
-            produced, error = None, f"{type(exc).__name__}: {exc}"
-
-        if produced is None:
-            correct, delta = False, None
-        else:
-            delta = abs(produced - expected)
-            if question["category"] == "subpoint_longitude":
-                delta = min(delta, 360.0 - delta)
-            correct = delta <= tolerance
-
-        by_category[question["category"]].append(correct)
-        results.append(
-            {
-                "id": question["id"],
-                "category": question["category"],
-                "memorizable": question["memorizable"],
-                "expected": expected,
-                "produced": produced,
-                "abs_error": round(delta, 6) if delta is not None else None,
-                "tolerance": tolerance,
-                "correct": correct,
-                "declined": produced is None and error is None,
-                "error": error,
-            }
-        )
+    for item in results:
+        by_category[item["category"]].append(item["correct"])
 
     correct_total = sum(1 for r in results if r["correct"])
     unmemorizable = [r for r in results if not r["memorizable"]]
 
     return {
-        "solver": solver.name,
+        "solver": solver_name,
         "run_utc": datetime.now(UTC).isoformat(timespec="seconds"),
         "total": len(results),
         "correct": correct_total,
@@ -325,6 +290,89 @@ def score(solver: Solver, questions: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def score(
+    solver: Solver,
+    questions: list[dict[str, Any]],
+    output_path: Path | None = None,
+) -> dict[str, Any]:
+    """Run a solver over the question set and score it.
+
+    Longitude is compared with wraparound: -179.9 and 180.1 differ by 0.2 degrees, not 360.
+
+    Results are checkpointed after **every** question and already-scored questions are skipped on
+    a rerun. A full grounded pass takes tens of minutes against a rate-limited free tier, and
+    losing all of it to an interruption -- a killed process, a dropped connection, a laptop lid --
+    means the measurement never gets made. Resumability is what makes a long evaluation
+    practical rather than a thing you keep almost finishing.
+
+    Args:
+        solver: The system under test.
+        questions: The evaluation questions.
+        output_path: Where to checkpoint. Also the source of prior answers to resume from.
+
+    Returns:
+        A results document with per-category and overall accuracy.
+    """
+    results: list[dict[str, Any]] = []
+    answered: set[str] = set()
+
+    if output_path and output_path.exists():
+        previous = json.loads(output_path.read_text(encoding="utf-8"))
+        # Only carry forward answers that actually landed. A prior error is worth retrying: it
+        # was usually a transient rate limit, and keeping it would bake a transport fault into
+        # the accuracy figure.
+        results = [item for item in previous.get("results", []) if item.get("error") is None]
+        answered = {item["id"] for item in results}
+        if answered:
+            print(f"resuming: {len(answered)} already scored", flush=True)
+
+    remaining = [q for q in questions if q["id"] not in answered]
+
+    for index, question in enumerate(remaining, start=1):
+        expected = question["answer"]["value"]
+        tolerance = question["answer"]["tolerance_abs"]
+
+        try:
+            produced = solver.answer(question)
+            error: str | None = None
+        except Exception as exc:  # noqa: BLE001 - a solver crash is a scoreable outcome
+            produced, error = None, f"{type(exc).__name__}: {exc}"
+
+        if produced is None:
+            correct, delta = False, None
+        else:
+            delta = abs(produced - expected)
+            if question["category"] == "subpoint_longitude":
+                delta = min(delta, 360.0 - delta)
+            correct = delta <= tolerance
+
+        results.append(
+            {
+                "id": question["id"],
+                "category": question["category"],
+                "memorizable": question["memorizable"],
+                "expected": expected,
+                "produced": produced,
+                "abs_error": round(delta, 6) if delta is not None else None,
+                "tolerance": tolerance,
+                "correct": correct,
+                "declined": produced is None and error is None,
+                "error": error,
+            }
+        )
+
+        # Checkpoint after every question: an interruption should cost one answer, not the run.
+        if output_path:
+            output_path.write_text(
+                json.dumps(_summarise(solver.name, results), indent=2) + "\n",
+                encoding="utf-8",
+            )
+            if index % 10 == 0 or index == len(remaining):
+                print(f"  {index}/{len(remaining)} scored", flush=True)
+
+    return _summarise(solver.name, results)
+
+
 def main() -> int:
     """Score a solver and write results.
 
@@ -345,6 +393,14 @@ def main() -> int:
     parser.add_argument("--provider", default=None, help="Model provider for agent solvers.")
     parser.add_argument("--base-url", default="http://localhost:3002", help="Where the app runs.")
     parser.add_argument("--limit", type=int, default=None, help="Score only the first N questions.")
+    parser.add_argument(
+        "--fresh",
+        action="store_true",
+        help=(
+            "Ignore any checkpoint and score every question again. Required after changing "
+            "tool code, since resuming would silently keep answers from the old version."
+        ),
+    )
     parser.add_argument(
         "--delay",
         type=float,
