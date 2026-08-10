@@ -1,0 +1,151 @@
+{
+  "_provenance": {
+    "source": "orekit",
+    "orekit_jpype_version": "13.1.7.0",
+    "generated_utc": "2026-08-10T12:13:07+00:00",
+    "generator": "tools/reference/generate_elements.py",
+    "frame": "TEME",
+    "time_scale": "UTC",
+    "element_type": "osculating",
+    "mu_m3_s2": 398600799999999.94,
+    "altitude_datum": "geodetic height above the WGS84 ellipsoid (OneAxisEllipsoid in ITRF, IERS_2010, simpleEOP=False) -- NOT a radius from Earth's centre",
+    "note": "Independent implementation used as ground truth for the skyfield-based element reduction in science/elements.py. Elements are osculating, not the TLE's own mean elements, and depend on mu -- which is recorded above so a comparison can confirm both sides used the same gravitational parameter."
+  },
+  "tle": {
+    "name": "ISS (ZARYA)",
+    "line1": "1 25544U 98067A   24001.50000000  .00016717  00000-0  30150-3 0  9004",
+    "line2": "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.49815310 10000"
+  },
+  "states": [
+    {
+      "offset_minutes": 0,
+      "epoch_utc": "2024-01-01T12:00:00.000",
+      "position_teme_m": [
+        4123014.3995,
+        -1003151.6424,
+        5293896.7047
+      ],
+      "velocity_teme_m_s": [
+        2500.877556,
+        7225.355384,
+        -581.001785
+      ],
+      "semi_major_axis_m": 6790035.357806,
+      "eccentricity": 0.000835988875,
+      "inclination_deg": 51.622029477,
+      "raan_deg": 247.457821327,
+      "argument_of_perigee_deg": 112.574980831,
+      "true_anomaly_deg": 342.957503357,
+      "orbital_period_s": 5568.251453,
+      "mean_motion_rev_per_day": 15.516540647,
+      "perigee_radius_m": 6784358.963788,
+      "apogee_radius_m": 6795711.751824,
+      "perigee_altitude_m": 417451.826529,
+      "apogee_altitude_m": 428804.558418
+    },
+    {
+      "offset_minutes": 10,
+      "epoch_utc": "2024-01-01T12:10:00.000",
+      "position_teme_m": [
+        4602184.6423,
+        3229571.4314,
+        3800650.5536
+      ],
+      "velocity_teme_m_s": [
+        -965.922837,
+        6340.355203,
+        -4205.153562
+      ],
+      "semi_major_axis_m": 6795787.447207,
+      "eccentricity": 0.001671609725,
+      "inclination_deg": 51.641189365,
+      "raan_deg": 247.402867232,
+      "argument_of_perigee_deg": 100.124825848,
+      "true_anomaly_deg": 34.296777886,
+      "orbital_period_s": 5575.328558,
+      "mean_motion_rev_per_day": 15.496844554,
+      "perigee_radius_m": 6784427.54282,
+      "apogee_radius_m": 6807147.351593,
+      "perigee_altitude_m": 419056.918244,
+      "apogee_altitude_m": 441776.618859
+    },
+    {
+      "offset_minutes": 60,
+      "epoch_utc": "2024-01-01T13:00:00.000",
+      "position_teme_m": [
+        -4291967.1643,
+        -4461951.2687,
+        -2819787.2525
+      ],
+      "velocity_teme_m_s": [
+        2154.621611,
+        -5285.498588,
+        5096.475163
+      ],
+      "semi_major_axis_m": 6798534.801038,
+      "eccentricity": 0.000941478828,
+      "inclination_deg": 51.650393907,
+      "raan_deg": 247.233428102,
+      "argument_of_perigee_deg": 102.720632678,
+      "true_anomaly_deg": 225.3735312,
+      "orbital_period_s": 5578.709832,
+      "mean_motion_rev_per_day": 15.487451866,
+      "perigee_radius_m": 6792134.12446,
+      "apogee_radius_m": 6804935.477617,
+      "perigee_altitude_m": 426535.628168,
+      "apogee_altitude_m": 439336.919933
+    },
+    {
+      "offset_minutes": 360,
+      "epoch_utc": "2024-01-01T18:00:00.000",
+      "position_teme_m": [
+        1290390.7426,
+        -5218363.2708,
+        4147503.7845
+      ],
+      "velocity_teme_m_s": [
+        5132.791871,
+        4273.259197,
+        3760.996567
+      ],
+      "semi_major_axis_m": 6794606.410532,
+      "eccentricity": 0.001661371987,
+      "inclination_deg": 51.637327139,
+      "raan_deg": 246.248844586,
+      "argument_of_perigee_deg": 114.742103751,
+      "true_anomaly_deg": 296.433064523,
+      "orbital_period_s": 5573.87522,
+      "mean_motion_rev_per_day": 15.500885216,
+      "perigee_radius_m": 6783318.041777,
+      "apogee_radius_m": 6805894.779287,
+      "perigee_altitude_m": 416050.194803,
+      "apogee_altitude_m": 438626.820536
+    },
+    {
+      "offset_minutes": 1440,
+      "epoch_utc": "2024-01-02T12:00:00.000",
+      "position_teme_m": [
+        -4177950.2686,
+        1017120.6912,
+        -5272491.872
+      ],
+      "velocity_teme_m_s": [
+        -2856.348797,
+        -7035.390663,
+        902.757753
+      ],
+      "semi_major_axis_m": 6790118.018833,
+      "eccentricity": 0.002015650096,
+      "inclination_deg": 51.622566445,
+      "raan_deg": 242.500237375,
+      "argument_of_perigee_deg": 108.578211862,
+      "true_anomaly_deg": 170.103303583,
+      "orbital_period_s": 5568.353134,
+      "mean_motion_rev_per_day": 15.516257307,
+      "perigee_radius_m": 6776431.516798,
+      "apogee_radius_m": 6803804.520867,
+      "perigee_altitude_m": 410127.166204,
+      "apogee_altitude_m": 437500.036131
+    }
+  ]
+}
