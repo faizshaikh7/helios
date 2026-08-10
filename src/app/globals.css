@@ -1,26 +1,155 @@
 @import "tailwindcss";
 
+/*
+ * Semantic colour tokens.
+ *
+ * Components reference roles (surface, muted, border) rather than literal colours, so the whole
+ * palette switches by redefining variables in one place. The alternative -- a `dark:` variant on
+ * every utility class -- doubles the class list and drifts the moment one is forgotten.
+ *
+ * Three theme states are supported, in this order of precedence:
+ *   1. an explicit choice, stamped as [data-theme="light"|"dark"] on <html>
+ *   2. the system preference, via prefers-color-scheme
+ *   3. light, as the bare default
+ */
+
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --surface: #fafafa;
+  --surface-inset: #f4f4f5;
+  --border: rgb(0 0 0 / 0.1);
+  --border-strong: rgb(0 0 0 / 0.16);
+
+  --foreground: #18181b;
+  --muted: #52525b;
+  --faint: #71717a;
+
+  --accent: #0284c7;
+  --accent-contrast: #ffffff;
+
+  /* Trust tiers. Line style carries the distinction; these only reinforce it, so they must be
+     legible on both grounds rather than merely pretty on one. */
+  --tier-observed: #047857;
+  --tier-derived: #0369a1;
+  --tier-predicted: #b45309;
+  --tier-speculative: #be123c;
+
+  /* Data visualisation */
+  --track: #0284c7;
+  --station: #047857;
+  --satellite: #b45309;
+  --sunlit: #f59e0b;
+  --shadow: #312e81;
+  --danger: #dc2626;
+  --ok: #059669;
+}
+
+/* System preference, only when no explicit choice has been stamped. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --background: #000000;
+    --surface: rgb(255 255 255 / 0.02);
+    --surface-inset: rgb(0 0 0 / 0.4);
+    --border: rgb(255 255 255 / 0.1);
+    --border-strong: rgb(255 255 255 / 0.16);
+
+    --foreground: #e4e4e7;
+    --muted: #a1a1aa;
+    --faint: #71717a;
+
+    --accent: #0ea5e9;
+    --accent-contrast: #000000;
+
+    --tier-observed: #6ee7b7;
+    --tier-derived: #7dd3fc;
+    --tier-predicted: #fcd34d;
+    --tier-speculative: #fda4af;
+
+    --track: #38bdf8;
+    --station: #34d399;
+    --satellite: #fcd34d;
+    --sunlit: #fcd34d;
+    --shadow: #312e81;
+    --danger: #f87171;
+    --ok: #34d399;
+  }
+}
+
+/* Explicit dark choice wins in both directions. */
+:root[data-theme="dark"] {
+  --background: #000000;
+  --surface: rgb(255 255 255 / 0.02);
+  --surface-inset: rgb(0 0 0 / 0.4);
+  --border: rgb(255 255 255 / 0.1);
+  --border-strong: rgb(255 255 255 / 0.16);
+
+  --foreground: #e4e4e7;
+  --muted: #a1a1aa;
+  --faint: #71717a;
+
+  --accent: #0ea5e9;
+  --accent-contrast: #000000;
+
+  --tier-observed: #6ee7b7;
+  --tier-derived: #7dd3fc;
+  --tier-predicted: #fcd34d;
+  --tier-speculative: #fda4af;
+
+  --track: #38bdf8;
+  --station: #34d399;
+  --satellite: #fcd34d;
+  --sunlit: #fcd34d;
+  --shadow: #312e81;
+  --danger: #f87171;
+  --ok: #34d399;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-inset: var(--surface-inset);
+  --color-edge: var(--border);
+  --color-edge-strong: var(--border-strong);
+
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+
+  --color-accent: var(--accent);
+  --color-accent-contrast: var(--accent-contrast);
+
+  --color-observed: var(--tier-observed);
+  --color-derived: var(--tier-derived);
+  --color-predicted: var(--tier-predicted);
+  --color-speculative: var(--tier-speculative);
+
+  --color-track: var(--track);
+  --color-station: var(--station);
+  --color-satellite: var(--satellite);
+  --color-sunlit: var(--sunlit);
+  --color-shadow: var(--shadow);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Theme changes are instant by default, which reads as a jarring flash on a full-page repaint.
+   Transition only the properties that actually change, and skip it for anyone who has asked for
+   reduced motion. */
+@media (prefers-reduced-motion: no-preference) {
+  body,
+  body * {
+    transition:
+      background-color 150ms ease,
+      border-color 150ms ease,
+      color 150ms ease;
+  }
 }

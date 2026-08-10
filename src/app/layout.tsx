@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { THEME_INIT_SCRIPT } from "@/components/ThemeToggle";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "space-sim",
+  title: "Helios",
   description:
     "Orbital mechanics answers computed by real tools, with explicit assumptions and sources.",
 };
@@ -23,8 +24,17 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <head>
+        {/*
+         * Runs before first paint so a stored theme is applied without a flash. React would
+         * otherwise only correct the theme after hydration, showing a full white screen first to
+         * anyone who chose dark.
+         */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
+      <body className="min-h-full flex flex-col bg-background text-foreground">{children}</body>
     </html>
   );
 }

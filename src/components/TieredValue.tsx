@@ -11,26 +11,26 @@ import type { Receipt, Tier, Value } from "@/lib/types";
  */
 const TIER_STYLE: Record<Tier, { line: string; text: string; label: string; blurb: string }> = {
   observed: {
-    line: "underline decoration-solid decoration-emerald-400/70 decoration-2 underline-offset-4",
-    text: "text-emerald-300",
+    line: "underline decoration-solid decoration-observed decoration-2 underline-offset-4",
+    text: "text-observed",
     label: "observed",
     blurb: "Measured data, as published by its source.",
   },
   derived: {
-    line: "underline decoration-dashed decoration-sky-400/70 decoration-2 underline-offset-4",
-    text: "text-sky-300",
+    line: "underline decoration-dashed decoration-derived decoration-2 underline-offset-4",
+    text: "text-derived",
     label: "derived",
     blurb: "Computed from observed inputs using accepted physics.",
   },
   predicted: {
-    line: "underline decoration-dotted decoration-amber-400/80 decoration-2 underline-offset-4",
-    text: "text-amber-300",
+    line: "underline decoration-dotted decoration-predicted decoration-2 underline-offset-4",
+    text: "text-predicted",
     label: "predicted",
     blurb: "Estimated by propagating a model forward. Error grows with time from epoch.",
   },
   speculative: {
-    line: "underline decoration-wavy decoration-rose-400/70 decoration-2 underline-offset-4",
-    text: "text-rose-300",
+    line: "underline decoration-wavy decoration-speculative decoration-2 underline-offset-4",
+    text: "text-speculative",
     label: "speculative",
     blurb: "Insufficient evidence. Treat as a hypothesis, not a result.",
   },
@@ -50,8 +50,8 @@ function ReceiptRow({ label, value }: { label: string; value: unknown }) {
 
   return (
     <div className="grid grid-cols-[7rem_1fr] gap-3 py-1.5">
-      <dt className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</dt>
-      <dd className="font-mono text-xs leading-relaxed whitespace-pre-wrap break-words text-zinc-300">
+      <dt className="text-[11px] uppercase tracking-wide text-muted">{label}</dt>
+      <dd className="font-mono text-xs leading-relaxed whitespace-pre-wrap break-words text-foreground">
         {rendered}
       </dd>
     </div>
@@ -65,7 +65,7 @@ function ReceiptRow({ label, value }: { label: string; value: unknown }) {
  */
 export function ReceiptPanel({ receipt }: { receipt: Receipt }) {
   return (
-    <dl className="mt-2 divide-y divide-white/5 rounded-md border border-white/10 bg-black/40 px-3 py-1">
+    <dl className="mt-2 divide-y divide-edge rounded-md border border-edge bg-surface-inset px-3 py-1">
       <ReceiptRow label="Tool" value={receipt.tool} />
       <ReceiptRow label="Frame" value={receipt.frame} />
       <ReceiptRow label="Time scale" value={receipt.time_scale} />
@@ -113,12 +113,12 @@ export function TieredValue({
         className={`font-mono text-sm ${style.line} ${style.text} cursor-pointer hover:brightness-125`}
       >
         {shown}
-        {value.unit !== "none" && <span className="ml-1 text-zinc-500">{value.unit}</span>}
+        {value.unit !== "none" && <span className="ml-1 text-muted">{value.unit}</span>}
       </button>
 
       {open && (
         <span className="block">
-          <span className="mt-1 block text-[11px] text-zinc-500">
+          <span className="mt-1 block text-[11px] text-muted">
             <span className={style.text}>{style.label}</span> — {style.blurb}
           </span>
           <ReceiptPanel receipt={value.receipt} />
@@ -136,7 +136,7 @@ export function TieredValue({
  */
 export function TierLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-zinc-500">
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-[11px] text-muted">
       {(Object.keys(TIER_STYLE) as Tier[]).map((tier) => (
         <span key={tier} className="inline-flex items-center gap-1.5" title={TIER_STYLE[tier].blurb}>
           <span className={`${TIER_STYLE[tier].line} ${TIER_STYLE[tier].text} font-mono`}>

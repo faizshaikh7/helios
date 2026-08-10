@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { GroundTrack } from "@/components/GroundTrack";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
 import type {
   ApiError,
@@ -60,16 +61,16 @@ function Field({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[11px] uppercase tracking-wide text-zinc-500">{label}</span>
+      <span className="text-[11px] uppercase tracking-wide text-muted">{label}</span>
       {children}
-      {hint && <span className="text-[11px] text-zinc-600">{hint}</span>}
+      {hint && <span className="text-[11px] text-faint">{hint}</span>}
     </label>
   );
 }
 
 const inputClass =
-  "rounded-md border border-white/10 bg-white/[0.03] px-2.5 py-1.5 font-mono text-sm " +
-  "text-zinc-200 outline-none focus:border-sky-500/50 focus:bg-white/[0.05]";
+  "rounded-md border border-edge bg-surface px-2.5 py-1.5 font-mono text-sm " +
+  "text-foreground outline-none focus:border-accent focus:bg-surface-inset";
 
 /**
  * Visual timeline of passes across the search window.
@@ -91,7 +92,7 @@ function PassTimeline({
 
   return (
     <div className="mt-1">
-      <div className="relative h-9 overflow-hidden rounded-md border border-white/10 bg-white/[0.02]">
+      <div className="relative h-9 overflow-hidden rounded-md border border-edge bg-surface">
         {passes.map((item, index) => {
           const left = ((new Date(item.rise_utc).getTime() - start) / span) * 100;
           const width = Math.max(((item.duration_s * 1000) / span) * 100, 0.35);
@@ -102,7 +103,7 @@ function PassTimeline({
           return (
             <div
               key={index}
-              className="absolute top-0 h-full bg-sky-400"
+              className="absolute top-0 h-full bg-track"
               style={{
                 left: `${left}%`,
                 width: `${width}%`,
@@ -113,7 +114,7 @@ function PassTimeline({
           );
         })}
       </div>
-      <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+      <div className="mt-1 flex justify-between text-[11px] text-faint">
         <span>{formatUtc(fromUtc)}</span>
         <span>+{days} day{days === 1 ? "" : "s"}</span>
       </div>
@@ -224,32 +225,35 @@ export default function Home() {
   }, [noradId, station, minElevation, days]);
 
   return (
-    <div className="min-h-full bg-black px-6 py-10 text-zinc-200">
+    <div className="min-h-full bg-background px-6 py-10 text-foreground">
       <main className="mx-auto w-full max-w-5xl">
         <header className="flex flex-wrap items-baseline justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-medium tracking-tight text-zinc-100">Helios</h1>
-            <p className="mt-1 max-w-xl text-sm leading-6 text-zinc-500">
+            <h1 className="text-2xl font-medium tracking-tight text-foreground">Helios</h1>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-muted">
               Ground-station pass prediction, computed by real orbital mechanics — every value
               carrying its frame, time scale, uncertainty, and source.
             </p>
           </div>
-          <span className="inline-flex items-center gap-2 text-xs text-zinc-500">
-            <span
-              className={`h-2 w-2 rounded-full ${
-                health === "ok"
-                  ? "bg-emerald-500"
-                  : health === "checking"
-                    ? "bg-zinc-600"
-                    : "bg-red-500"
-              }`}
-            />
-            science service {health}
-          </span>
+          <div className="flex items-center gap-4">
+            <span className="inline-flex items-center gap-2 text-xs text-muted">
+              <span
+                className={`h-2 w-2 rounded-full ${
+                  health === "ok"
+                    ? "bg-ok"
+                    : health === "checking"
+                      ? "bg-faint"
+                      : "bg-danger"
+                }`}
+              />
+              science service {health}
+            </span>
+            <ThemeToggle />
+          </div>
         </header>
 
         {/* Controls */}
-        <section className="mt-8 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+        <section className="mt-8 rounded-lg border border-edge bg-surface p-5">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Satellite">
               <select
@@ -258,7 +262,7 @@ export default function Home() {
                 onChange={(e) => setNoradId(Number(e.target.value))}
               >
                 {SATELLITE_PRESETS.map((preset) => (
-                  <option key={preset.norad} value={preset.norad} className="bg-zinc-900">
+                  <option key={preset.norad} value={preset.norad} className="bg-surface">
                     {preset.label}
                   </option>
                 ))}
@@ -286,7 +290,7 @@ export default function Home() {
                 }
               >
                 {STATION_PRESETS.map((preset) => (
-                  <option key={preset.name} value={preset.name} className="bg-zinc-900">
+                  <option key={preset.name} value={preset.name} className="bg-surface">
                     {preset.name}
                   </option>
                 ))}
@@ -339,7 +343,7 @@ export default function Home() {
                 type="button"
                 onClick={run}
                 disabled={loading}
-                className="w-full rounded-md bg-sky-500 px-4 py-2 text-sm font-medium text-black transition hover:bg-sky-400 disabled:opacity-50"
+                className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition hover:opacity-90 disabled:opacity-50"
               >
                 {loading ? "Computing…" : "Predict passes"}
               </button>
@@ -348,25 +352,25 @@ export default function Home() {
         </section>
 
         {error && (
-          <p className="mt-4 rounded-md border border-red-500/30 bg-red-500/5 px-4 py-3 font-mono text-sm text-red-300">
+          <p className="mt-4 rounded-md border border-danger bg-surface px-4 py-3 font-mono text-sm text-danger">
             {error}
           </p>
         )}
 
         {/* Satellite identity */}
         {satellite && (
-          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-3">
-              <h2 className="text-sm font-medium text-zinc-300">
+              <h2 className="text-sm font-medium text-foreground">
                 {satellite.name}{" "}
-                <span className="font-mono text-xs text-zinc-500">#{satellite.norad_id}</span>
+                <span className="font-mono text-xs text-muted">#{satellite.norad_id}</span>
               </h2>
               <TierLegend />
             </div>
 
             <div className="mt-4 grid gap-5 sm:grid-cols-2">
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                   Element set epoch
                 </p>
                 <TieredValue
@@ -375,14 +379,14 @@ export default function Home() {
                 />
               </div>
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                   Element set age
                 </p>
                 <TieredValue value={satellite.element_set_age} />
               </div>
             </div>
 
-            <pre className="mt-4 overflow-x-auto rounded-md border border-white/10 bg-black/40 p-3 font-mono text-[11px] leading-relaxed text-zinc-500">
+            <pre className="mt-4 overflow-x-auto rounded-md border border-edge bg-surface-inset p-3 font-mono text-[11px] leading-relaxed text-muted">
               {satellite.tle.line1}
               {"\n"}
               {satellite.tle.line2}
@@ -392,12 +396,12 @@ export default function Home() {
 
         {/* Passes */}
         {passes && (
-          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-medium text-zinc-300">
+              <h2 className="text-sm font-medium text-foreground">
                 {passes.count} pass{passes.count === 1 ? "" : "es"} over {station.name}
               </h2>
-              <span className="text-[11px] text-zinc-500">
+              <span className="text-[11px] text-muted">
                 mask {passes.min_elevation_deg}° · next {passes.searched_days} day
                 {passes.searched_days === 1 ? "" : "s"}
               </span>
@@ -412,7 +416,7 @@ export default function Home() {
             </div>
 
             {passes.count === 0 ? (
-              <p className="mt-4 text-sm text-zinc-500">
+              <p className="mt-4 text-sm text-muted">
                 No passes clear a {passes.min_elevation_deg}° mask from this site in the search
                 window. Lower the mask or extend the window — or the orbit may simply never reach
                 this latitude.
@@ -421,7 +425,7 @@ export default function Home() {
               <div className="mt-4 overflow-x-auto">
                 <table className="w-full min-w-[36rem] text-left text-sm">
                   <thead>
-                    <tr className="border-b border-white/10 text-[11px] uppercase tracking-wide text-zinc-500">
+                    <tr className="border-b border-edge text-[11px] uppercase tracking-wide text-muted">
                       <th className="py-2 pr-4 font-normal">Rise (UTC)</th>
                       <th className="py-2 pr-4 font-normal">Culmination</th>
                       <th className="py-2 pr-4 font-normal">Set</th>
@@ -429,17 +433,17 @@ export default function Home() {
                       <th className="py-2 font-normal">Duration</th>
                     </tr>
                   </thead>
-                  <tbody className="font-mono text-xs text-zinc-300">
+                  <tbody className="font-mono text-xs text-foreground">
                     {passes.passes.map((item, index) => (
-                      <tr key={index} className="border-b border-white/5 last:border-0">
+                      <tr key={index} className="border-b border-edge last:border-0">
                         <td className="py-2 pr-4">{formatUtc(item.rise_utc)}</td>
-                        <td className="py-2 pr-4 text-zinc-500">
+                        <td className="py-2 pr-4 text-muted">
                           {formatUtc(item.culmination_utc).slice(11)}
                         </td>
-                        <td className="py-2 pr-4 text-zinc-500">
+                        <td className="py-2 pr-4 text-muted">
                           {formatUtc(item.set_utc).slice(11)}
                         </td>
-                        <td className="py-2 pr-4 text-amber-300">
+                        <td className="py-2 pr-4 text-predicted">
                           {item.max_elevation_deg.toFixed(1)}°
                         </td>
                         <td className="py-2">{formatDuration(item.duration_s)}</td>
@@ -451,7 +455,7 @@ export default function Home() {
             )}
 
             <details className="mt-5 group">
-              <summary className="cursor-pointer text-xs text-zinc-500 hover:text-zinc-300">
+              <summary className="cursor-pointer text-xs text-muted hover:text-foreground">
                 How these were computed — assumptions, frame, uncertainty
               </summary>
               <div className="mt-2">
@@ -470,12 +474,12 @@ export default function Home() {
 
         {/* Ground track */}
         {track && (
-          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-medium text-zinc-300">
+              <h2 className="text-sm font-medium text-foreground">
                 Ground track — next {track.minutes} minutes
               </h2>
-              <span className="text-[11px] text-zinc-500">
+              <span className="text-[11px] text-muted">
                 from {formatUtc(track.start_utc)}
               </span>
             </div>
@@ -493,15 +497,15 @@ export default function Home() {
 
             <div className="mt-4 grid gap-5 sm:grid-cols-3">
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Latitude</p>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">Latitude</p>
                 <TieredValue value={track.current.latitude} />
               </div>
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Longitude</p>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">Longitude</p>
                 <TieredValue value={track.current.longitude} />
               </div>
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Altitude</p>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">Altitude</p>
                 <TieredValue value={track.current.altitude} />
               </div>
             </div>
@@ -510,10 +514,10 @@ export default function Home() {
 
         {/* Orbital elements */}
         {orbitElements && (
-          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-medium text-zinc-300">Orbit</h2>
-              <span className="text-[11px] text-zinc-500">
+              <h2 className="text-sm font-medium text-foreground">Orbit</h2>
+              <span className="text-[11px] text-muted">
                 at element-set epoch · osculating
               </span>
             </div>
@@ -530,7 +534,7 @@ export default function Home() {
                 ["Apogee altitude", orbitElements.derived.apogee_altitude],
               ].map(([label, value]) => (
                 <div key={label as string}>
-                  <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                     {label as string}
                   </p>
                   <TieredValue value={value as Value} />
@@ -538,7 +542,7 @@ export default function Home() {
               ))}
             </div>
 
-            <p className="mt-4 text-[11px] leading-5 text-zinc-600">
+            <p className="mt-4 text-[11px] leading-5 text-faint">
               {orbitElements.element_convention}
             </p>
           </section>
@@ -546,27 +550,27 @@ export default function Home() {
 
         {/* Eclipse and power */}
         {eclipse && (
-          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+          <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="text-sm font-medium text-zinc-300">Eclipse &amp; power</h2>
-              <span className="text-[11px] text-zinc-500">next {eclipse.days} day</span>
+              <h2 className="text-sm font-medium text-foreground">Eclipse &amp; power</h2>
+              <span className="text-[11px] text-muted">next {eclipse.days} day</span>
             </div>
 
             <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                   Beta angle
                 </p>
                 <TieredValue value={eclipse.beta_angle} />
               </div>
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                   Eclipses
                 </p>
                 <TieredValue value={eclipse.summary.eclipse_count} />
               </div>
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                   Longest eclipse
                 </p>
                 <TieredValue
@@ -575,7 +579,7 @@ export default function Home() {
                 />
               </div>
               <div>
-                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-muted">
                   Max orbit in shadow
                 </p>
                 <TieredValue
@@ -589,21 +593,21 @@ export default function Home() {
                 system has to survive, which a number alone does not convey. */}
             {eclipse.intervals.length > 0 && (
               <div className="mt-5">
-                <div className="flex h-6 overflow-hidden rounded-md border border-white/10">
+                <div className="flex h-6 overflow-hidden rounded-md border border-edge">
                   <div
-                    className="bg-amber-300/80"
+                    className="bg-sunlit"
                     style={{
                       width: `${(1 - eclipse.intervals[0].orbit_fraction) * 100}%`,
                     }}
                     title="sunlit"
                   />
                   <div
-                    className="bg-indigo-900"
+                    className="bg-shadow"
                     style={{ width: `${eclipse.intervals[0].orbit_fraction * 100}%` }}
                     title="eclipse"
                   />
                 </div>
-                <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+                <div className="mt-1 flex justify-between text-[11px] text-faint">
                   <span>sunlit</span>
                   <span>
                     eclipse — {(eclipse.intervals[0].duration_s / 60).toFixed(1)} min, of which{" "}
@@ -613,7 +617,7 @@ export default function Home() {
               </div>
             )}
 
-            <p className="mt-4 text-[11px] leading-5 text-zinc-600">
+            <p className="mt-4 text-[11px] leading-5 text-faint">
               Beta angle is the angle between the orbit plane and the Sun. It sets how much of
               each orbit is spent in shadow, and so drives battery sizing and thermal design.
               Umbra is full shadow; the remainder is penumbra, where the Sun is partly occulted.
@@ -621,7 +625,7 @@ export default function Home() {
           </section>
         )}
 
-        <footer className="mt-8 border-t border-white/5 pt-5 text-[11px] leading-5 text-zinc-600">
+        <footer className="mt-8 border-t border-edge pt-5 text-[11px] leading-5 text-faint">
           {passes?.notice ??
             "Research and educational use only. Do not use for mission operations, collision " +
               "avoidance, or launch decisions. Verify independently before acting."}

@@ -59,7 +59,7 @@ export function GroundTrack({
   return (
     <svg
       viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-      className="w-full rounded-lg border border-white/10 bg-black"
+      className="w-full rounded-lg border border-edge bg-background"
       role="img"
       aria-label="Satellite ground track on an equirectangular map"
     >
@@ -71,7 +71,7 @@ export function GroundTrack({
           y1={0}
           x2={project(0, lon)[0]}
           y2={HEIGHT}
-          stroke={lon === 0 ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)"}
+          stroke={lon === 0 ? "var(--border-strong)" : "var(--border)"}
           strokeWidth={1}
         />
       ))}
@@ -82,13 +82,13 @@ export function GroundTrack({
           y1={project(lat, 0)[1]}
           x2={WIDTH}
           y2={project(lat, 0)[1]}
-          stroke={lat === 0 ? "rgba(255,255,255,0.16)" : "rgba(255,255,255,0.06)"}
+          stroke={lat === 0 ? "var(--border-strong)" : "var(--border)"}
           strokeWidth={1}
         />
       ))}
 
       {/* Equator label, so the projection is readable without a legend. */}
-      <text x={6} y={project(0, 0)[1] - 6} className="fill-zinc-600" fontSize={10}>
+      <text x={6} y={project(0, 0)[1] - 6} className="fill-faint" fontSize={10}>
         equator
       </text>
 
@@ -96,7 +96,7 @@ export function GroundTrack({
         <polyline
           key={index}
           fill="none"
-          stroke="rgb(56 189 248)"
+          stroke="var(--track)"
           strokeWidth={1.8}
           strokeOpacity={0.9}
           points={segment.map((s) => project(s.lat, s.lon).join(",")).join(" ")}
@@ -109,12 +109,12 @@ export function GroundTrack({
             cx={project(station.lat, station.lon)[0]}
             cy={project(station.lat, station.lon)[1]}
             r={4}
-            className="fill-emerald-400"
+            className="fill-station"
           />
           <text
             x={project(station.lat, station.lon)[0] + 8}
             y={project(station.lat, station.lon)[1] + 4}
-            className="fill-emerald-300"
+            className="fill-station"
             fontSize={11}
           >
             {station.name}
@@ -128,13 +128,13 @@ export function GroundTrack({
             cx={project(current.lat, current.lon)[0]}
             cy={project(current.lat, current.lon)[1]}
             r={5}
-            className="fill-amber-300"
+            className="fill-satellite"
           />
           <circle
             cx={project(current.lat, current.lon)[0]}
             cy={project(current.lat, current.lon)[1]}
             r={11}
-            className="fill-none stroke-amber-300/40"
+            className="fill-none stroke-satellite"
             strokeWidth={1.5}
           />
         </g>
