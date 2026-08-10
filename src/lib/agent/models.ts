@@ -18,9 +18,21 @@ export type ModelChoice = {
   model: string;
 };
 
-/** Defaults per provider, chosen for tool-calling capability rather than raw size. */
+/**
+ * Defaults per provider, chosen for tool-calling capability rather than raw size.
+ *
+ * Gemini defaults to the *lite* variant deliberately. On the free tier, `gemini-3.5-flash`
+ * allows only 20 requests per day (metric `generate_content_free_tier_requests`), which a single
+ * evaluation pass exhausts many times over -- and the resulting error reads as a rate limit
+ * rather than a daily cap, so it looks like a pacing problem that no amount of pacing fixes.
+ * The lite variant has its own, far larger allowance.
+ *
+ * Capability trade-off accepted: a lighter model is weaker at tool selection. That is a fair
+ * comparison regardless, because the grounded and baseline runs use the *same* model, so the
+ * measured difference is still attributable to tool access alone.
+ */
 export const DEFAULT_MODELS: Record<ProviderId, string> = {
-  gemini: "gemini-3.5-flash",
+  gemini: "gemini-3.5-flash-lite",
   grok: "grok-4.5",
   // Whatever is pulled locally; qwen3 is a reasonable tool-calling default but users vary, so
   // this is overridable and the provider is probed before use.

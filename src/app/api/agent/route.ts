@@ -61,6 +61,12 @@ export async function POST(request: Request): Promise<Response> {
       instructions: grounded ? AGENT_INSTRUCTIONS : BASELINE_INSTRUCTIONS,
       tools: grounded ? scienceTools : {},
       stopWhen: isStepCount(grounded ? MAX_STEPS : 1),
+      // No internal retry. The SDK's default of 3 multiplies quota consumption: a grounded
+      // question makes several model calls, and retrying each one three times can burn nine
+      // quota units before the caller sees a single failure -- which on a rate-limited free tier
+      // guarantees the next request fails too. Surfacing the rejection immediately lets the
+      // caller pace itself against the provider's own stated delay.
+      maxRetries: 0,
     });
 
     const result = await agent.generate({ prompt: parsed.data.question });
