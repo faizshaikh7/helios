@@ -1,0 +1,227 @@
+{
+  "_provenance": {
+    "source": "orekit",
+    "orekit_jpype_version": "13.1.7.0",
+    "generated_utc": "2026-08-10T12:19:53+00:00",
+    "generator": "tools/reference/generate_eclipse.py",
+    "frame": "GCRF",
+    "shadow_model": "conical (Orekit EclipseDetector, umbra and penumbra separately)",
+    "note": "Independent implementation used as ground truth for science.eclipse, which builds on skyfield for the orbit and astropy's built-in ERFA ephemeris for the Sun. The two do not share a solar ephemeris, a propagator implementation, or a frame stack. Orekit reports the Sun's geometric position while astropy's get_sun reports its apparent position, a known ~21 arcsecond difference that the test tolerances account for explicitly."
+  },
+  "tle": {
+    "name": "ISS (ZARYA)",
+    "line1": "1 25544U 98067A   24001.50000000  .00016717  00000-0  30150-3 0  9004",
+    "line2": "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.49815310 10000"
+  },
+  "model": {
+    "earth_radius_m": 6378136.6,
+    "earth_flattening": 0.0,
+    "sun_radius_m": 695700000.0,
+    "orbital_period_s": 5574.85782,
+    "note": "Pinned to match science.eclipse so the differential test measures implementation, not modelling choice. A spherical Earth also removes Earth orientation parameters from the comparison entirely."
+  },
+  "span": {
+    "start_utc": "2024-01-01T12:00:00.000",
+    "days": 1.0,
+    "max_check_s": 60.0,
+    "threshold_s": 1e-06
+  },
+  "beta_angles": [
+    {
+      "offset_minutes": 0,
+      "epoch_utc": "2024-01-01T12:00:00.000",
+      "beta_deg": -40.276253733,
+      "sun_gcrf_m": [
+        26101249664.322,
+        -132824745443.904,
+        -57577678844.144
+      ]
+    },
+    {
+      "offset_minutes": 360,
+      "epoch_utc": "2024-01-01T18:00:00.000",
+      "beta_deg": -41.429713936,
+      "sun_gcrf_m": [
+        26744609901.534,
+        -132716684101.772,
+        -57530859036.645
+      ]
+    },
+    {
+      "offset_minutes": 720,
+      "epoch_utc": "2024-01-02T00:00:00.000",
+      "beta_deg": -42.621084037,
+      "sun_gcrf_m": [
+        27387463276.08,
+        -132606044237.044,
+        -57482922262.952
+      ]
+    },
+    {
+      "offset_minutes": 1080,
+      "epoch_utc": "2024-01-02T06:00:00.000",
+      "beta_deg": -43.818494926,
+      "sun_gcrf_m": [
+        28029797461.275,
+        -132492827372.942,
+        -57433869126.605
+      ]
+    },
+    {
+      "offset_minutes": 1440,
+      "epoch_utc": "2024-01-02T12:00:00.000",
+      "beta_deg": -44.975438623,
+      "sun_gcrf_m": [
+        28671600110.158,
+        -132377035079.147,
+        -57383700249.503
+      ]
+    }
+  ],
+  "eclipses": [
+    {
+      "entry_utc": "2024-01-01T12:05:34.20408375428169024",
+      "exit_utc": "2024-01-01T12:38:20.466871640365134496",
+      "umbra_entry_utc": "2024-01-01T12:05:45.761491817676194656",
+      "umbra_exit_utc": "2024-01-01T12:38:08.866693735995696064",
+      "duration_s": 1966.262788,
+      "umbra_duration_s": 1943.105202,
+      "orbit_fraction": 0.352701872
+    },
+    {
+      "entry_utc": "2024-01-01T13:38:31.27777293335308429",
+      "exit_utc": "2024-01-01T14:11:13.54408095585237957",
+      "umbra_entry_utc": "2024-01-01T13:38:42.901408179965279966",
+      "umbra_exit_utc": "2024-01-01T14:11:01.877488513200802314",
+      "duration_s": 1962.266308,
+      "umbra_duration_s": 1938.97608,
+      "orbit_fraction": 0.351984996
+    },
+    {
+      "entry_utc": "2024-01-01T15:11:28.396039340260150752",
+      "exit_utc": "2024-01-01T15:44:06.600168751018690824",
+      "umbra_entry_utc": "2024-01-01T15:11:40.087151654613023741",
+      "umbra_exit_utc": "2024-01-01T15:43:54.865910849021918945",
+      "duration_s": 1958.204129,
+      "umbra_duration_s": 1934.778759,
+      "orbit_fraction": 0.351256336
+    },
+    {
+      "entry_utc": "2024-01-01T16:44:25.559990249919026766",
+      "exit_utc": "2024-01-01T17:16:59.635019683567657366",
+      "umbra_entry_utc": "2024-01-01T16:44:37.319859223237518201",
+      "umbra_exit_utc": "2024-01-01T17:16:47.831815731271248505",
+      "duration_s": 1954.075029,
+      "umbra_duration_s": 1930.511957,
+      "orbit_fraction": 0.350515671
+    },
+    {
+      "entry_utc": "2024-01-01T18:17:22.770759258509420246",
+      "exit_utc": "2024-01-01T18:49:52.648512874877420682",
+      "umbra_entry_utc": "2024-01-01T18:17:34.600695453002870593",
+      "umbra_exit_utc": "2024-01-01T18:49:40.775051195394753021",
+      "duration_s": 1949.877754,
+      "umbra_duration_s": 1926.174356,
+      "orbit_fraction": 0.349762777
+    },
+    {
+      "entry_utc": "2024-01-01T19:50:20.029508334975540546",
+      "exit_utc": "2024-01-01T20:22:45.64052170872082397",
+      "umbra_entry_utc": "2024-01-01T19:50:31.930853356981907045",
+      "umbra_exit_utc": "2024-01-01T20:22:33.695460082863712901",
+      "duration_s": 1945.611013,
+      "umbra_duration_s": 1921.764607,
+      "orbit_fraction": 0.348997423
+    },
+    {
+      "entry_utc": "2024-01-01T21:23:17.337426225916997722",
+      "exit_utc": "2024-01-01T21:55:38.610913608102778794",
+      "umbra_entry_utc": "2024-01-01T21:23:29.311555308184915889",
+      "umbra_exit_utc": "2024-01-01T21:55:26.592875763421249045",
+      "duration_s": 1941.273487,
+      "umbra_duration_s": 1917.28132,
+      "orbit_fraction": 0.348219372
+    },
+    {
+      "entry_utc": "2024-01-01T22:56:14.695731785435464498",
+      "exit_utc": "2024-01-01T23:28:31.559549812991489666",
+      "umbra_entry_utc": "2024-01-01T22:56:26.744053967080826141",
+      "umbra_exit_utc": "2024-01-01T23:28:19.467125871412252797",
+      "duration_s": 1936.863818,
+      "umbra_duration_s": 1912.723072,
+      "orbit_fraction": 0.347428379
+    },
+    {
+      "entry_utc": "2024-01-02T00:29:12.105673653892969418",
+      "exit_utc": "2024-01-02T01:01:24.486284571041140946",
+      "umbra_entry_utc": "2024-01-02T00:29:24.229633238613504741",
+      "umbra_exit_utc": "2024-01-02T01:01:12.318030004555022405",
+      "duration_s": 1932.380611,
+      "umbra_duration_s": 1908.088397,
+      "orbit_fraction": 0.346624196
+    },
+    {
+      "entry_utc": "2024-01-02T02:02:09.568531475655349738",
+      "exit_utc": "2024-01-02T02:34:17.390967709175388292",
+      "umbra_entry_utc": "2024-01-02T02:02:21.769609286630102781",
+      "umbra_exit_utc": "2024-01-02T02:34:05.145399824032994941",
+      "duration_s": 1927.822436,
+      "umbra_duration_s": 1903.375791,
+      "orbit_fraction": 0.345806566
+    },
+    {
+      "entry_utc": "2024-01-02T03:35:07.085616854904575296",
+      "exit_utc": "2024-01-02T04:07:10.27343872795553884",
+      "umbra_entry_utc": "2024-01-02T03:35:19.365331565608268031",
+      "umbra_exit_utc": "2024-01-02T04:06:57.949038724869420319",
+      "duration_s": 1923.187822,
+      "umbra_duration_s": 1898.583707,
+      "orbit_fraction": 0.344975223
+    },
+    {
+      "entry_utc": "2024-01-02T05:08:04.658274391346014524",
+      "exit_utc": "2024-01-02T05:40:03.13353216452250183",
+      "umbra_entry_utc": "2024-01-02T05:08:17.018183611305249167",
+      "umbra_exit_utc": "2024-01-02T05:39:50.728741503987615867",
+      "duration_s": 1918.475258,
+      "umbra_duration_s": 1893.710558,
+      "orbit_fraction": 0.344129899
+    },
+    {
+      "entry_utc": "2024-01-02T06:41:02.287882721596171711",
+      "exit_utc": "2024-01-02T07:12:55.971074473918984527",
+      "umbra_entry_utc": "2024-01-02T06:41:14.729585637241912891",
+      "umbra_exit_utc": "2024-01-02T07:12:43.484293994048323835",
+      "duration_s": 1913.683192,
+      "umbra_duration_s": 1888.754708,
+      "orbit_fraction": 0.343270314
+    },
+    {
+      "entry_utc": "2024-01-02T08:13:59.975855637520920415",
+      "exit_utc": "2024-01-02T08:45:48.785884294263785951",
+      "umbra_entry_utc": "2024-01-02T08:14:12.500992744772910203",
+      "umbra_exit_utc": "2024-01-02T08:45:36.215472695899334883",
+      "duration_s": 1908.810029,
+      "umbra_duration_s": 1883.71448,
+      "orbit_fraction": 0.342396181
+    },
+    {
+      "entry_utc": "2024-01-02T09:46:57.723642501027492511",
+      "exit_utc": "2024-01-02T10:18:41.577772109960840735",
+      "umbra_entry_utc": "2024-01-02T09:47:10.333899082588940707",
+      "umbra_exit_utc": "2024-01-02T10:18:28.922044371288338215",
+      "duration_s": 1903.85413,
+      "umbra_duration_s": 1878.588145,
+      "orbit_fraction": 0.341507208
+    },
+    {
+      "entry_utc": "2024-01-02T11:19:55.532732958319593887",
+      "exit_utc": "2024-01-02T11:51:34.346539921891095775",
+      "umbra_entry_utc": "2024-01-02T11:20:08.229837656144114967",
+      "umbra_exit_utc": "2024-01-02T11:51:21.603765634424947703",
+      "duration_s": 1898.813807,
+      "umbra_duration_s": 1873.373928,
+      "orbit_fraction": 0.340603091
+    }
+  ]
+}

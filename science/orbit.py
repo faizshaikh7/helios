@@ -24,7 +24,7 @@ from science.provenance import Receipt, Tier, Value
 
 # Built-in timescale data: skyfield would otherwise fetch leap-second and delta-T tables over
 # the network, which would make results depend on when the process happened to start.
-_timescale = load.timescale()
+TIMESCALE = load.timescale()
 
 # SGP4 error grows with age of the element set. Published rule of thumb for LEO, used to state
 # an honest uncertainty rather than implying the model is exact.
@@ -49,12 +49,12 @@ class GroundStation:
     elevation_m: float = 0.0
 
 
-def _satellite(tle: TLE) -> EarthSatellite:
+def build_satellite(tle: TLE) -> EarthSatellite:
     """Build a skyfield satellite from an element set."""
-    return EarthSatellite(tle.line1, tle.line2, tle.name, _timescale)
+    return EarthSatellite(tle.line1, tle.line2, tle.name, TIMESCALE)
 
 
-def _dataset(tle: TLE) -> dict[str, object]:
+def dataset_record(tle: TLE) -> dict[str, object]:
     """Describe the element set for a receipt."""
     return {
         "source": tle.source,
@@ -77,10 +77,10 @@ def tle_epoch(tle: TLE) -> datetime:
     Returns:
         Epoch as a timezone-aware UTC datetime.
     """
-    return _satellite(tle).epoch.utc_datetime()
+    return build_satellite(tle).epoch.utc_datetime()
 
 
-def _position_uncertainty(tle: TLE, when: datetime) -> dict[str, object]:
+def position_uncertainty(tle: TLE, when: datetime) -> dict[str, object]:
     """Estimate SGP4 position error at a given time.
 
     Stated as an interval derived from age since epoch rather than a confidence percentage. It
@@ -116,8 +116,8 @@ def subpoint(tle: TLE, when: datetime) -> dict[str, Value]:
     Returns:
         Mapping of ``latitude``, ``longitude``, ``altitude`` to values with provenance.
     """
-    satellite = _satellite(tle)
-    time_point = _timescale.from_datetime(when)
+    satellite = build_satellite(tle)
+    time_point = TIMESCALE.from_datetime(when)
     geodetic = wgs84.subpoint(satellite.at(time_point))
 
     at_epoch = abs((when - tle_epoch(tle)).total_seconds()) < 1.0
@@ -133,9 +133,9 @@ def subpoint(tle: TLE, when: datetime) -> dict[str, Value]:
                 inputs={"norad_id": tle.norad_id, "when_utc": when.isoformat()},
                 frame="ITRF (WGS84 geodetic)",
                 time_scale="UTC",
-                dataset=_dataset(tle),
+                dataset=dataset_record(tle),
                 equation="SGP4 propagation (TEME), rotated to ITRF, reduced to WGS84 geodetic",
-                uncertainty=_position_uncertainty(tle, when),
+                uncertainty=position_uncertainty(tle, when),
                 notes=f"{name} of the sub-satellite point.",
             ),
         )
@@ -169,12 +169,12 @@ def ground_track(
     Returns:
         A list of ``{t, lat, lon, alt_km}`` samples.
     """
-    satellite = _satellite(tle)
+    satellite = build_satellite(tle)
     samples: list[dict[str, float]] = []
 
     for offset in range(0, minutes * 60 + 1, step_seconds):
         moment = start + timedelta(seconds=offset)
-        geodetic = wgs84.subpoint(satellite.at(_timescale.from_datetime(moment)))
+        geodetic = wgs84.subpoint(satellite.at(TIMESCALE.from_datetime(moment)))
         samples.append(
             {
                 "t": moment.isoformat(),
@@ -236,11 +236,11 @@ def find_passes(
     Returns:
         Complete passes, in chronological order.
     """
-    satellite = _satellite(tle)
+    satellite = build_satellite(tle)
     site = wgs84.latlon(station.latitude_deg, station.longitude_deg, station.elevation_m)
 
-    t0 = _timescale.from_datetime(start)
-    t1 = _timescale.from_datetime(start + timedelta(days=days))
+    t0 = TIMESCALE.from_datetime(start)
+    t1 = TIMESCALE.from_datetime(start + timedelta(days=days))
 
     times, codes = satellite.find_events(site, t0, t1, altitude_degrees=min_elevation_deg)
 
@@ -257,7 +257,7 @@ def find_passes(
         elif code == 2 and 0 in pending and 1 in pending:  # set
             culmination = pending[1]
             elevation = (
-                (satellite - site).at(_timescale.from_datetime(culmination)).altaz()[0].degrees
+                (satellite - site).at(TIMESCALE.from_datetime(culmination)).altaz()[0].degrees
             )
             passes.append(
                 Pass(
@@ -302,9 +302,9 @@ def pass_receipt(
         },
         frame="ITRF (topocentric alt/az from WGS84 site)",
         time_scale="UTC",
-        dataset=_dataset(tle),
+        dataset=dataset_record(tle),
         equation="SGP4 propagation; geometric elevation above the WGS84 ellipsoid",
-        uncertainty=_position_uncertainty(tle, when),
+        uncertainty=position_uncertainty(tle, when),
         notes=(
             "Geometric visibility only. Ignores terrain, local obstructions, atmospheric "
             "refraction, and link budget -- a geometrically visible pass is not necessarily a "

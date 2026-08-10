@@ -43,7 +43,13 @@ from science.catalog import TLE
 # Reused rather than duplicated: the element-set descriptor, the SGP4 uncertainty model, and the
 # skyfield handles are one concept each and belong in one place. Duplicating them here would let
 # the two modules drift into disagreeing about the same TLE.
-from science.orbit import _dataset, _position_uncertainty, _satellite, _timescale, tle_epoch
+from science.orbit import (
+    TIMESCALE,
+    build_satellite,
+    dataset_record,
+    position_uncertainty,
+    tle_epoch,
+)
 from science.provenance import Receipt, Tier, Value
 
 # SGP4 is defined against the WGS72 gravity model, so the state vectors converted below were
@@ -111,9 +117,9 @@ def _receipt(
         inputs={"norad_id": tle.norad_id, "when_utc": when.isoformat()},
         frame=frame,
         time_scale="UTC",
-        dataset=_dataset(tle),
+        dataset=dataset_record(tle),
         equation=equation,
-        uncertainty=_position_uncertainty(tle, when),
+        uncertainty=position_uncertainty(tle, when),
         notes=notes,
     )
 
@@ -132,8 +138,8 @@ def _teme_state(tle: TLE, when: datetime) -> tuple[np.ndarray, np.ndarray, Time]
     Returns:
         Position in metres, velocity in metres per second, and the skyfield time used.
     """
-    time_point = _timescale.from_datetime(when)
-    distance, velocity = _satellite(tle).at(time_point).frame_xyz_and_velocity(TEME)
+    time_point = TIMESCALE.from_datetime(when)
+    distance, velocity = build_satellite(tle).at(time_point).frame_xyz_and_velocity(TEME)
     return distance.km * 1e3, velocity.km_per_s * 1e3, time_point
 
 
@@ -152,8 +158,8 @@ def _osculating(tle: TLE, when: datetime) -> tuple[OsculatingElements, Time]:
     Returns:
         The osculating elements and the skyfield time used.
     """
-    time_point = _timescale.from_datetime(when)
-    distance, velocity = _satellite(tle).at(time_point).frame_xyz_and_velocity(TEME)
+    time_point = TIMESCALE.from_datetime(when)
+    distance, velocity = build_satellite(tle).at(time_point).frame_xyz_and_velocity(TEME)
 
     state = ICRF(distance.au, velocity.au_per_d, t=time_point, center=EARTH_CENTER)
     return osculating_elements_of(state, gm_km3_s2=EARTH_MU_KM3_S2), time_point

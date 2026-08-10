@@ -21,7 +21,7 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from science import catalog, orbit
+from science import catalog, eclipse, elements, orbit
 from science.provenance import Receipt, Tier, Value
 
 app = FastAPI(
@@ -303,5 +303,106 @@ def groundtrack(request: GroundTrackRequest) -> dict[str, Any]:
         "minutes": request.minutes,
         "current": now_point,
         "samples": samples,
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# Orbital elements
+# --------------------------------------------------------------------------------------------
+
+
+class ElementsRequest(BaseModel):
+    """Parameters for an orbital-element query."""
+
+    norad_id: int = Field(default=25544, ge=1)
+    at_epoch: bool = Field(
+        default=True,
+        description=(
+            "Evaluate at the element set's own epoch, where results are derived rather than "
+            "propagated. False evaluates now, which weakens the tier to predicted."
+        ),
+    )
+
+
+@app.post("/api/elements")
+def orbital_elements(request: ElementsRequest) -> dict[str, Any]:
+    """Return the state vector, classical elements, and derived orbit properties.
+
+    Elements are **osculating** -- computed from the instantaneous state -- not the Brouwer mean
+    values a TLE prints. The two differ legitimately, by roughly a twentieth of a degree in
+    inclination, so the distinction is stated rather than left for a reader to trip over.
+
+    Args:
+        request: Satellite and evaluation epoch.
+
+    Returns:
+        State vector, classical elements, and derived properties, each with provenance.
+    """
+    tle = catalog.get_tle(request.norad_id)
+    when = orbit.tle_epoch(tle) if request.at_epoch else datetime.now(UTC)
+
+    return {
+        "satellite": {"norad_id": tle.norad_id, "name": tle.name},
+        "evaluated_at_utc": when.isoformat(),
+        "at_epoch": request.at_epoch,
+        "state_vector": elements.state_vector(tle, when),
+        "classical_elements": elements.classical_elements(tle, when),
+        "derived": elements.derived_orbit_properties(tle, when),
+        "element_convention": (
+            "Osculating elements from the instantaneous state, not the Brouwer mean elements "
+            "published in the two-line element set."
+        ),
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# Eclipse and beta angle
+# --------------------------------------------------------------------------------------------
+
+
+class EclipseRequest(BaseModel):
+    """Parameters for an eclipse and beta-angle query."""
+
+    norad_id: int = Field(default=25544, ge=1)
+    days: float = Field(default=1.0, gt=0, le=10, description="Span to analyse, in days.")
+
+
+@app.post("/api/eclipse")
+def eclipse_analysis(request: EclipseRequest) -> dict[str, Any]:
+    """Return beta angle and eclipse statistics over a span.
+
+    These are the quantities that size a spacecraft's battery and drive its thermal design: beta
+    angle sets how much of each orbit is spent in shadow, and the longest eclipse in a span is
+    what the power system must survive.
+
+    Args:
+        request: Satellite and span.
+
+    Returns:
+        Beta angle now, eclipse summary statistics, and the individual intervals.
+    """
+    tle = catalog.get_tle(request.norad_id)
+    start = datetime.now(UTC)
+
+    intervals = eclipse.eclipse_intervals(tle, start, request.days)
+
+    return {
+        "satellite": {"norad_id": tle.norad_id, "name": tle.name},
+        "start_utc": start.isoformat(),
+        "days": request.days,
+        "beta_angle": eclipse.beta_angle(tle, start),
+        "summary": eclipse.eclipse_summary(tle, start, request.days),
+        "intervals": [
+            {
+                "entry_utc": item.entry_utc.isoformat(),
+                "exit_utc": item.exit_utc.isoformat(),
+                "duration_s": round(item.duration_s, 1),
+                "umbra_duration_s": round(item.umbra_duration_s, 1),
+                "orbit_fraction": round(item.orbit_fraction, 5),
+            }
+            for item in intervals
+        ],
         "notice": OPERATIONAL_NOTICE,
     }

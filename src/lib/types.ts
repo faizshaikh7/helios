@@ -71,5 +71,37 @@ export type GroundTrackResponse = {
   notice: string;
 };
 
+/** Response from `POST /api/elements`. */
+export type ElementsResponse = {
+  satellite: { norad_id: number; name: string };
+  evaluated_at_utc: string;
+  at_epoch: boolean;
+  state_vector: Record<string, Value>;
+  classical_elements: Record<string, Value>;
+  derived: Record<string, Value>;
+  element_convention: string;
+  notice: string;
+};
+
+/** A single shadow crossing. */
+export type EclipseInterval = {
+  entry_utc: string;
+  exit_utc: string;
+  duration_s: number;
+  umbra_duration_s: number;
+  orbit_fraction: number;
+};
+
+/** Response from `POST /api/eclipse`. */
+export type EclipseResponse = {
+  satellite: { norad_id: number; name: string };
+  start_utc: string;
+  days: number;
+  beta_angle: Value;
+  summary: Record<string, Value>;
+  intervals: EclipseInterval[];
+  notice: string;
+};
+
 /** Typed error body returned by the service. */
 export type ApiError = { error: { code: string; message: string } };

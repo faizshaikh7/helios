@@ -5,10 +5,13 @@ import { GroundTrack } from "@/components/GroundTrack";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
 import type {
   ApiError,
+  EclipseResponse,
+  ElementsResponse,
   GroundTrackResponse,
   PassesResponse,
   SatelliteResponse,
   SatellitePass,
+  Value,
 } from "@/lib/types";
 
 /** A few well-known objects, so the tool is usable without looking up catalog numbers. */
@@ -133,6 +136,8 @@ export default function Home() {
   const [satellite, setSatellite] = useState<SatelliteResponse | null>(null);
   const [passes, setPasses] = useState<PassesResponse | null>(null);
   const [track, setTrack] = useState<GroundTrackResponse | null>(null);
+  const [orbitElements, setOrbitElements] = useState<ElementsResponse | null>(null);
+  const [eclipse, setEclipse] = useState<EclipseResponse | null>(null);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -150,7 +155,13 @@ export default function Home() {
     setError(null);
 
     try {
-      const [satelliteResponse, passesResponse, trackResponse] = await Promise.all([
+      const [
+        satelliteResponse,
+        passesResponse,
+        trackResponse,
+        elementsResponse,
+        eclipseResponse,
+      ] = await Promise.all([
         fetch(`/api/satellite/${noradId}`),
         fetch("/api/passes", {
           method: "POST",
@@ -170,9 +181,25 @@ export default function Home() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ norad_id: noradId, minutes: 100, step_seconds: 30 }),
         }),
+        fetch("/api/elements", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ norad_id: noradId, at_epoch: true }),
+        }),
+        fetch("/api/eclipse", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ norad_id: noradId, days: 1 }),
+        }),
       ]);
 
-      for (const response of [satelliteResponse, passesResponse, trackResponse]) {
+      for (const response of [
+        satelliteResponse,
+        passesResponse,
+        trackResponse,
+        elementsResponse,
+        eclipseResponse,
+      ]) {
         if (!response.ok) {
           const body = (await response.json().catch(() => null)) as ApiError | null;
           throw new Error(body?.error?.message ?? `HTTP ${response.status}`);
@@ -182,11 +209,15 @@ export default function Home() {
       setSatellite(await satelliteResponse.json());
       setPasses(await passesResponse.json());
       setTrack(await trackResponse.json());
+      setOrbitElements(await elementsResponse.json());
+      setEclipse(await eclipseResponse.json());
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught));
       setSatellite(null);
       setPasses(null);
       setTrack(null);
+      setOrbitElements(null);
+      setEclipse(null);
     } finally {
       setLoading(false);
     }
@@ -474,6 +505,119 @@ export default function Home() {
                 <TieredValue value={track.current.altitude} />
               </div>
             </div>
+          </section>
+        )}
+
+        {/* Orbital elements */}
+        {orbitElements && (
+          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-sm font-medium text-zinc-300">Orbit</h2>
+              <span className="text-[11px] text-zinc-500">
+                at element-set epoch · osculating
+              </span>
+            </div>
+
+            <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+              {[
+                ["Semi-major axis", orbitElements.classical_elements.semi_major_axis],
+                ["Eccentricity", orbitElements.classical_elements.eccentricity],
+                ["Inclination", orbitElements.classical_elements.inclination],
+                ["RAAN", orbitElements.classical_elements.raan],
+                ["Period", orbitElements.derived.orbital_period],
+                ["Mean motion", orbitElements.derived.mean_motion],
+                ["Perigee altitude", orbitElements.derived.perigee_altitude],
+                ["Apogee altitude", orbitElements.derived.apogee_altitude],
+              ].map(([label, value]) => (
+                <div key={label as string}>
+                  <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                    {label as string}
+                  </p>
+                  <TieredValue value={value as Value} />
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-[11px] leading-5 text-zinc-600">
+              {orbitElements.element_convention}
+            </p>
+          </section>
+        )}
+
+        {/* Eclipse and power */}
+        {eclipse && (
+          <section className="mt-6 rounded-lg border border-white/10 bg-white/[0.02] p-5">
+            <div className="flex flex-wrap items-baseline justify-between gap-2">
+              <h2 className="text-sm font-medium text-zinc-300">Eclipse &amp; power</h2>
+              <span className="text-[11px] text-zinc-500">next {eclipse.days} day</span>
+            </div>
+
+            <div className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  Beta angle
+                </p>
+                <TieredValue value={eclipse.beta_angle} />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  Eclipses
+                </p>
+                <TieredValue value={eclipse.summary.eclipse_count} />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  Longest eclipse
+                </p>
+                <TieredValue
+                  value={eclipse.summary.max_eclipse_duration}
+                  format={(raw) => `${(Number(raw) / 60).toFixed(1)} min`}
+                />
+              </div>
+              <div>
+                <p className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">
+                  Max orbit in shadow
+                </p>
+                <TieredValue
+                  value={eclipse.summary.max_orbit_fraction}
+                  format={(raw) => `${(Number(raw) * 100).toFixed(1)} %`}
+                />
+              </div>
+            </div>
+
+            {/* Sunlight/shadow bar for the first orbit: the shape of the duty cycle a power
+                system has to survive, which a number alone does not convey. */}
+            {eclipse.intervals.length > 0 && (
+              <div className="mt-5">
+                <div className="flex h-6 overflow-hidden rounded-md border border-white/10">
+                  <div
+                    className="bg-amber-300/80"
+                    style={{
+                      width: `${(1 - eclipse.intervals[0].orbit_fraction) * 100}%`,
+                    }}
+                    title="sunlit"
+                  />
+                  <div
+                    className="bg-indigo-900"
+                    style={{ width: `${eclipse.intervals[0].orbit_fraction * 100}%` }}
+                    title="eclipse"
+                  />
+                </div>
+                <div className="mt-1 flex justify-between text-[11px] text-zinc-600">
+                  <span>sunlit</span>
+                  <span>
+                    eclipse — {(eclipse.intervals[0].duration_s / 60).toFixed(1)} min, of which{" "}
+                    {(eclipse.intervals[0].umbra_duration_s / 60).toFixed(1)} min umbra
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <p className="mt-4 text-[11px] leading-5 text-zinc-600">
+              Beta angle is the angle between the orbit plane and the Sun. It sets how much of
+              each orbit is spent in shadow, and so drives battery sizing and thermal design.
+              Umbra is full shadow; the remainder is penumbra, where the Sun is partly occulted.
+            </p>
           </section>
         )}
 
