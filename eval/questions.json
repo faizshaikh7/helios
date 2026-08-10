@@ -2,7 +2,7 @@
   "_provenance": {
     "source": "orekit",
     "orekit_jpype_version": "13.1.7.0",
-    "generated_utc": "2026-08-10T12:04:57+00:00",
+    "generated_utc": "2026-08-10T12:16:30+00:00",
     "generator": "tools/eval/generate_questions.py",
     "note": "Ground truth from an independent implementation, never from the code being graded. Questions are weighted toward quantities a language model cannot recall; the memorizable minority is a control, not filler."
   },
@@ -41,11 +41,11 @@
     {
       "id": "inclination-0001",
       "category": "inclination",
-      "question": "What is the orbital inclination of ISS (ZARYA) (NORAD 25544), in degrees?",
+      "question": "What is the orbital inclination of ISS (ZARYA) (NORAD 25544), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 51.6326,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {
@@ -331,7 +331,7 @@
       "category": "pass_count",
       "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 5.0,
+        "value": 8.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -381,7 +381,7 @@
       "category": "pass_count",
       "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 7.0,
+        "value": 14.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -406,7 +406,7 @@
       "category": "max_elevation",
       "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
-        "value": 86.174047,
+        "value": 33.971331,
         "unit": "deg",
         "tolerance_abs": 2.0
       },
@@ -431,7 +431,7 @@
       "category": "pass_count",
       "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 3.0,
+        "value": 8.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -481,7 +481,7 @@
       "category": "pass_count",
       "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 6.0,
+        "value": 12.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -545,11 +545,11 @@
     {
       "id": "inclination-0027",
       "category": "inclination",
-      "question": "What is the orbital inclination of HST (NORAD 20580), in degrees?",
+      "question": "What is the orbital inclination of HST (NORAD 20580), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 28.4728,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {
@@ -835,7 +835,7 @@
       "category": "pass_count",
       "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 7.0,
+        "value": 17.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -860,7 +860,7 @@
       "category": "max_elevation",
       "question": "For the first pass of HST (NORAD 20580) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
-        "value": 56.930197,
+        "value": 20.727546,
         "unit": "deg",
         "tolerance_abs": 2.0
       },
@@ -910,7 +910,7 @@
       "category": "pass_count",
       "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 8.0,
+        "value": 13.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -960,7 +960,7 @@
       "category": "pass_count",
       "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 4.0,
+        "value": 12.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1024,11 +1024,11 @@
     {
       "id": "inclination-0052",
       "category": "inclination",
-      "question": "What is the orbital inclination of NOAA 19 (NORAD 33591), in degrees?",
+      "question": "What is the orbital inclination of NOAA 19 (NORAD 33591), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 98.9488,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {
@@ -1314,7 +1314,7 @@
       "category": "pass_count",
       "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 8.0,
+        "value": 10.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1364,7 +1364,7 @@
       "category": "pass_count",
       "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 12.0,
+        "value": 18.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1414,7 +1414,7 @@
       "category": "pass_count",
       "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 9.0,
+        "value": 10.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1464,7 +1464,7 @@
       "category": "pass_count",
       "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 9.0,
+        "value": 12.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1528,11 +1528,11 @@
     {
       "id": "inclination-0078",
       "category": "inclination",
-      "question": "What is the orbital inclination of CSS (TIANHE) (NORAD 48274), in degrees?",
+      "question": "What is the orbital inclination of CSS (TIANHE) (NORAD 48274), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 41.4697,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {
@@ -1818,7 +1818,7 @@
       "category": "pass_count",
       "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 6.0,
+        "value": 8.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1868,7 +1868,7 @@
       "category": "pass_count",
       "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 1.0,
+        "value": 6.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1893,7 +1893,7 @@
       "category": "max_elevation",
       "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
-        "value": 13.126127,
+        "value": 14.076534,
         "unit": "deg",
         "tolerance_abs": 2.0
       },
@@ -1918,7 +1918,7 @@
       "category": "pass_count",
       "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 5.0,
+        "value": 9.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -1943,7 +1943,7 @@
       "category": "max_elevation",
       "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
-        "value": 70.192251,
+        "value": 63.440925,
         "unit": "deg",
         "tolerance_abs": 2.0
       },
@@ -1968,7 +1968,7 @@
       "category": "pass_count",
       "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
       "answer": {
-        "value": 8.0,
+        "value": 16.0,
         "unit": "passes",
         "tolerance_abs": 0
       },
@@ -2032,11 +2032,11 @@
     {
       "id": "inclination-0104",
       "category": "inclination",
-      "question": "What is the orbital inclination of GOES 16 (NORAD 41866), in degrees?",
+      "question": "What is the orbital inclination of GOES 16 (NORAD 41866), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 0.466,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {
@@ -2336,11 +2336,11 @@
     {
       "id": "inclination-0122",
       "category": "inclination",
-      "question": "What is the orbital inclination of XMM-NEWTON (NORAD 25989), in degrees?",
+      "question": "What is the orbital inclination of XMM-NEWTON (NORAD 25989), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 64.1942,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {
@@ -2640,11 +2640,11 @@
     {
       "id": "inclination-0140",
       "category": "inclination",
-      "question": "What is the orbital inclination of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees?",
+      "question": "What is the orbital inclination of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees? Mean or osculating inclination are both acceptable; they differ by well under a tenth of a degree.",
       "answer": {
         "value": 55.5578,
         "unit": "deg",
-        "tolerance_abs": 0.05
+        "tolerance_abs": 0.1
       },
       "memorizable": true,
       "context": {

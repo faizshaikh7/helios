@@ -68,7 +68,12 @@ STATIONS = [
 # position nobody can recall.
 TOLERANCES: dict[str, dict[str, Any]] = {
     "orbital_period": {"abs": 0.5, "unit": "minutes"},
-    "inclination": {"abs": 0.05, "unit": "deg"},
+    # 0.1 deg, not tighter, because "the inclination" is genuinely ambiguous: a TLE publishes
+    # Brouwer MEAN elements, while anything derived from a propagated state vector is OSCULATING.
+    # The two differ legitimately -- by ~0.055 deg for the eccentric orbits in this set -- so a
+    # tighter tolerance would score a correct method wrong over an unstated convention rather
+    # than over an error. The question text names the convention; this absorbs the difference.
+    "inclination": {"abs": 0.1, "unit": "deg"},
     "subpoint_latitude": {"abs": 0.5, "unit": "deg"},
     "subpoint_longitude": {"abs": 0.5, "unit": "deg"},
     "altitude": {"abs": 10.0, "unit": "km"},
@@ -184,7 +189,9 @@ def generate() -> dict[str, Any]:
         )
         add(
             "inclination",
-            f"What is the orbital inclination of {name} (NORAD {norad}), in degrees?",
+            f"What is the orbital inclination of {name} (NORAD {norad}), in degrees? "
+            f"Mean or osculating inclination are both acceptable; they differ by well under a "
+            f"tenth of a degree.",
             float(tle.getI()) * 180.0 / 3.141592653589793,
             "deg",
             {"norad_id": norad, "regime": regime},
@@ -254,9 +261,16 @@ def generate() -> dict[str, Any]:
             start = AbsoluteDate(EVAL_EPOCHS[0], utc)
             end = start.shiftedBy(3 * 86400.0)
 
+            # maxCheck MUST be shorter than the shortest event being detected. Orekit's default
+            # is 600 s, but a low-Earth-orbit pass above 10 degrees lasts roughly 6 minutes -- so
+            # the default steps straight over real passes and silently undercounts by about half.
+            # This was caught by the tool-ceiling evaluation disagreeing 2:1 with the reference,
+            # in a pattern too systematic to be numerical error.
             detector = (
                 ElevationDetector(topo)
                 .withConstantElevation(10.0 * deg_to_rad)
+                .withMaxCheck(30.0)
+                .withThreshold(1.0e-3)
                 .withHandler(ContinueOnEvent())
             )
 
