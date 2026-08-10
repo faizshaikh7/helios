@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AskPanel } from "@/components/AskPanel";
 import { GroundTrack } from "@/components/GroundTrack";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
@@ -252,8 +253,10 @@ export default function Home() {
           </div>
         </header>
 
+        <AskPanel />
+
         {/* Controls */}
-        <section className="mt-8 rounded-lg border border-edge bg-surface p-5">
+        <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Satellite">
               <select

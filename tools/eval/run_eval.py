@@ -18,12 +18,15 @@ of tool selection -- attributable, rather than tangled up with numerical error.
 
 from __future__ import annotations
 
+import argparse
 import json
+import re
 import sys
 from collections import defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Protocol
+from urllib import request as urlrequest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
@@ -135,6 +138,57 @@ class ToolCeilingSolver:
         return None
 
 
+class AgentSolver:
+    """Asks the deployed agent, in either grounded or baseline mode.
+
+    Both modes run the **same model**; only tool access differs. Holding the model fixed is what
+    makes the comparison mean anything -- otherwise a difference could be capability rather than
+    grounding.
+
+    The agent is asked for a bare number. Parsing a figure out of prose would introduce a second
+    failure mode (extraction) on top of the one being measured, and would penalise a verbose but
+    correct answer.
+    """
+
+    def __init__(self, base_url: str, mode: str, provider: str | None = None) -> None:
+        self.base_url = base_url.rstrip("/")
+        self.mode = mode
+        self.provider = provider
+        self.name = f"agent-{mode}" + (f"-{provider}" if provider else "")
+
+    def answer(self, question: dict[str, Any]) -> float | None:
+        """Ask the agent and parse a numeric answer, or None if it declined."""
+        unit = question["answer"]["unit"]
+        prompt = (
+            f"{question['question']}\n\n"
+            f"Respond with ONLY the numeric value in {unit}. No units, no words, no explanation. "
+            f"If you cannot determine it, respond with exactly: UNKNOWN"
+        )
+
+        payload: dict[str, Any] = {"question": prompt, "mode": self.mode}
+        if self.provider:
+            payload["provider"] = self.provider
+
+        request = urlrequest.Request(
+            f"{self.base_url}/api/agent",
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
+        )
+
+        with urlrequest.urlopen(request, timeout=300) as response:
+            body = json.loads(response.read().decode("utf-8"))
+
+        text = (body.get("answer") or "").strip()
+        if "UNKNOWN" in text.upper():
+            return None
+
+        # Take the first number in the reply. The prompt asks for a bare value, so anything more
+        # is the model ignoring instructions -- but scoring the first figure is fairer than
+        # scoring nothing.
+        match = re.search(r"-?\d+(?:\.\d+)?(?:[eE][-+]?\d+)?", text.replace(",", ""))
+        return float(match.group()) if match else None
+
+
 def score(solver: Solver, questions: list[dict[str, Any]]) -> dict[str, Any]:
     """Run a solver over the question set and score it.
 
@@ -212,11 +266,27 @@ def score(solver: Solver, questions: list[dict[str, Any]]) -> dict[str, Any]:
 
 
 def main() -> int:
-    """Score the tool-ceiling solver and write results.
+    """Score a solver and write results.
 
     Returns:
         Process exit code.
     """
+    parser = argparse.ArgumentParser(description="Score a solver against the evaluation set.")
+    parser.add_argument(
+        "--solver",
+        choices=["ceiling", "grounded", "baseline"],
+        default="ceiling",
+        help=(
+            "ceiling: tools with perfect selection (no model). "
+            "grounded: the agent with tools. "
+            "baseline: the same model with no tools."
+        ),
+    )
+    parser.add_argument("--provider", default=None, help="Model provider for agent solvers.")
+    parser.add_argument("--base-url", default="http://localhost:3002", help="Where the app runs.")
+    parser.add_argument("--limit", type=int, default=None, help="Score only the first N questions.")
+    args = parser.parse_args()
+
     if not DATASET_PATH.exists():
         print(
             "eval/questions.json missing - run tools/eval/generate_questions.py first",
@@ -225,9 +295,21 @@ def main() -> int:
         return 1
 
     questions = json.loads(DATASET_PATH.read_text(encoding="utf-8"))["questions"]
-    report = score(ToolCeilingSolver(), questions)
+    if args.limit:
+        questions = questions[: args.limit]
 
-    RESULTS_PATH.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    solver: Solver
+    if args.solver == "ceiling":
+        solver = ToolCeilingSolver()
+    else:
+        solver = AgentSolver(args.base_url, args.solver, args.provider)
+
+    report = score(solver, questions)
+
+    output = RESULTS_PATH if args.solver == "ceiling" else (
+        RESULTS_PATH.with_name(f"results-{solver.name}.json")
+    )
+    output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
     print(f"solver: {report['solver']}")
     print(f"  overall        {report['correct']}/{report['total']}  ({report['accuracy']:.1%})")
