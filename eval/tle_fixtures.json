@@ -1,0 +1,59 @@
+{
+  "_provenance": {
+    "source": "celestrak",
+    "frozen_utc": "2026-08-10T12:02:33+00:00",
+    "generator": "tools/eval/fetch_fixtures.py",
+    "note": "Frozen deliberately so the evaluation set is reproducible and independent of what Celestrak serves on any given day. Re-running changes every ground-truth answer downstream, so treat regeneration as a deliberate act."
+  },
+  "satellites": [
+    {
+      "norad_id": 25544,
+      "name": "ISS (ZARYA)",
+      "regime": "LEO",
+      "line1": "1 25544U 98067A   26222.18186727  .00004351  00000+0  85915-4 0  9998",
+      "line2": "2 25544  51.6326  32.8714 0007377  31.2060 328.9366 15.49401464580127"
+    },
+    {
+      "norad_id": 20580,
+      "name": "HST",
+      "regime": "LEO low-inclination",
+      "line1": "1 20580U 90037B   26221.98467551  .00003912  00000+0  11826-3 0  9997",
+      "line2": "2 20580  28.4728  72.7277 0002381  30.1378 329.9355 15.31308603796824"
+    },
+    {
+      "norad_id": 33591,
+      "name": "NOAA 19",
+      "regime": "sun-synchronous",
+      "line1": "1 33591U 09005A   26222.20202360  .00000006  00000+0  26832-4 0  9994",
+      "line2": "2 33591  98.9488 293.1071 0012901 234.8178 125.1787 14.13481610902111"
+    },
+    {
+      "norad_id": 48274,
+      "name": "CSS (TIANHE)",
+      "regime": "LEO",
+      "line1": "1 48274U 21035A   26221.84723466  .00014603  00000+0  18665-3 0  9991",
+      "line2": "2 48274  41.4697 356.2595 0001093 264.0637  96.0076 15.58937645301548"
+    },
+    {
+      "norad_id": 41866,
+      "name": "GOES 16",
+      "regime": "geostationary",
+      "line1": "1 41866U 16071A   26222.23220117 -.00000103  00000+0  00000+0 0  9995",
+      "line2": "2 41866   0.4660  85.1555 0001213 118.6703  93.7498  1.00270572 35647"
+    },
+    {
+      "norad_id": 25989,
+      "name": "XMM-NEWTON",
+      "regime": "highly eccentric",
+      "line1": "1 25989U 99066A   26223.20141259  .00000086  00000+0  00000+0 0  9994",
+      "line2": "2 25989  64.1942 282.2765 4658939  63.9538   0.1007  0.50125870 23271"
+    },
+    {
+      "norad_id": 41328,
+      "name": "NAVSTAR 76 (USA 266)",
+      "regime": "medium Earth orbit",
+      "line1": "1 41328U 16007A   26221.21632904 -.00000016  00000+0  00000+0 0  9998",
+      "line2": "2 41328  55.5578  87.3566 0096810 247.4374 111.6098  2.00574201 76904"
+    }
+  ]
+}

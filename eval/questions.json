@@ -1,0 +1,2929 @@
+{
+  "_provenance": {
+    "source": "orekit",
+    "orekit_jpype_version": "13.1.7.0",
+    "generated_utc": "2026-08-10T12:04:57+00:00",
+    "generator": "tools/eval/generate_questions.py",
+    "note": "Ground truth from an independent implementation, never from the code being graded. Questions are weighted toward quantities a language model cannot recall; the memorizable minority is a control, not filler."
+  },
+  "summary": {
+    "total": 157,
+    "memorizable_control": 14,
+    "unmemorizable": 143,
+    "categories": [
+      "altitude",
+      "inclination",
+      "max_elevation",
+      "orbital_period",
+      "pass_count",
+      "speed",
+      "subpoint_latitude",
+      "subpoint_longitude"
+    ]
+  },
+  "questions": [
+    {
+      "id": "orbital_period-0000",
+      "category": "orbital_period",
+      "question": "What is the orbital period of ISS (ZARYA) (NORAD 25544), in minutes?",
+      "answer": {
+        "value": 92.939114,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0001",
+      "category": "inclination",
+      "question": "What is the orbital inclination of ISS (ZARYA) (NORAD 25544), in degrees?",
+      "answer": {
+        "value": 51.6326,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0002",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of ISS (ZARYA) (NORAD 25544), in degrees north?",
+      "answer": {
+        "value": 46.870409,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0003",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of ISS (ZARYA) (NORAD 25544), in degrees east?",
+      "answer": {
+        "value": 120.589176,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0004",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of ISS (ZARYA) (NORAD 25544) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 419.030993,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0005",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of ISS (ZARYA) (NORAD 25544), in kilometres per second?",
+      "answer": {
+        "value": 7.668121,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0006",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of ISS (ZARYA) (NORAD 25544), in degrees north?",
+      "answer": {
+        "value": 30.407945,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0007",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of ISS (ZARYA) (NORAD 25544), in degrees east?",
+      "answer": {
+        "value": 116.780298,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0008",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of ISS (ZARYA) (NORAD 25544) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 420.971896,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0009",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of ISS (ZARYA) (NORAD 25544), in kilometres per second?",
+      "answer": {
+        "value": 7.662297,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0010",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of ISS (ZARYA) (NORAD 25544), in degrees north?",
+      "answer": {
+        "value": 50.745919,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0011",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of ISS (ZARYA) (NORAD 25544), in degrees east?",
+      "answer": {
+        "value": -92.977991,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0012",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of ISS (ZARYA) (NORAD 25544) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 420.160472,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0013",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of ISS (ZARYA) (NORAD 25544), in kilometres per second?",
+      "answer": {
+        "value": 7.667703,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0014",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of ISS (ZARYA) (NORAD 25544), in degrees north?",
+      "answer": {
+        "value": -34.487657,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0015",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of ISS (ZARYA) (NORAD 25544), in degrees east?",
+      "answer": {
+        "value": 56.052468,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0016",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of ISS (ZARYA) (NORAD 25544) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 429.474002,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0017",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of ISS (ZARYA) (NORAD 25544), in kilometres per second?",
+      "answer": {
+        "value": 7.653516,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0018",
+      "category": "pass_count",
+      "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 5.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0019",
+      "category": "max_elevation",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 29.26956,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0020",
+      "category": "pass_count",
+      "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 7.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0021",
+      "category": "max_elevation",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 86.174047,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0022",
+      "category": "pass_count",
+      "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 3.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0023",
+      "category": "max_elevation",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 41.910428,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0024",
+      "category": "pass_count",
+      "question": "How many times does ISS (ZARYA) (NORAD 25544) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 6.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0025",
+      "category": "max_elevation",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 10.869493,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25544,
+        "regime": "LEO",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "orbital_period-0026",
+      "category": "orbital_period",
+      "question": "What is the orbital period of HST (NORAD 20580), in minutes?",
+      "answer": {
+        "value": 94.037217,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0027",
+      "category": "inclination",
+      "question": "What is the orbital inclination of HST (NORAD 20580), in degrees?",
+      "answer": {
+        "value": 28.4728,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0028",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of HST (NORAD 20580), in degrees north?",
+      "answer": {
+        "value": -12.83452,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0029",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of HST (NORAD 20580), in degrees east?",
+      "answer": {
+        "value": 73.792554,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0030",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of HST (NORAD 20580) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 472.376696,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0031",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of HST (NORAD 20580), in kilometres per second?",
+      "answer": {
+        "value": 7.631876,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0032",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of HST (NORAD 20580), in degrees north?",
+      "answer": {
+        "value": 13.206259,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0033",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of HST (NORAD 20580), in degrees east?",
+      "answer": {
+        "value": 24.352716,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0034",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of HST (NORAD 20580) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 467.904532,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0035",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of HST (NORAD 20580), in kilometres per second?",
+      "answer": {
+        "value": 7.636891,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0036",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of HST (NORAD 20580), in degrees north?",
+      "answer": {
+        "value": -26.977423,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0037",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of HST (NORAD 20580), in degrees east?",
+      "answer": {
+        "value": 113.573123,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0038",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of HST (NORAD 20580) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 478.797958,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0039",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of HST (NORAD 20580), in kilometres per second?",
+      "answer": {
+        "value": 7.626746,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0040",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of HST (NORAD 20580), in degrees north?",
+      "answer": {
+        "value": 22.212806,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0041",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of HST (NORAD 20580), in degrees east?",
+      "answer": {
+        "value": 166.921002,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0042",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of HST (NORAD 20580) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 468.453017,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0043",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of HST (NORAD 20580), in kilometres per second?",
+      "answer": {
+        "value": 7.637431,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0044",
+      "category": "pass_count",
+      "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 7.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0045",
+      "category": "max_elevation",
+      "question": "For the first pass of HST (NORAD 20580) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 56.930197,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0046",
+      "category": "pass_count",
+      "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 0.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0047",
+      "category": "pass_count",
+      "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 8.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0048",
+      "category": "max_elevation",
+      "question": "For the first pass of HST (NORAD 20580) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 22.008203,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0049",
+      "category": "pass_count",
+      "question": "How many times does HST (NORAD 20580) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 4.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0050",
+      "category": "max_elevation",
+      "question": "For the first pass of HST (NORAD 20580) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 21.373337,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 20580,
+        "regime": "LEO low-inclination",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "orbital_period-0051",
+      "category": "orbital_period",
+      "question": "What is the orbital period of NOAA 19 (NORAD 33591), in minutes?",
+      "answer": {
+        "value": 101.876104,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0052",
+      "category": "inclination",
+      "question": "What is the orbital inclination of NOAA 19 (NORAD 33591), in degrees?",
+      "answer": {
+        "value": 98.9488,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0053",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of NOAA 19 (NORAD 33591), in degrees north?",
+      "answer": {
+        "value": 35.738357,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0054",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of NOAA 19 (NORAD 33591), in degrees east?",
+      "answer": {
+        "value": 160.916749,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0055",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of NOAA 19 (NORAD 33591) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 851.578681,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0056",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of NOAA 19 (NORAD 33591), in kilometres per second?",
+      "answer": {
+        "value": 7.430514,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0057",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of NOAA 19 (NORAD 33591), in degrees north?",
+      "answer": {
+        "value": 77.581496,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0058",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of NOAA 19 (NORAD 33591), in degrees east?",
+      "answer": {
+        "value": -168.39464,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0059",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of NOAA 19 (NORAD 33591) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 868.439883,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0060",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of NOAA 19 (NORAD 33591), in kilometres per second?",
+      "answer": {
+        "value": 7.420895,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0061",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of NOAA 19 (NORAD 33591), in degrees north?",
+      "answer": {
+        "value": 72.822269,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0062",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of NOAA 19 (NORAD 33591), in degrees east?",
+      "answer": {
+        "value": 82.772729,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0063",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of NOAA 19 (NORAD 33591) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 868.036079,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0064",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of NOAA 19 (NORAD 33591), in kilometres per second?",
+      "answer": {
+        "value": 7.420794,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0065",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of NOAA 19 (NORAD 33591), in degrees north?",
+      "answer": {
+        "value": 40.184597,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0066",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of NOAA 19 (NORAD 33591), in degrees east?",
+      "answer": {
+        "value": 9.383933,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0067",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of NOAA 19 (NORAD 33591) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 862.496497,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0068",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of NOAA 19 (NORAD 33591), in kilometres per second?",
+      "answer": {
+        "value": 7.420239,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0069",
+      "category": "pass_count",
+      "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 8.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0070",
+      "category": "max_elevation",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 83.117208,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0071",
+      "category": "pass_count",
+      "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 12.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0072",
+      "category": "max_elevation",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 35.423873,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0073",
+      "category": "pass_count",
+      "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 9.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0074",
+      "category": "max_elevation",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 25.154899,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0075",
+      "category": "pass_count",
+      "question": "How many times does NOAA 19 (NORAD 33591) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 9.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0076",
+      "category": "max_elevation",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 45.430439,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 33591,
+        "regime": "sun-synchronous",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "orbital_period-0077",
+      "category": "orbital_period",
+      "question": "What is the orbital period of CSS (TIANHE) (NORAD 48274), in minutes?",
+      "answer": {
+        "value": 92.370596,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0078",
+      "category": "inclination",
+      "question": "What is the orbital inclination of CSS (TIANHE) (NORAD 48274), in degrees?",
+      "answer": {
+        "value": 41.4697,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0079",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of CSS (TIANHE) (NORAD 48274), in degrees north?",
+      "answer": {
+        "value": -24.083565,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0080",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of CSS (TIANHE) (NORAD 48274), in degrees east?",
+      "answer": {
+        "value": -127.076599,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0081",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of CSS (TIANHE) (NORAD 48274) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 395.838754,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0082",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of CSS (TIANHE) (NORAD 48274), in kilometres per second?",
+      "answer": {
+        "value": 7.673787,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0083",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of CSS (TIANHE) (NORAD 48274), in degrees north?",
+      "answer": {
+        "value": -35.255575,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0084",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of CSS (TIANHE) (NORAD 48274), in degrees east?",
+      "answer": {
+        "value": -129.371386,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0085",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of CSS (TIANHE) (NORAD 48274) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 399.737391,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0086",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of CSS (TIANHE) (NORAD 48274), in kilometres per second?",
+      "answer": {
+        "value": 7.671546,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0087",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of CSS (TIANHE) (NORAD 48274), in degrees north?",
+      "answer": {
+        "value": -38.229215,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0088",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of CSS (TIANHE) (NORAD 48274), in degrees east?",
+      "answer": {
+        "value": 87.665171,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0089",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of CSS (TIANHE) (NORAD 48274) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 400.801722,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0090",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of CSS (TIANHE) (NORAD 48274), in kilometres per second?",
+      "answer": {
+        "value": 7.670928,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0091",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of CSS (TIANHE) (NORAD 48274), in degrees north?",
+      "answer": {
+        "value": -21.849883,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0092",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of CSS (TIANHE) (NORAD 48274), in degrees east?",
+      "answer": {
+        "value": -108.290658,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0093",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of CSS (TIANHE) (NORAD 48274) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 395.12081,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0094",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of CSS (TIANHE) (NORAD 48274), in kilometres per second?",
+      "answer": {
+        "value": 7.674091,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0095",
+      "category": "pass_count",
+      "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from Bangalore (12.9716N, 77.5946E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 6.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0096",
+      "category": "max_elevation",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 52.937351,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "Bangalore",
+          "lat": 12.9716,
+          "lon": 77.5946,
+          "alt_m": 920.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0097",
+      "category": "pass_count",
+      "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from London (51.5072N, -0.1276E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 1.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0098",
+      "category": "max_elevation",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 13.126127,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "London",
+          "lat": 51.5072,
+          "lon": -0.1276,
+          "alt_m": 11.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0099",
+      "category": "pass_count",
+      "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from Quito (-0.1807N, -78.4678E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 5.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0100",
+      "category": "max_elevation",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 70.192251,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "Quito",
+          "lat": -0.1807,
+          "lon": -78.4678,
+          "alt_m": 2850.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "pass_count-0101",
+      "category": "pass_count",
+      "question": "How many times does CSS (TIANHE) (NORAD 48274) rise above 10 degrees elevation as seen from Sydney (-33.8688N, 151.2093E) during the 3 days from 2026-08-12T00:00:00Z?",
+      "answer": {
+        "value": 8.0,
+        "unit": "passes",
+        "tolerance_abs": 0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "max_elevation-0102",
+      "category": "max_elevation",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "answer": {
+        "value": 57.771644,
+        "unit": "deg",
+        "tolerance_abs": 2.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 48274,
+        "regime": "LEO",
+        "station": {
+          "name": "Sydney",
+          "lat": -33.8688,
+          "lon": 151.2093,
+          "alt_m": 58.0
+        },
+        "from_utc": "2026-08-12T00:00:00",
+        "days": 3,
+        "min_elevation_deg": 10.0
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "orbital_period-0103",
+      "category": "orbital_period",
+      "question": "What is the orbital period of GOES 16 (NORAD 41866), in minutes?",
+      "answer": {
+        "value": 1436.114277,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0104",
+      "category": "inclination",
+      "question": "What is the orbital inclination of GOES 16 (NORAD 41866), in degrees?",
+      "answer": {
+        "value": 0.466,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0105",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of GOES 16 (NORAD 41866), in degrees north?",
+      "answer": {
+        "value": 0.378941,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0106",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of GOES 16 (NORAD 41866), in degrees east?",
+      "answer": {
+        "value": -104.718979,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0107",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of GOES 16 (NORAD 41866) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 35781.39581,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0108",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of GOES 16 (NORAD 41866), in kilometres per second?",
+      "answer": {
+        "value": 3.075071,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0109",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of GOES 16 (NORAD 41866), in degrees north?",
+      "answer": {
+        "value": -0.368138,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0110",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of GOES 16 (NORAD 41866), in degrees east?",
+      "answer": {
+        "value": -104.711831,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0111",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of GOES 16 (NORAD 41866) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 35788.208336,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0112",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of GOES 16 (NORAD 41866), in kilometres per second?",
+      "answer": {
+        "value": 3.074574,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0113",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of GOES 16 (NORAD 41866), in degrees north?",
+      "answer": {
+        "value": -0.065007,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0114",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of GOES 16 (NORAD 41866), in degrees east?",
+      "answer": {
+        "value": -104.740807,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0115",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of GOES 16 (NORAD 41866) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 35789.364521,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0116",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of GOES 16 (NORAD 41866), in kilometres per second?",
+      "answer": {
+        "value": 3.07449,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0117",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of GOES 16 (NORAD 41866), in degrees north?",
+      "answer": {
+        "value": 0.499351,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0118",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of GOES 16 (NORAD 41866), in degrees east?",
+      "answer": {
+        "value": -104.743131,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0119",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of GOES 16 (NORAD 41866) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 35781.841547,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0120",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of GOES 16 (NORAD 41866), in kilometres per second?",
+      "answer": {
+        "value": 3.075039,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41866,
+        "regime": "geostationary",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "orbital_period-0121",
+      "category": "orbital_period",
+      "question": "What is the orbital period of XMM-NEWTON (NORAD 25989), in minutes?",
+      "answer": {
+        "value": 2872.768094,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0122",
+      "category": "inclination",
+      "question": "What is the orbital inclination of XMM-NEWTON (NORAD 25989), in degrees?",
+      "answer": {
+        "value": 64.1942,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0123",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of XMM-NEWTON (NORAD 25989), in degrees north?",
+      "answer": {
+        "value": -42.585014,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0124",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of XMM-NEWTON (NORAD 25989), in degrees east?",
+      "answer": {
+        "value": 168.244567,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0125",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of XMM-NEWTON (NORAD 25989) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 88942.990056,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0126",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of XMM-NEWTON (NORAD 25989), in kilometres per second?",
+      "answer": {
+        "value": 1.552313,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0127",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of XMM-NEWTON (NORAD 25989), in degrees north?",
+      "answer": {
+        "value": -57.29983,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0128",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of XMM-NEWTON (NORAD 25989), in degrees east?",
+      "answer": {
+        "value": 92.879798,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0129",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of XMM-NEWTON (NORAD 25989) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 91391.397491,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0130",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of XMM-NEWTON (NORAD 25989), in kilometres per second?",
+      "answer": {
+        "value": 1.483448,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0131",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of XMM-NEWTON (NORAD 25989), in degrees north?",
+      "answer": {
+        "value": -10.327134,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0132",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of XMM-NEWTON (NORAD 25989), in degrees east?",
+      "answer": {
+        "value": -75.882157,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0133",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of XMM-NEWTON (NORAD 25989) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 66995.424959,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0134",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of XMM-NEWTON (NORAD 25989), in kilometres per second?",
+      "answer": {
+        "value": 2.215996,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0135",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of XMM-NEWTON (NORAD 25989), in degrees north?",
+      "answer": {
+        "value": -41.080787,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0136",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of XMM-NEWTON (NORAD 25989), in degrees east?",
+      "answer": {
+        "value": -23.359465,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0137",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of XMM-NEWTON (NORAD 25989) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 56222.08025,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0138",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of XMM-NEWTON (NORAD 25989), in kilometres per second?",
+      "answer": {
+        "value": 2.604257,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 25989,
+        "regime": "highly eccentric",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "orbital_period-0139",
+      "category": "orbital_period",
+      "question": "What is the orbital period of NAVSTAR 76 (USA 266) (NORAD 41328), in minutes?",
+      "answer": {
+        "value": 717.938794,
+        "unit": "minutes",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "inclination-0140",
+      "category": "inclination",
+      "question": "What is the orbital inclination of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees?",
+      "answer": {
+        "value": 55.5578,
+        "unit": "deg",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": true,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0141",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite latitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees north?",
+      "answer": {
+        "value": -23.107017,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0142",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the sub-satellite longitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees east?",
+      "answer": {
+        "value": -36.209147,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0143",
+      "category": "altitude",
+      "question": "At 2026-08-12T00:00:00Z, what is the altitude of NAVSTAR 76 (USA 266) (NORAD 41328) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 19986.892646,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0144",
+      "category": "speed",
+      "question": "At 2026-08-12T00:00:00Z, what is the inertial speed of NAVSTAR 76 (USA 266) (NORAD 41328), in kilometres per second?",
+      "answer": {
+        "value": 3.903009,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0145",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite latitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees north?",
+      "answer": {
+        "value": 35.732651,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0146",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the sub-satellite longitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees east?",
+      "answer": {
+        "value": 58.536416,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0147",
+      "category": "altitude",
+      "question": "At 2026-08-12T06:30:00Z, what is the altitude of NAVSTAR 76 (USA 266) (NORAD 41328) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 20421.941718,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0148",
+      "category": "speed",
+      "question": "At 2026-08-12T06:30:00Z, what is the inertial speed of NAVSTAR 76 (USA 266) (NORAD 41328), in kilometres per second?",
+      "answer": {
+        "value": 3.840106,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-12T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0149",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite latitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees north?",
+      "answer": {
+        "value": -48.02844,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0150",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the sub-satellite longitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees east?",
+      "answer": {
+        "value": -145.664366,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0151",
+      "category": "altitude",
+      "question": "At 2026-08-13T14:45:00Z, what is the altitude of NAVSTAR 76 (USA 266) (NORAD 41328) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 20025.27663,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0152",
+      "category": "speed",
+      "question": "At 2026-08-13T14:45:00Z, what is the inertial speed of NAVSTAR 76 (USA 266) (NORAD 41328), in kilometres per second?",
+      "answer": {
+        "value": 3.898477,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-13T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_latitude-0153",
+      "category": "subpoint_latitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite latitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees north?",
+      "answer": {
+        "value": 39.834583,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "subpoint_longitude-0154",
+      "category": "subpoint_longitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the sub-satellite longitude of NAVSTAR 76 (USA 266) (NORAD 41328), in degrees east?",
+      "answer": {
+        "value": -48.483851,
+        "unit": "deg",
+        "tolerance_abs": 0.5
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "altitude-0155",
+      "category": "altitude",
+      "question": "At 2026-08-14T21:10:00Z, what is the altitude of NAVSTAR 76 (USA 266) (NORAD 41328) above the WGS84 ellipsoid, in kilometres?",
+      "answer": {
+        "value": 20306.282676,
+        "unit": "km",
+        "tolerance_abs": 10.0
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "speed-0156",
+      "category": "speed",
+      "question": "At 2026-08-14T21:10:00Z, what is the inertial speed of NAVSTAR 76 (USA 266) (NORAD 41328), in kilometres per second?",
+      "answer": {
+        "value": 3.857055,
+        "unit": "km/s",
+        "tolerance_abs": 0.05
+      },
+      "memorizable": false,
+      "context": {
+        "norad_id": 41328,
+        "regime": "medium Earth orbit",
+        "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    }
+  ]
+}
