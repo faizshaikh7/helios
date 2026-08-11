@@ -306,9 +306,15 @@ def main() -> int:
 
     # Compare every series over the same questions. A run cut short by a rate limit would
     # otherwise contribute a coverage difference disguised as an accuracy difference.
-    common = {item["id"] for item in grounded["results"]} & {item["id"] for item in baseline["results"]}
+    # A transport failure -- a rate limit, a dropped connection -- is not a wrong answer, and
+    # scoring it as one would understate the system by whatever the provider's quota happened to
+    # be that day. Only questions every series actually *answered* are compared.
+    def answered(document: dict[str, Any]) -> set[str]:
+        return {item["id"] for item in document["results"] if not item.get("error")}
+
+    common = answered(grounded) & answered(baseline)
     if ceiling:
-        common &= {item["id"] for item in ceiling["results"]}
+        common &= answered(ceiling)
 
     grounded = _restrict(grounded, common)
     baseline = _restrict(baseline, common)

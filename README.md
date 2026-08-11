@@ -51,20 +51,46 @@ publicly-known facts would let a bare model score well without computing anythin
 longitude at `2026-08-13T14:45Z` has to be calculated. The other 14 are a deliberate control —
 values a model should get right from recall alone.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/img/accuracy-dark.svg">
+  <img alt="Accuracy against independently computed ground truth" src="docs/img/accuracy-light.svg">
+</picture>
+
 | | Overall | On questions that cannot be recalled |
 |---|---|---|
-| **Tool ceiling** — perfect tool selection | **100%** (157/157) | **100%** |
-| **Bare model** — same model, no tools | 12.1% | 9.1% |
-| **Grounded agent** | *in progress* | *in progress* |
+| **Tool ceiling** — perfect tool selection | **100%** | **100%** |
+| **Grounded agent** — model plus tools | **100%** | **100%** |
+| **Bare model** — same model, no tools | 15.8% | 12.0% |
+
+Measured over the 114 questions every series answered. A transport failure — a provider rate
+limit, a dropped connection — is not a wrong answer, so those are excluded rather than scored
+as errors; doing otherwise would understate the system by whatever the day's quota happened to
+be. The full 157-question sweep is still filling in against a free-tier daily cap.
 
 The tool ceiling is what the tools achieve when every question reaches the right one. It is the
 upper bound on anything the agent can reach, so the gap between it and the grounded run is the
 cost of tool selection, isolated from numerical error. Reaching 100% also means skyfield and
 Orekit — two independent implementations — agree on every question, in every regime.
 
-The bare model scoring 9.1% rather than 0% is expected, not a flaw: it can guess ISS altitude
-within 10 km and orbital speed within 0.05 km/s, because those barely vary. It fails everything
-genuinely time-dependent.
+| Category | Grounded | Bare model | n |
+|---|---|---|---|
+| Sub-satellite longitude | **100%** | 0% | 25 |
+| Sub-satellite latitude | **100%** | 4% | 26 |
+| Altitude | **100%** | 12% | 24 |
+| Speed | **100%** | 32% | 25 |
+| Inclination* | **100%** | 29% | 7 |
+| Orbital period* | **100%** | 57% | 7 |
+
+*\* control — publicly known, answerable from memory.*
+
+The bare model scoring 12% rather than 0% is expected, not a flaw: it can guess ISS altitude
+within 10 km and orbital speed within 0.05 km/s, because those barely vary. It collapses on
+anything genuinely time-dependent — 0% on sub-satellite longitude, which changes every second
+and appears in no training set.
+
+The control questions are the tell. The bare model does best exactly where recall suffices
+(57% on orbital period) and worst where it does not. That pattern is what confirms the dataset
+is measuring grounding rather than model quality.
 
 Spot checks of the grounded agent, each answered by a real tool chain:
 
