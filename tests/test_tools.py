@@ -351,3 +351,100 @@ def test_out_of_range_elevation_mask_explains_itself() -> None:
     assert body["error"]["code"] == "invalid_input"
     assert "min_elevation_deg" in body["error"]["message"], "the failing field must be named"
     assert len(body["error"]["message"]) > 20, "the message must say more than that it failed"
+
+
+# --------------------------------------------------------------------------------------------
+# Query windows
+#
+# Found by the evaluation: the agent scored 12% on pass counts against a 100% tool ceiling,
+# because /api/passes always searched from now and no parameter existed to say otherwise. A
+# question about a named window could only be answered by searching a different one, so counts
+# came back consistently low. The tool was right; the API could not express the question.
+# --------------------------------------------------------------------------------------------
+
+
+def test_passes_can_search_from_a_stated_instant() -> None:
+    """A pass search honours an explicit start time rather than always using now."""
+    start = "2026-08-12T00:00:00Z"
+
+    response = client.post(
+        "/api/passes",
+        json={
+            "norad_id": 25544,
+            "latitude_deg": BANGALORE.latitude_deg,
+            "longitude_deg": BANGALORE.longitude_deg,
+            "elevation_m": BANGALORE.elevation_m,
+            "min_elevation_deg": 10.0,
+            "days": 3,
+            "from_utc": start,
+        },
+    )
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["searched_from_utc"].startswith("2026-08-12T00:00:00"), (
+        "the search must begin where the caller asked, not at the current time"
+    )
+
+    for item in body["passes"]:
+        assert item["rise_utc"] >= start, "a pass before the requested window leaked in"
+
+
+def test_pass_window_changes_the_answer() -> None:
+    """Different windows produce different results.
+
+    Guards against the parameter being accepted and ignored -- which is exactly how the original
+    defect behaved, and why it survived a passing test suite.
+    """
+    def count(from_utc: str) -> int:
+        return client.post(
+            "/api/passes",
+            json={
+                "norad_id": 25544,
+                "latitude_deg": BANGALORE.latitude_deg,
+                "longitude_deg": BANGALORE.longitude_deg,
+                "min_elevation_deg": 10.0,
+                "days": 1,
+                "from_utc": from_utc,
+            },
+        ).json()["passes"]
+
+    first = count("2026-08-12T00:00:00Z")
+    later = count("2026-08-20T00:00:00Z")
+
+    assert first != later, "the window parameter appears to be ignored"
+
+
+def test_state_and_passes_reject_unparseable_timestamps() -> None:
+    """A malformed instant is refused with a message naming the field."""
+    for path, payload in (
+        ("/api/state", {"norad_id": 25544, "at_utc": "not-a-date"}),
+        (
+            "/api/passes",
+            {
+                "norad_id": 25544,
+                "latitude_deg": 12.97,
+                "longitude_deg": 77.59,
+                "from_utc": "12/08/2026",
+            },
+        ),
+    ):
+        response = client.post(path, json=payload)
+        assert response.status_code == 422, f"{path} accepted a bad timestamp"
+
+        body = response.json()
+        assert body["error"]["code"] == "invalid_input"
+        assert "utc" in body["error"]["message"].lower(), "the failing field must be named"
+
+
+def test_naive_timestamps_are_treated_as_utc() -> None:
+    """A timestamp without an offset is interpreted as UTC rather than local time.
+
+    Every value this service returns is UTC. Silently applying the server's local zone would
+    shift results by hours depending on where the process happens to run.
+    """
+    aware = client.post("/api/state", json={"norad_id": 25544, "at_utc": "2026-08-12T00:00:00Z"})
+    naive = client.post("/api/state", json={"norad_id": 25544, "at_utc": "2026-08-12T00:00:00"})
+
+    assert aware.status_code == naive.status_code == 200
+    assert aware.json()["latitude"]["value"] == naive.json()["latitude"]["value"]
