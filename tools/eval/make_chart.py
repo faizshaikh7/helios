@@ -73,6 +73,52 @@ def _escape(text: str) -> str:
     return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+def _restrict(document: dict[str, Any], ids: set[str]) -> dict[str, Any]:
+    """Recompute a results document over only the given question ids.
+
+    Runs can end up covering slightly different question sets -- a rate-limited run may stop a
+    few short. Comparing 153 answers against 157 would silently mix a coverage difference into
+    what is presented as an accuracy difference, so every series is restricted to the questions
+    that *all* of them answered.
+
+    Args:
+        document: A results document.
+        ids: The question ids to keep.
+
+    Returns:
+        A results document recomputed over the intersection.
+    """
+    results = [item for item in document["results"] if item["id"] in ids]
+
+    by_category: dict[str, list[bool]] = {}
+    for item in results:
+        by_category.setdefault(item["category"], []).append(item["correct"])
+
+    unmemorizable = [item for item in results if not item["memorizable"]]
+    correct = sum(1 for item in results if item["correct"])
+
+    return {
+        **document,
+        "total": len(results),
+        "correct": correct,
+        "accuracy": round(correct / len(results), 4) if results else 0.0,
+        "accuracy_unmemorizable": (
+            round(sum(1 for i in unmemorizable if i["correct"]) / len(unmemorizable), 4)
+            if unmemorizable
+            else 0.0
+        ),
+        "by_category": {
+            category: {
+                "n": len(flags),
+                "correct": sum(flags),
+                "accuracy": round(sum(flags) / len(flags), 4),
+            }
+            for category, flags in sorted(by_category.items())
+        },
+        "results": results,
+    }
+
+
 def render(
     grounded: dict[str, Any],
     baseline: dict[str, Any],
@@ -257,6 +303,19 @@ def main() -> int:
     baseline = json.loads(BASELINE_PATH.read_text(encoding="utf-8"))
     ceiling_path = EVAL_DIR / "results.json"
     ceiling = json.loads(ceiling_path.read_text(encoding="utf-8")) if ceiling_path.exists() else None
+
+    # Compare every series over the same questions. A run cut short by a rate limit would
+    # otherwise contribute a coverage difference disguised as an accuracy difference.
+    common = {item["id"] for item in grounded["results"]} & {item["id"] for item in baseline["results"]}
+    if ceiling:
+        common &= {item["id"] for item in ceiling["results"]}
+
+    grounded = _restrict(grounded, common)
+    baseline = _restrict(baseline, common)
+    if ceiling:
+        ceiling = _restrict(ceiling, common)
+
+    print(f"comparing over {len(common)} questions answered by every series\n")
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 

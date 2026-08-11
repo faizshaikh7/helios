@@ -426,11 +426,18 @@ def main() -> int:
     else:
         solver = AgentSolver(args.base_url, args.solver, args.provider, args.delay)
 
-    report = score(solver, questions)
-
-    output = RESULTS_PATH if args.solver == "ceiling" else (
-        RESULTS_PATH.with_name(f"results-{solver.name}.json")
+    output = (
+        RESULTS_PATH
+        if args.solver == "ceiling"
+        else RESULTS_PATH.with_name(f"results-{solver.name}.json")
     )
+
+    if args.fresh and output.exists():
+        output.unlink()
+
+    # Passing the path is what enables checkpointing and resume; without it a long run that dies
+    # partway loses everything.
+    report = score(solver, questions, output)
     output.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
 
     print(f"solver: {report['solver']}")

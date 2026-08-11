@@ -50,6 +50,36 @@ if _EVAL_FIXTURES:
     print(f"[eval mode] catalog pinned to {_pinned} frozen element sets from {_EVAL_FIXTURES}")
 
 
+def _parse_instant(value: str, field: str) -> datetime:
+    """Parse an ISO-8601 UTC timestamp, defaulting a naive value to UTC.
+
+    Args:
+        value: The timestamp as supplied.
+        field: Field name, for the error message.
+
+    Returns:
+        A timezone-aware datetime.
+
+    Raises:
+        RequestValidationError: If the value is not parseable.
+    """
+    try:
+        # Python 3.11+ parses a trailing "Z" directly.
+        parsed = datetime.fromisoformat(value)
+    except ValueError as exc:
+        raise RequestValidationError(
+            [
+                {
+                    "loc": ("body", field),
+                    "msg": f"not a valid ISO-8601 timestamp: {value}",
+                    "type": "value_error",
+                }
+            ]
+        ) from exc
+
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
+
+
 def _error(code: str, message: str, status: int) -> JSONResponse:
     """Build a typed error response.
 
@@ -251,6 +281,13 @@ class PassRequest(BaseModel):
         default=10.0, ge=0, le=89, description="Elevation mask in degrees."
     )
     days: float = Field(default=1.0, gt=0, le=10, description="Search window length in days.")
+    from_utc: str | None = Field(
+        default=None,
+        description=(
+            "ISO-8601 UTC instant to start the search from, e.g. 2026-08-12T00:00:00Z. "
+            "Omit to search from now."
+        ),
+    )
 
 
 @app.post("/api/passes")
@@ -271,7 +308,8 @@ def passes(request: PassRequest) -> dict[str, Any]:
         elevation_m=request.elevation_m,
     )
 
-    start = datetime.now(UTC)
+    start = _parse_instant(request.from_utc, "from_utc") if request.from_utc else datetime.now(UTC)
+
     found = orbit.find_passes(
         tle,
         station,
@@ -381,25 +419,7 @@ def state_at(request: StateRequest) -> dict[str, Any]:
     """
     tle = catalog.get_tle(request.norad_id)
 
-    if request.at_utc:
-        try:
-            # Python 3.11+ parses a trailing "Z" directly.
-            when = datetime.fromisoformat(request.at_utc)
-        except ValueError as exc:
-            raise RequestValidationError(
-                [
-                    {
-                        "loc": ("body", "at_utc"),
-                        "msg": f"not a valid ISO-8601 timestamp: {request.at_utc}",
-                        "type": "value_error",
-                    }
-                ]
-            ) from exc
-
-        if when.tzinfo is None:
-            when = when.replace(tzinfo=UTC)
-    else:
-        when = datetime.now(UTC)
+    when = _parse_instant(request.at_utc, "at_utc") if request.at_utc else datetime.now(UTC)
 
     point = orbit.subpoint(tle, when)
     state = elements.state_vector(tle, when)

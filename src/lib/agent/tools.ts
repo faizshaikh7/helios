@@ -95,6 +95,13 @@ export const scienceTools = {
       station_name: z.string().default("Ground station"),
       min_elevation_deg: z.number().min(0).max(89).default(10),
       days: z.number().min(0.1).max(10).default(1).describe("Search window length in days."),
+      from_utc: z
+        .string()
+        .optional()
+        .describe(
+          "ISO-8601 UTC instant to start the search from, e.g. 2026-08-12T00:00:00Z. " +
+            "Set this whenever the question names a start time. Omit to search from now.",
+        ),
     }),
     execute: async (input) => callScience("/api/passes", input),
   }),
