@@ -33,13 +33,18 @@ jobs:
         with:
           enable-cache: true
 
+      # The Python service is a self-contained project under backend/, so it can deploy with
+      # its own root and a bundle that cannot reach the frontend, tests, or private files.
       - run: uv sync --extra dev
+        working-directory: backend
 
       - name: Lint
         run: uv run ruff check .
+        working-directory: backend
 
       # Tier-1 analytic checks per .agent/test.md: closed-form values that catch gross
       # algorithmic and unit errors. Differential tests against an independent implementation
       # arrive at M2 and run here too.
       - name: Tests
         run: uv run pytest -q
+        working-directory: backend

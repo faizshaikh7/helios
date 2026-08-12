@@ -31,7 +31,7 @@ from urllib import error as urlerror
 from urllib import request as urlrequest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(REPO_ROOT))
+sys.path.insert(0, str(REPO_ROOT / "backend"))
 
 from science import catalog, elements, orbit
 

@@ -27,7 +27,7 @@ from typing import Any
 
 from orekit_setup import REPO_ROOT, initialise, package_version
 
-OUTPUT_PATH = REPO_ROOT / "tests" / "reference" / "frames.json"
+OUTPUT_PATH = REPO_ROOT / "backend" / "tests" / "reference" / "frames.json"
 
 # Epochs spread across years so differing Earth-orientation data would show up as drift rather
 # than a constant offset.
@@ -65,7 +65,10 @@ def generate() -> dict[str, Any]:
         Vector3D,
     )
     from org.orekit.frames import FramesFactory  # type: ignore[import-not-found]
-    from org.orekit.time import AbsoluteDate, TimeScalesFactory  # type: ignore[import-not-found]
+    from org.orekit.time import (  # type: ignore[import-not-found]
+        AbsoluteDate,
+        TimeScalesFactory,
+    )
     from org.orekit.utils import IERSConventions  # type: ignore[import-not-found]
 
     utc = TimeScalesFactory.getUTC()

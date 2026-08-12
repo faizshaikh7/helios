@@ -24,7 +24,9 @@ from typing import Any
 
 import pytest
 
-DATASET_PATH = Path(__file__).resolve().parents[1] / "eval" / "questions.json"
+# eval/ sits at the repo root: it is research data shared by the tools, not part of the
+# deployable backend service.
+DATASET_PATH = Path(__file__).resolve().parents[2] / "eval" / "questions.json"
 
 # Independent expectations, from published orbital facts rather than from this project's code.
 EXPECTED_PERIOD_MINUTES: dict[str, tuple[float, float]] = {

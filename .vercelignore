@@ -1,0 +1,30 @@
+# Files that must never reach a deployment.
+#
+# Python functions have no tree-shaking: they bundle everything reachable at build time. A
+# `functions.excludeFiles` glob does not help for a framework service, because the whole service
+# builds as a single function rather than one per source file - so the glob matches nothing and
+# fails silently. This file is the control that actually applies.
+#
+# Verified by inspecting the built bundle's filePathMap, not by assuming.
+
+# Private working memory. Gitignored, and must not leave the machine.
+.agent/
+
+# Tests, generators, and evaluation data: build-time and research artifacts, never served.
+tests/
+tools/
+eval/
+docs/
+.github/
+
+# Large local caches and downloads.
+data/
+.venv/
+.pytest_cache/
+.ruff_cache/
+__pycache__/
+
+# Secrets, in case one is ever present locally.
+.env
+.env.*
+!.env.example

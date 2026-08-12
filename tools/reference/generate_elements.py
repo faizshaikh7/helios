@@ -39,7 +39,7 @@ from typing import Any
 
 from orekit_setup import REPO_ROOT, initialise, package_version
 
-OUTPUT_PATH = REPO_ROOT / "tests" / "reference" / "elements.json"
+OUTPUT_PATH = REPO_ROOT / "backend" / "tests" / "reference" / "elements.json"
 
 # ISS (ZARYA), NORAD 25544. Identical to tests/reference/tle_propagation.json -- see module
 # docstring. Changing it here without changing it there would silently decouple the two references.
@@ -98,7 +98,10 @@ def generate() -> dict[str, Any]:
         TLEPropagator,
     )
     from org.orekit.time import TimeScalesFactory  # type: ignore[import-not-found]
-    from org.orekit.utils import Constants, IERSConventions  # type: ignore[import-not-found]
+    from org.orekit.utils import (  # type: ignore[import-not-found]
+        Constants,
+        IERSConventions,
+    )
 
     utc = TimeScalesFactory.getUTC()
     tle = TLE(TLE_LINE1, TLE_LINE2)

@@ -23,7 +23,7 @@ from typing import Any
 
 from orekit_setup import REPO_ROOT, initialise, package_version
 
-OUTPUT_PATH = REPO_ROOT / "tests" / "reference" / "time_scales.json"
+OUTPUT_PATH = REPO_ROOT / "backend" / "tests" / "reference" / "time_scales.json"
 
 # Epochs chosen to exercise leap-second transitions:
 #   2000-01-01  TAI-UTC = 32 s
@@ -71,7 +71,10 @@ def generate() -> dict[str, Any]:
     """
     initialise()
 
-    from org.orekit.time import AbsoluteDate, TimeScalesFactory  # type: ignore[import-not-found]
+    from org.orekit.time import (  # type: ignore[import-not-found]
+        AbsoluteDate,
+        TimeScalesFactory,
+    )
 
     utc = TimeScalesFactory.getUTC()
     tt = TimeScalesFactory.getTT()

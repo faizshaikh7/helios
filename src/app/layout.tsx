@@ -27,7 +27,16 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      {/*
+       * suppressHydrationWarning on body as well as html: extensions such as password managers
+       * and grammar checkers inject attributes into <body> before React hydrates, which React
+       * reports as a mismatch on every load. The warning is real but not ours, and leaving it
+       * buries genuine hydration bugs in noise.
+       */}
+      <body
+        className="min-h-full flex flex-col bg-background text-foreground"
+        suppressHydrationWarning
+      >
         {/*
          * Applies a stored theme before hydration, so someone who chose dark never sees a white
          * flash first.

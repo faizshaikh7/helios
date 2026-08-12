@@ -130,8 +130,14 @@ def generate() -> dict[str, Any]:
     from org.orekit.propagation.events.handlers import (  # type: ignore[import-not-found]
         ContinueOnEvent,
     )
-    from org.orekit.time import AbsoluteDate, TimeScalesFactory  # type: ignore[import-not-found]
-    from org.orekit.utils import Constants, IERSConventions  # type: ignore[import-not-found]
+    from org.orekit.time import (  # type: ignore[import-not-found]
+        AbsoluteDate,
+        TimeScalesFactory,
+    )
+    from org.orekit.utils import (  # type: ignore[import-not-found]
+        Constants,
+        IERSConventions,
+    )
 
     utc = TimeScalesFactory.getUTC()
     itrf = FramesFactory.getITRF(IERSConventions.IERS_2010, False)

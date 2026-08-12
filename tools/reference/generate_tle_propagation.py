@@ -25,7 +25,7 @@ from typing import Any
 
 from orekit_setup import REPO_ROOT, initialise, package_version
 
-OUTPUT_PATH = REPO_ROOT / "tests" / "reference" / "tle_propagation.json"
+OUTPUT_PATH = REPO_ROOT / "backend" / "tests" / "reference" / "tle_propagation.json"
 
 # ISS (ZARYA), NORAD 25544. Frozen deliberately -- see module docstring.
 TLE_NAME = "ISS (ZARYA)"
