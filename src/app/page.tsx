@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AskPanel } from "@/components/AskPanel";
+import dynamic from "next/dynamic";
 import { GroundTrack } from "@/components/GroundTrack";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
@@ -15,6 +16,16 @@ import type {
   SatellitePass,
   Value,
 } from "@/lib/types";
+
+/** Cesium is client-only: it touches window and would bloat the server bundle. */
+const Globe = dynamic(() => import("@/components/Globe").then((m) => m.Globe), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-[420px] w-full items-center justify-center rounded-lg border border-edge bg-surface text-xs text-muted">
+      loading globe…
+    </div>
+  ),
+});
 
 /** A few well-known objects, so the tool is usable without looking up catalog numbers. */
 const SATELLITE_PRESETS = [
@@ -134,6 +145,7 @@ export default function Home() {
   const [station, setStation] = useState(STATION_PRESETS[0]);
   const [minElevation, setMinElevation] = useState(10);
   const [days, setDays] = useState(2);
+  const [trackView, setTrackView] = useState<"3D" | "2D">("3D");
 
   const [satellite, setSatellite] = useState<SatelliteResponse | null>(null);
   const [passes, setPasses] = useState<PassesResponse | null>(null);
@@ -482,20 +494,57 @@ export default function Home() {
               <h2 className="text-sm font-medium text-foreground">
                 Ground track — next {track.minutes} minutes
               </h2>
-              <span className="text-[11px] text-muted">
-                from {formatUtc(track.start_utc)}
-              </span>
+              <div className="flex items-center gap-3">
+                <span className="text-[11px] text-muted">
+                  from {formatUtc(track.start_utc)}
+                </span>
+                <div
+                  className="inline-flex items-center gap-0.5 rounded-md border border-edge p-0.5"
+                  role="group"
+                  aria-label="Ground track view"
+                >
+                  {(["3D", "2D"] as const).map((mode) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setTrackView(mode)}
+                      aria-pressed={trackView === mode}
+                      className={`rounded px-2 py-1 text-[11px] transition-colors ${
+                        trackView === mode
+                          ? "bg-accent text-accent-contrast"
+                          : "text-faint hover:text-foreground"
+                      }`}
+                    >
+                      {mode}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
 
             <div className="mt-4">
-              <GroundTrack
-                samples={track.samples}
-                station={{ lat: station.lat, lon: station.lon, name: station.name }}
-                current={{
-                  lat: Number(track.current.latitude.value),
-                  lon: Number(track.current.longitude.value),
-                }}
-              />
+              {/*
+                Both views earn their place. The 3D globe shows the orbit at true altitude and
+                the access geometry to the station; the 2D projection is what an operator
+                actually reads, because a whole revolution is visible at once without rotating
+                anything.
+              */}
+              {trackView === "3D" ? (
+                <Globe
+                  samples={track.samples}
+                  station={{ lat: station.lat, lon: station.lon, name: station.name }}
+                  passes={passes?.passes}
+                />
+              ) : (
+                <GroundTrack
+                  samples={track.samples}
+                  station={{ lat: station.lat, lon: station.lon, name: station.name }}
+                  current={{
+                    lat: Number(track.current.latitude.value),
+                    lon: Number(track.current.longitude.value),
+                  }}
+                />
+              )}
             </div>
 
             <div className="mt-4 grid gap-5 sm:grid-cols-3">

@@ -11,13 +11,18 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "test:py": "uv run pytest -q",
-    "lint:py": "uv run ruff check ."
+    "lint:py": "uv run ruff check .",
+    "cesium:assets": "node scripts/copy-cesium-assets.mjs",
+    "predev": "node scripts/copy-cesium-assets.mjs",
+    "predev:web": "node scripts/copy-cesium-assets.mjs",
+    "prebuild": "node scripts/copy-cesium-assets.mjs"
   },
   "dependencies": {
     "@ai-sdk/google": "^4.0.39",
     "@ai-sdk/openai-compatible": "^3.0.28",
     "@ai-sdk/xai": "^4.0.33",
     "ai": "^7.0.58",
+    "cesium": "^1.144.0",
     "next": "16.3.0",
     "react": "19.2.8",
     "react-dom": "19.2.8",

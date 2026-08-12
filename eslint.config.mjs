@@ -14,6 +14,8 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // Vercel build output: generated bundles, not source.
     ".vercel/**",
+    // Cesium runtime assets, copied from node_modules. Third-party minified bundles.
+    "public/cesium/**",
   ]),
 ]);
 
