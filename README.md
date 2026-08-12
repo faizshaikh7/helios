@@ -59,7 +59,7 @@ values a model should get right from recall alone.
 | | Overall | On questions that cannot be recalled |
 |---|---|---|
 | **Tool ceiling** — perfect tool selection | **100%** | **100%** |
-| **Grounded agent** — model plus tools | **96.2%** | **95.8%** |
+| **Grounded agent** — model plus tools | **99.4%** | **99.3%** |
 | **Bare model** — same model, no tools | 12.1% | 9.1% |
 
 All 157 questions, zero transport failures. A provider rate limit is not a wrong answer, so runs
@@ -78,7 +78,7 @@ Orekit — two independent implementations — agree on every question, in every
 | Altitude | **100%** | 11% | 28 |
 | Speed | **100%** | 32% | 28 |
 | Pass count | **94%** | 0% | 16 |
-| Max elevation | **67%** | 0% | 15 |
+| Max elevation | **100%** | 0% | 15 |
 | Inclination* | **100%** | 29% | 7 |
 | Orbital period* | **100%** | 57% | 7 |
 
@@ -93,34 +93,32 @@ The control questions are the tell. The bare model does best exactly where recal
 (57% on orbital period) and worst where it does not. That pattern is what confirms the dataset
 measures grounding rather than model quality.
 
-### Where it still loses, and why that is knowable
+### The one remaining miss
 
-The gap between the grounded agent and the tool ceiling is **entirely in pass geometry**, and
-because the ceiling is 100% there, the tools are not the problem — tool *use* is:
+**Pass count, 94% — one off-by-one**, 17 against 18. A boundary effect: this implementation
+discards a pass already in progress when the window opens, while the reference counts every
+rise. Both are defensible; they are not the same convention.
 
-- **Max elevation, 67%.** Five answers came back between 4° and 9° for passes whose true peak was
-  21°–63°. Those values are below the 10° elevation mask the question specifies, and a pass that
-  clears a 10° mask cannot peak at 5° — so the agent is reporting some other elevation from the
-  tool's response, not the culmination.
-- **Pass count, 94%.** One off-by-one, 17 against 18: a boundary effect, since this
-  implementation discards a pass already in progress at the window's start while the reference
-  counts every rise.
+### What the ceiling was for
 
-Separating the ceiling from the agent is what makes those diagnosable rather than a vague "the
-model is bad at passes". An earlier run scored 12% on pass counts, which looked like a reasoning
-failure and was in fact a missing parameter — the API could not express a search window, so the
-agent was scored for a hole in the tool surface.
+Separating the tool ceiling from the agent score is what made every earlier failure diagnosable
+instead of a vague "the model is bad at passes". Three times it pointed at something other than
+the model:
 
-Spot checks of the grounded agent, each answered by a real tool chain:
+- **Pass count once scored 12%.** That looked like a reasoning failure. It was a missing
+  parameter — `/api/passes` always searched from *now* and had no way to express a start time,
+  so the agent was being scored for a hole in the tool surface.
+- **Max elevation scored 60–67%** across two runs, returning values like 0.161° for a pass whose
+  reference peak was 14°. The tool was right and so was the agent: the question said *"the first
+  pass over London"* without stating an elevation mask, so a 0° mask returned a grazing pass —
+  a correct answer to an under-specified question. It also gave no coordinates, and the model
+  put London at +0.128° instead of −0.128°, in the wrong hemisphere. Stating the mask and the
+  coordinates took it to **100%**, and the ground-truth value never changed — the question was
+  wrong, not the target.
+- **An apparent 72.6%** was 43 rate-limit failures being scored as wrong answers.
 
-| Question | Agent | Ground truth |
-|---|---|---|
-| ISS sub-satellite latitude at 2026-08-12T00:00Z | 46.870296° | 46.8704° |
-| ISS altitude at 2026-08-12T00:00Z | 419.030951 km | 419.031 km |
-
-The full grounded run is paused on a provider free-tier daily quota; it resumes from its
-checkpoint rather than restarting. The chart is published here when it completes — including the
-categories where the agent loses to its own tools.
+None of those were model failures, and all three would have been invisible without an
+independently computed upper bound to compare against.
 
 ### Reproducing it
 

@@ -2,7 +2,7 @@
 <rect width="860" height="460" fill="#fcfcfb"/>
 <text x="60" y="34" fill="#1a1a19" font-size="17" font-weight="600">Accuracy against independently computed ground truth</text>
 <text x="60" y="56" fill="#5c5b55" font-size="12.5">gemini &#183; 157 questions &#183; ground truth from Orekit</text>
-<text x="60" y="74" fill="#5c5b55" font-size="12.5">overall 96% with tools vs 12% without &#183; on questions that cannot be recalled: 96% vs 9%</text>
+<text x="60" y="74" fill="#5c5b55" font-size="12.5">overall 99% with tools vs 12% without &#183; on questions that cannot be recalled: 99% vs 9%</text>
 <line x1="60" y1="364.0" x2="836" y2="364.0" stroke="#e4e3dd" stroke-width="1"/>
 <text x="50" y="368.0" fill="#5c5b55" font-size="11" text-anchor="end">0%</text>
 <line x1="60" y1="297.0" x2="836" y2="297.0" stroke="#e4e3dd" stroke-width="1"/>
@@ -43,8 +43,8 @@
 <line x1="465.5" y1="96.0" x2="527.5" y2="96.0" stroke="#1a1a19" stroke-width="1.5" stroke-dasharray="3 2"><title>tool ceiling &#183; pass_count: 100%</title></line>
 <text x="496.5" y="384" fill="#5c5b55" font-size="11" text-anchor="middle">Pass</text>
 <text x="496.5" y="397" fill="#5c5b55" font-size="11" text-anchor="middle">count</text>
-<rect x="564.5" y="185.3" width="28.0" height="178.7" fill="#2a78d6" rx="4"><title>grounded &#183; max_elevation: 67% of 15</title></rect>
-<text x="578.5" y="180.3" fill="#5c5b55" font-size="10.5" text-anchor="middle">67</text>
+<rect x="564.5" y="96.0" width="28.0" height="268.0" fill="#2a78d6" rx="4"><title>grounded &#183; max_elevation: 100% of 15</title></rect>
+<text x="578.5" y="91.0" fill="#5c5b55" font-size="10.5" text-anchor="middle">100</text>
 <rect x="594.5" y="362.5" width="28.0" height="1.5" fill="#eb6834" rx="4"><title>baseline &#183; max_elevation: 0% of 15</title></rect>
 <line x1="562.5" y1="96.0" x2="624.5" y2="96.0" stroke="#1a1a19" stroke-width="1.5" stroke-dasharray="3 2"><title>tool ceiling &#183; max_elevation: 100%</title></line>
 <text x="593.5" y="384" fill="#5c5b55" font-size="11" text-anchor="middle">Max</text>

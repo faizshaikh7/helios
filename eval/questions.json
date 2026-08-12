@@ -2,7 +2,7 @@
   "_provenance": {
     "source": "orekit",
     "orekit_jpype_version": "13.1.7.0",
-    "generated_utc": "2026-08-10T12:16:30+00:00",
+    "generated_utc": "2026-08-12T12:42:30+00:00",
     "generator": "tools/eval/generate_questions.py",
     "note": "Ground truth from an independent implementation, never from the code being graded. Questions are weighted toward quantities a language model cannot recall; the memorizable minority is a control, not filler."
   },
@@ -354,7 +354,7 @@
     {
       "id": "max_elevation-0019",
       "category": "max_elevation",
-      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Bangalore (12.9716N, 77.5946E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 29.26956,
         "unit": "deg",
@@ -404,7 +404,7 @@
     {
       "id": "max_elevation-0021",
       "category": "max_elevation",
-      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over London (51.5072N, -0.1276E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 33.971331,
         "unit": "deg",
@@ -454,7 +454,7 @@
     {
       "id": "max_elevation-0023",
       "category": "max_elevation",
-      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Quito (-0.1807N, -78.4678E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 41.910428,
         "unit": "deg",
@@ -504,7 +504,7 @@
     {
       "id": "max_elevation-0025",
       "category": "max_elevation",
-      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of ISS (ZARYA) (NORAD 25544) over Sydney (-33.8688N, 151.2093E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 10.869493,
         "unit": "deg",
@@ -858,7 +858,7 @@
     {
       "id": "max_elevation-0045",
       "category": "max_elevation",
-      "question": "For the first pass of HST (NORAD 20580) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of HST (NORAD 20580) over Bangalore (12.9716N, 77.5946E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 20.727546,
         "unit": "deg",
@@ -933,7 +933,7 @@
     {
       "id": "max_elevation-0048",
       "category": "max_elevation",
-      "question": "For the first pass of HST (NORAD 20580) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of HST (NORAD 20580) over Quito (-0.1807N, -78.4678E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 22.008203,
         "unit": "deg",
@@ -983,7 +983,7 @@
     {
       "id": "max_elevation-0050",
       "category": "max_elevation",
-      "question": "For the first pass of HST (NORAD 20580) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of HST (NORAD 20580) over Sydney (-33.8688N, 151.2093E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 21.373337,
         "unit": "deg",
@@ -1337,7 +1337,7 @@
     {
       "id": "max_elevation-0070",
       "category": "max_elevation",
-      "question": "For the first pass of NOAA 19 (NORAD 33591) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over Bangalore (12.9716N, 77.5946E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 83.117208,
         "unit": "deg",
@@ -1387,7 +1387,7 @@
     {
       "id": "max_elevation-0072",
       "category": "max_elevation",
-      "question": "For the first pass of NOAA 19 (NORAD 33591) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over London (51.5072N, -0.1276E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 35.423873,
         "unit": "deg",
@@ -1437,7 +1437,7 @@
     {
       "id": "max_elevation-0074",
       "category": "max_elevation",
-      "question": "For the first pass of NOAA 19 (NORAD 33591) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over Quito (-0.1807N, -78.4678E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 25.154899,
         "unit": "deg",
@@ -1487,7 +1487,7 @@
     {
       "id": "max_elevation-0076",
       "category": "max_elevation",
-      "question": "For the first pass of NOAA 19 (NORAD 33591) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of NOAA 19 (NORAD 33591) over Sydney (-33.8688N, 151.2093E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 45.430439,
         "unit": "deg",
@@ -1841,7 +1841,7 @@
     {
       "id": "max_elevation-0096",
       "category": "max_elevation",
-      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Bangalore after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Bangalore (12.9716N, 77.5946E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 52.937351,
         "unit": "deg",
@@ -1891,7 +1891,7 @@
     {
       "id": "max_elevation-0098",
       "category": "max_elevation",
-      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over London after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over London (51.5072N, -0.1276E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 14.076534,
         "unit": "deg",
@@ -1941,7 +1941,7 @@
     {
       "id": "max_elevation-0100",
       "category": "max_elevation",
-      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Quito after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Quito (-0.1807N, -78.4678E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 63.440925,
         "unit": "deg",
@@ -1991,7 +1991,7 @@
     {
       "id": "max_elevation-0102",
       "category": "max_elevation",
-      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Sydney after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
+      "question": "For the first pass of CSS (TIANHE) (NORAD 48274) over Sydney (-33.8688N, 151.2093E) rising above a 10 degree elevation mask after 2026-08-12T00:00:00Z, what is the maximum elevation in degrees?",
       "answer": {
         "value": 57.771644,
         "unit": "deg",

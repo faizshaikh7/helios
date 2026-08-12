@@ -317,10 +317,17 @@ def generate() -> dict[str, Any]:
                     elevation = float(topo.getElevation(position, itrf, moment)) * 180.0 / 3.14159
                     peak = max(peak, elevation)
 
+                # The mask and the coordinates must both be stated. Without a mask, "the first
+                # pass" is whichever grazing pass happens to clear the horizon first, and a
+                # correct method answering 0.16 degrees would be scored wrong against a 10-degree
+                # reference. Without coordinates, the model has to recall the city's position and
+                # can put London in the wrong hemisphere. Neither ambiguity measures grounding.
                 add(
                     "max_elevation",
                     f"For the first pass of {name} (NORAD {norad}) over {station['name']} "
-                    f"after {EVAL_EPOCHS[0]}Z, what is the maximum elevation in degrees?",
+                    f"({station['lat']:.4f}N, {station['lon']:.4f}E) rising above a "
+                    f"10 degree elevation mask after {EVAL_EPOCHS[0]}Z, "
+                    f"what is the maximum elevation in degrees?",
                     peak,
                     "deg",
                     context,

@@ -100,7 +100,10 @@ export const scienceTools = {
         .optional()
         .describe(
           "ISO-8601 UTC instant to start the search from, e.g. 2026-08-12T00:00:00Z. " +
-            "Set this whenever the question names a start time. Omit to search from now.",
+            "REQUIRED whenever the question names any time - 'after <time>', 'from <date>', " +
+            "'during the 3 days from <date>', or 'the first pass after <time>'. Omitting it " +
+            "silently searches from the current moment instead, which returns a DIFFERENT set " +
+            "of passes and a different first pass. Only omit it for questions about now.",
         ),
     }),
     execute: async (input) => callScience("/api/passes", input),
@@ -197,6 +200,12 @@ is which.
 Read the tool's own notes and uncertainty fields and respect them. If a receipt says results
 ignore refraction and terrain, do not claim a pass is workable - only that it is geometrically
 visible.
+
+**Carry every constraint from the question into the tool call.** If the question names a time,
+a date, a window, an elevation mask, or a location, those belong in the parameters. A tool
+called with defaults answers a different question than the one asked, and does so without any
+error - the numbers come back looking perfectly reasonable. Before answering, check that each
+constraint you were given appears somewhere in what you sent.
 
 Be concise. Lead with the answer, then the assumptions behind it.
 `.trim();
