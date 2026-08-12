@@ -59,13 +59,12 @@ values a model should get right from recall alone.
 | | Overall | On questions that cannot be recalled |
 |---|---|---|
 | **Tool ceiling** — perfect tool selection | **100%** | **100%** |
-| **Grounded agent** — model plus tools | **100%** | **100%** |
-| **Bare model** — same model, no tools | 15.8% | 12.0% |
+| **Grounded agent** — model plus tools | **96.2%** | **95.8%** |
+| **Bare model** — same model, no tools | 12.1% | 9.1% |
 
-Measured over the 114 questions every series answered. A transport failure — a provider rate
-limit, a dropped connection — is not a wrong answer, so those are excluded rather than scored
-as errors; doing otherwise would understate the system by whatever the day's quota happened to
-be. The full 157-question sweep is still filling in against a free-tier daily cap.
+All 157 questions, zero transport failures. A provider rate limit is not a wrong answer, so runs
+that hit one are retried rather than scored — counting them would understate the system by
+whatever the day's quota happened to be.
 
 The tool ceiling is what the tools achieve when every question reaches the right one. It is the
 upper bound on anything the agent can reach, so the gap between it and the grounded run is the
@@ -74,10 +73,12 @@ Orekit — two independent implementations — agree on every question, in every
 
 | Category | Grounded | Bare model | n |
 |---|---|---|---|
-| Sub-satellite longitude | **100%** | 0% | 25 |
-| Sub-satellite latitude | **100%** | 4% | 26 |
-| Altitude | **100%** | 12% | 24 |
-| Speed | **100%** | 32% | 25 |
+| Sub-satellite longitude | **100%** | 0% | 28 |
+| Sub-satellite latitude | **100%** | 4% | 28 |
+| Altitude | **100%** | 11% | 28 |
+| Speed | **100%** | 32% | 28 |
+| Pass count | **94%** | 0% | 16 |
+| Max elevation | **67%** | 0% | 15 |
 | Inclination* | **100%** | 29% | 7 |
 | Orbital period* | **100%** | 57% | 7 |
 
@@ -90,7 +91,25 @@ and appears in no training set.
 
 The control questions are the tell. The bare model does best exactly where recall suffices
 (57% on orbital period) and worst where it does not. That pattern is what confirms the dataset
-is measuring grounding rather than model quality.
+measures grounding rather than model quality.
+
+### Where it still loses, and why that is knowable
+
+The gap between the grounded agent and the tool ceiling is **entirely in pass geometry**, and
+because the ceiling is 100% there, the tools are not the problem — tool *use* is:
+
+- **Max elevation, 67%.** Five answers came back between 4° and 9° for passes whose true peak was
+  21°–63°. Those values are below the 10° elevation mask the question specifies, and a pass that
+  clears a 10° mask cannot peak at 5° — so the agent is reporting some other elevation from the
+  tool's response, not the culmination.
+- **Pass count, 94%.** One off-by-one, 17 against 18: a boundary effect, since this
+  implementation discards a pass already in progress at the window's start while the reference
+  counts every rise.
+
+Separating the ceiling from the agent is what makes those diagnosable rather than a vague "the
+model is bad at passes". An earlier run scored 12% on pass counts, which looked like a reasoning
+failure and was in fact a missing parameter — the API could not express a search window, so the
+agent was scored for a hole in the tool surface.
 
 Spot checks of the grounded agent, each answered by a real tool chain:
 
