@@ -3,7 +3,15 @@
   "services": {
     "web": {
       "root": "./",
-      "framework": "nextjs"
+      "framework": "nextjs",
+      "bindings": [
+        {
+          "type": "service",
+          "service": "science",
+          "format": "url",
+          "env": "SCIENCE_SERVICE_URL"
+        }
+      ]
     },
     "science": {
       "root": "./backend",

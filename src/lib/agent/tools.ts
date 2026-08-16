@@ -7,8 +7,19 @@ import { z } from "zod";
  * Tools run server-side inside a route handler, so they call the service directly rather than
  * through the browser-facing `/api` rewrite -- that rewrite exists for the client and does not
  * apply to server-to-server calls.
+ *
+ * In a deployment this value is injected by a Vercel service binding, which is deployment-aware
+ * (a preview's web service reaches that same preview's science service) and bypasses the public
+ * request pipeline -- so Deployment Protection does not block an internal call. Locally it comes
+ * from .env.local. The fallback is the local dev port.
+ *
+ * The trailing slash is stripped because callers append absolute paths like `/api/health`, and a
+ * base ending in `/` would produce a double slash.
  */
-const SCIENCE_URL = process.env.SCIENCE_SERVICE_URL ?? "http://127.0.0.1:8787";
+const SCIENCE_URL = (process.env.SCIENCE_SERVICE_URL ?? "http://127.0.0.1:8787").replace(
+  /\/+$/,
+  "",
+);
 
 /** Every tool result the agent produced, in call order, for provenance rendering. */
 export type CollectedCall = {
