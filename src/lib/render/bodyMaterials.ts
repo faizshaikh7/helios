@@ -35,6 +35,9 @@ function texture(file: string, colour = true): THREE.Texture {
 }
 
 const VERTEX_GLSL = /* glsl */ `
+#include <common>
+#include <logdepthbuf_pars_vertex>
+
 varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
@@ -45,6 +48,8 @@ void main(){
   vec4 worldPosition = modelMatrix * vec4(position, 1.0);
   vWorld = worldPosition.xyz;
   gl_Position = projectionMatrix * viewMatrix * worldPosition;
+
+  #include <logdepthbuf_vertex>
 }
 `;
 
@@ -65,7 +70,12 @@ varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
+#include <common>
+#include <logdepthbuf_pars_fragment>
+
 void main(){
+  #include <logdepthbuf_fragment>
+
   vec3 albedo = texture2D(uMap, vUv).rgb;
   vec3 normal = normalize(vNormalW);
 
@@ -94,7 +104,12 @@ varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
+#include <common>
+#include <logdepthbuf_pars_fragment>
+
 void main(){
+  #include <logdepthbuf_fragment>
+
   vec3 normal = normalize(vNormalW);
   float incidence = dot(normal, normalize(uLightDir));
 
@@ -126,7 +141,12 @@ varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
+#include <common>
+#include <logdepthbuf_pars_fragment>
+
 void main(){
+  #include <logdepthbuf_fragment>
+
   vec3 surface = texture2D(uMap, vec2(vUv.x + uTime * 0.004, vUv.y)).rgb;
 
   vec3 viewDir = normalize(cameraPosition - vWorld);
@@ -159,7 +179,12 @@ varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
+#include <common>
+#include <logdepthbuf_pars_fragment>
+
 void main(){
+  #include <logdepthbuf_fragment>
+
   vec3 normal = normalize(vNormalW);
   vec3 viewDir = normalize(cameraPosition - vWorld);
 
@@ -184,7 +209,12 @@ uniform float uPlanetRadius;
 varying vec3 vLocal;
 varying float vRadius;
 
+#include <common>
+#include <logdepthbuf_pars_fragment>
+
 void main(){
+  #include <logdepthbuf_fragment>
+
   float t = clamp((vRadius - uInner) / max(uOuter - uInner, 1e-6), 0.0, 1.0);
   vec4 sampled = texture2D(uMap, vec2(t, 0.5));
 
@@ -204,6 +234,9 @@ void main(){
 `;
 
 const RING_VERTEX_GLSL = /* glsl */ `
+#include <common>
+#include <logdepthbuf_pars_vertex>
+
 varying vec3 vLocal;
 varying float vRadius;
 
@@ -212,6 +245,8 @@ void main(){
   vLocal = position;
 
   gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
+
+  #include <logdepthbuf_vertex>
 }
 `;
 

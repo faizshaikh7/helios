@@ -23,7 +23,16 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from science import catalog, decay, eclipse, elements, ephemeris, literature, orbit
+from science import (
+    catalog,
+    decay,
+    eclipse,
+    elements,
+    ephemeris,
+    literature,
+    orbit,
+    smallbodies,
+)
 from science.provenance import Receipt, Tier, Value
 
 app = FastAPI(
@@ -850,6 +859,117 @@ def ephemeris_orbits(request: OrbitsRequest) -> dict[str, Any]:
         "note": (
             "Sampled over one sidereal period from the same ephemeris that positions the "
             "bodies, so each planet lies on its own path by construction."
+        ),
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# Stars, moons and small bodies
+# --------------------------------------------------------------------------------------------
+
+
+@app.get("/api/stars")
+def stars() -> dict[str, Any]:
+    """Return the bright-star catalogue.
+
+    Real stars at real J2000 positions, from the Yale Bright Star Catalogue via CDS VizieR. The
+    renderer used a decorative starfield before this; the constellations in the view are now the
+    actual constellations.
+
+    Returns:
+        Every star brighter than the catalogue's magnitude limit, with provenance.
+    """
+    data = smallbodies.stars()
+
+    return {
+        "count": data["count"],
+        "stars": data["stars"],
+        "provenance": data["_provenance"],
+        "tier": Tier.OBSERVED.value,
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+class MoonsRequest(BaseModel):
+    """Parameters for a moon-position query."""
+
+    at_utc: str | None = Field(
+        default=None, description="ISO-8601 UTC instant. Omit for the current moment."
+    )
+
+
+@app.post("/api/moons")
+def moons(request: MoonsRequest) -> dict[str, Any]:
+    """Positions of the major moons, relative to their planet and to the Sun.
+
+    Propagated as two-body orbits from JPL Horizons element sets. That ignores the parent's
+    oblateness and third-body pull, so the orbit plane goes stale over months while the position
+    along the orbit stays good — see `science/smallbodies.py`.
+
+    Args:
+        request: The instant.
+
+    Returns:
+        One entry per moon, in AU, with the model's limitations stated.
+    """
+    when = _parse_instant(request.at_utc, "at_utc") if request.at_utc else datetime.now(UTC)
+
+    return {
+        "at_utc": when.isoformat(),
+        "frame": "ecliptic; relative_* is planet-centred, x/y/z is heliocentric",
+        "tier": Tier.DERIVED.value,
+        "count": len(smallbodies.moon_positions(when)),
+        "moons": smallbodies.moon_positions(when),
+        "model": (
+            "Two-body propagation of JPL Horizons osculating elements. Ignores the parent's "
+            "oblateness, solar perturbation and moon-moon interaction. Adequate for showing "
+            "where the moons are; not adequate for targeting or occultation timing."
+        ),
+        "selection": (
+            "Major moons only. Hundreds are known; these are the ones large enough to be worth "
+            "drawing."
+        ),
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+class AsteroidsRequest(BaseModel):
+    """Parameters for an asteroid-position query."""
+
+    at_utc: str | None = Field(
+        default=None, description="ISO-8601 UTC instant. Omit for the current moment."
+    )
+    limit: int = Field(default=800, ge=1, le=2000)
+
+
+@app.post("/api/asteroids")
+def asteroids(request: AsteroidsRequest) -> dict[str, Any]:
+    """Positions of the largest catalogued asteroids.
+
+    Real objects on real orbits from JPL's Small-Body Database, not a decorative scatter. The
+    Kirkwood gaps show up in the result because they are in the data.
+
+    Args:
+        request: Instant and how many objects to return.
+
+    Returns:
+        One entry per asteroid, heliocentric ecliptic, in AU.
+    """
+    when = _parse_instant(request.at_utc, "at_utc") if request.at_utc else datetime.now(UTC)
+    positions = smallbodies.asteroid_positions(when, limit=request.limit)
+
+    return {
+        "at_utc": when.isoformat(),
+        "frame": "heliocentric ecliptic",
+        "tier": Tier.DERIVED.value,
+        "count": len(positions),
+        "asteroids": positions,
+        "model": "Two-body propagation of JPL SBDB osculating elements, each at its own epoch.",
+        "selection": (
+            "A size-limited selection, not the whole belt: over a million asteroids are known. "
+            "Drawing a representative scatter instead would be a picture of an idea rather than "
+            "of anything measured."
         ),
         "notice": OPERATIONAL_NOTICE,
     }

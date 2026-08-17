@@ -3,7 +3,14 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { DistanceMode } from "@/components/SolarSystem";
-import type { ApiError, OrbitsResponse, SnapshotResponse } from "@/lib/types";
+import type {
+  ApiError,
+  AsteroidsResponse,
+  MoonsResponse,
+  OrbitsResponse,
+  SnapshotResponse,
+  StarsResponse,
+} from "@/lib/types";
 
 /** three.js touches WebGL and window, so it must not run on the server. */
 const SolarSystem = dynamic(
@@ -53,6 +60,11 @@ export function SolarSystemPanel() {
 
   const [snapshot, setSnapshot] = useState<SnapshotResponse | null>(null);
   const [orbits, setOrbits] = useState<OrbitsResponse | null>(null);
+  const [starCatalogue, setStarCatalogue] = useState<StarsResponse | null>(null);
+  const [moons, setMoons] = useState<MoonsResponse | null>(null);
+  const [asteroids, setAsteroids] = useState<AsteroidsResponse | null>(null);
+  const [showAsteroids, setShowAsteroids] = useState(true);
+  const [fullscreen, setFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -77,6 +89,62 @@ export function SolarSystemPanel() {
 
     return () => controller.abort();
   }, []);
+
+  // The star catalogue is fetched once. It is eight thousand records and none of them move on
+  // any timescale this view cares about.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/stars", { signal: controller.signal })
+      .then((response) => (response.ok ? (response.json() as Promise<StarsResponse>) : null))
+      .then((body) => body && setStarCatalogue(body))
+      .catch(() => {
+        // A missing star catalogue leaves an empty sky, which is a degraded picture rather than
+        // a broken one. The planets are unaffected, so this is not surfaced as an error.
+      });
+
+    return () => controller.abort();
+  }, []);
+
+  // Moons and asteroids track the date, so they are refetched alongside the planet snapshot.
+  useEffect(() => {
+    const controller = new AbortController();
+    const at = dateFromOffset(offsetDays).toISOString();
+
+    const post = <T,>(path: string, body: unknown) =>
+      fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+        signal: controller.signal,
+      }).then((response) => (response.ok ? (response.json() as Promise<T>) : null));
+
+    const load = setTimeout(() => {
+      void post<MoonsResponse>("/api/moons", { at_utc: at })
+        .then((body) => body && setMoons(body))
+        .catch(() => undefined);
+
+      void post<AsteroidsResponse>("/api/asteroids", { at_utc: at, limit: 760 })
+        .then((body) => body && setAsteroids(body))
+        .catch(() => undefined);
+    }, 180);
+
+    return () => {
+      controller.abort();
+      clearTimeout(load);
+    };
+  }, [offsetDays]);
+
+  // Escape leaves fullscreen, which is what every viewer will try first.
+  useEffect(() => {
+    if (!fullscreen) return;
+
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFullscreen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fullscreen]);
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -117,7 +185,13 @@ export function SolarSystemPanel() {
   const focused = focus ? snapshot?.bodies.find((item) => item.body === focus) : undefined;
 
   return (
-    <section className="mt-10 rounded-lg border border-edge bg-surface p-5">
+    <section
+      className={
+        fullscreen
+          ? "fixed inset-0 z-50 overflow-auto bg-background p-5"
+          : "mt-10 rounded-lg border border-edge bg-surface p-5"
+      }
+    >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium tracking-tight text-foreground">Solar system</h2>
         <span className="text-[11px] text-faint">
@@ -171,15 +245,38 @@ export function SolarSystemPanel() {
           </div>
         </div>
 
-        {offsetDays !== 0 && (
-          <button
-            type="button"
-            onClick={() => setOffsetDays(0)}
-            className="rounded-md border border-edge px-2.5 py-1 text-xs text-muted hover:border-accent"
-          >
-            today
-          </button>
-        )}
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] uppercase tracking-wide text-muted">View</span>
+          <div className="flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => setShowAsteroids((previous) => !previous)}
+              className={`rounded-md border px-2.5 py-1 text-xs ${
+                showAsteroids
+                  ? "border-accent bg-surface-inset text-foreground"
+                  : "border-edge text-muted hover:border-accent"
+              }`}
+            >
+              asteroids
+            </button>
+            <button
+              type="button"
+              onClick={() => setFullscreen((previous) => !previous)}
+              className="rounded-md border border-edge px-2.5 py-1 text-xs text-muted hover:border-accent"
+            >
+              {fullscreen ? "exit full screen" : "full screen"}
+            </button>
+            {offsetDays !== 0 && (
+              <button
+                type="button"
+                onClick={() => setOffsetDays(0)}
+                className="rounded-md border border-edge px-2.5 py-1 text-xs text-muted hover:border-accent"
+              >
+                today
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       <div className="mt-3 flex flex-wrap items-center gap-1.5">
@@ -217,10 +314,17 @@ export function SolarSystemPanel() {
         </p>
       )}
 
-      <div className="mt-4 overflow-hidden rounded-lg border border-edge">
+      <div
+        className={`mt-4 overflow-hidden rounded-lg border border-edge ${
+          fullscreen ? "h-[calc(100vh-19rem)]" : ""
+        }`}
+      >
         <SolarSystem
           snapshot={snapshot}
           orbits={orbits}
+          starCatalogue={starCatalogue}
+          moons={moons}
+          asteroids={showAsteroids ? asteroids : null}
           distanceMode={distanceMode}
           focus={focus}
           onSelect={setFocus}
@@ -277,6 +381,23 @@ export function SolarSystemPanel() {
             rotation directions and the illumination direction are real too:{" "}
             <span className="text-foreground">Uranus lies on its side</span> and Venus turns
             backwards because they do.
+          </dd>
+        </div>
+
+        <div>
+          <dt className="uppercase tracking-wide text-muted">Stars, moons and asteroids</dt>
+          <dd className="mt-1 text-faint">
+            {starCatalogue ? (
+              <>
+                <span className="text-observed">{starCatalogue.count.toLocaleString()} real
+                stars</span> from the Yale Bright Star Catalogue via CDS VizieR — the
+                constellations are the actual constellations.{" "}
+              </>
+            ) : null}
+            {moons ? `${moons.count} major moons ` : ""}from JPL Horizons and{" "}
+            {asteroids ? `${asteroids.count} ` : ""}catalogued asteroids from JPL&apos;s
+            Small-Body Database, propagated from real elements — so the belt&apos;s resonance
+            gaps are in the data, not drawn. Both are selections, not complete catalogues.
           </dd>
         </div>
 

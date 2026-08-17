@@ -237,5 +237,73 @@ export type OrbitsResponse = {
   notice: string;
 };
 
+/** One catalogued star. Positions are J2000 equatorial. */
+export type Star = {
+  ra_deg: number;
+  dec_deg: number;
+  vmag: number;
+  bv: number | null;
+  name: string | null;
+};
+
+/** Response from `GET /api/stars`. */
+export type StarsResponse = {
+  count: number;
+  stars: Star[];
+  provenance: Record<string, unknown>;
+  tier: string;
+  notice: string;
+};
+
+/** One moon, positioned relative to its planet and to the Sun. */
+export type MoonPosition = {
+  name: string;
+  planet: string;
+  relative_x_au: number;
+  relative_y_au: number;
+  relative_z_au: number;
+  distance_from_planet_km: number;
+  x_au: number;
+  y_au: number;
+  z_au: number;
+  radius_m: number | null;
+};
+
+/** Response from `POST /api/moons`. */
+export type MoonsResponse = {
+  at_utc: string;
+  frame: string;
+  tier: string;
+  count: number;
+  moons: MoonPosition[];
+  model: string;
+  selection: string;
+  notice: string;
+};
+
+/** One catalogued asteroid. */
+export type AsteroidPosition = {
+  name: string;
+  class: string;
+  x_au: number;
+  y_au: number;
+  z_au: number;
+  semi_major_axis_au: number;
+  eccentricity: number;
+  diameter_km: number | null;
+};
+
+/** Response from `POST /api/asteroids`. */
+export type AsteroidsResponse = {
+  at_utc: string;
+  frame: string;
+  tier: string;
+  count: number;
+  asteroids: AsteroidPosition[];
+  model: string;
+  selection: string;
+  notice: string;
+};
+
 /** Typed error body returned by the service. */
 export type ApiError = { error: { code: string; message: string } };

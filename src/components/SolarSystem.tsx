@@ -8,7 +8,14 @@ import {
   createRingMaterial,
   createSurfaceMaterial,
 } from "@/lib/render/bodyMaterials";
-import type { OrbitsResponse, SnapshotResponse } from "@/lib/types";
+import { buildAsteroids, buildStars } from "@/lib/render/skyObjects";
+import type {
+  AsteroidsResponse,
+  MoonsResponse,
+  OrbitsResponse,
+  SnapshotResponse,
+  StarsResponse,
+} from "@/lib/types";
 
 /** Radial mapping. Distances are real in both; `log` only compresses the radial axis. */
 export type DistanceMode = "linear" | "log";
@@ -81,12 +88,18 @@ type BodyEntry = {
 export function SolarSystem({
   snapshot,
   orbits,
+  starCatalogue,
+  moons,
+  asteroids,
   distanceMode,
   focus,
   onSelect,
 }: {
   snapshot: SnapshotResponse | null;
   orbits: OrbitsResponse | null;
+  starCatalogue: StarsResponse | null;
+  moons: MoonsResponse | null;
+  asteroids: AsteroidsResponse | null;
   distanceMode: DistanceMode;
   focus: string | null;
   onSelect: (body: string) => void;
@@ -96,6 +109,13 @@ export function SolarSystem({
   const bodyGroupRef = useRef<THREE.Group | null>(null);
   const orbitGroupRef = useRef<THREE.Group | null>(null);
   const entriesRef = useRef<BodyEntry[]>([]);
+  const starsRef = useRef<THREE.Group | null>(null);
+  const asteroidsRef = useRef<THREE.Points | null>(null);
+  const moonGroupRef = useRef<THREE.Group | null>(null);
+  const moonEntriesRef = useRef<
+    { name: string; mesh: THREE.Mesh; radius: number; planet: string }[]
+  >([]);
+  const sceneRef = useRef<THREE.Scene | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const sizeRef = useRef({ width: 1, height: 1 });
   // Held in a ref so the scene effect can call the latest handler without re-running and
@@ -124,12 +144,21 @@ export function SolarSystem({
     const camera = new THREE.PerspectiveCamera(
       38,
       mount.clientWidth / Math.max(mount.clientHeight, 1),
-      1e-7,
-      20000,
+      1e-6,
+      40000,
     );
     cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    // Logarithmic depth is not optional at this scale. The camera has to sit 1e-3 units from
+    // Saturn while Neptune is 30 units away and the stars are further still; a conventional
+    // depth buffer across that range has so little precision that the front and back of a
+    // sphere fight for the same depth values, which draws as concentric arcs across the planet.
+    // Every custom shader includes the matching logdepthbuf chunks.
+    const renderer = new THREE.WebGLRenderer({
+      antialias: true,
+      alpha: false,
+      logarithmicDepthBuffer: true,
+    });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setClearColor(0x01030a, 1);
@@ -141,11 +170,13 @@ export function SolarSystem({
 
     const bodyGroup = new THREE.Group();
     const orbitGroup = new THREE.Group();
-    scene.add(bodyGroup, orbitGroup);
+    const moonGroup = new THREE.Group();
+    scene.add(bodyGroup, orbitGroup, moonGroup);
     bodyGroupRef.current = bodyGroup;
     orbitGroupRef.current = orbitGroup;
+    moonGroupRef.current = moonGroup;
 
-    scene.add(buildStarfield());
+    sceneRef.current = scene;
 
     const clock = new THREE.Clock();
     let elapsedTime = 0;
@@ -175,8 +206,28 @@ export function SolarSystem({
         state.centre.y + state.radius * Math.cos(state.phi),
         state.centre.z + state.radius * Math.sin(state.phi) * Math.sin(state.theta),
       );
+      // Near and far track the viewing distance. Even with a logarithmic buffer, a near plane
+      // fixed at 1e-7 wastes most of the range; tying it to how far away we actually are keeps
+      // precision where the geometry is.
+      const near = Math.max(state.radius * 2e-4, 1e-9);
+      const far = Math.max(state.radius * 4000, 400);
+      if (camera.near !== near || camera.far !== far) {
+        camera.near = near;
+        camera.far = far;
+        camera.updateProjectionMatrix();
+      }
+
       camera.lookAt(state.centre);
       camera.updateMatrixWorld();
+
+      // The sky rides with the camera, so it is always at a fixed distance rather than a fixed
+      // position. Without this it would either clip through the far plane when zoomed in or
+      // force the far plane so far out that depth precision collapses again.
+      const sky = starsRef.current;
+      if (sky) {
+        sky.position.copy(camera.position);
+        sky.scale.setScalar(Math.max(state.radius * 300, 60));
+      }
 
       elapsedTime += delta;
       const elapsed = elapsedTime;
@@ -241,6 +292,20 @@ export function SolarSystem({
           const offset = drawSphere ? Math.min(apparentPx * 0.5 + 10, height * 0.4) : 11;
           entry.label.style.transform = `translate(${screenX + offset}px, ${screenY - 7}px)`;
         }
+      }
+
+      // Moons only appear once they are worth resolving. At system scale they sit inside their
+      // planet's own marker, so drawing them there would add clutter that carries no information.
+      for (const moon of moonEntriesRef.current) {
+        const moonDistance = camera.position.distanceTo(moon.mesh.position);
+        const moonPixels = ((2 * moon.radius) / Math.max(moonDistance, 1e-9)) * pixelsPerRadian;
+        moon.mesh.visible = moonPixels >= 2.5;
+      }
+
+      // The asteroid cloud is a system-scale object. Close to a planet it is just noise across
+      // the view, and every point is millions of kilometres away in any case.
+      if (asteroidsRef.current) {
+        asteroidsRef.current.visible = state.radius > 0.02;
       }
 
       renderer.render(scene, camera);
@@ -309,6 +374,45 @@ export function SolarSystem({
       if (element.parentNode === mount) mount.removeChild(element);
     };
   }, []);
+
+  // The star catalogue. Built once when it arrives: the sky does not change with the date, and
+  // rebuilding eight thousand points per frame would be absurd.
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene || !starCatalogue) return;
+
+    const stars = buildStars(starCatalogue.stars);
+    scene.add(stars);
+    starsRef.current = stars;
+
+    return () => {
+      scene.remove(stars);
+      stars.traverse((node) => {
+        if (node instanceof THREE.Points) {
+          node.geometry.dispose();
+          (node.material as THREE.Material).dispose();
+        }
+      });
+      starsRef.current = null;
+    };
+  }, [starCatalogue]);
+
+  // The asteroid cloud, rebuilt when the date or the radial mapping changes.
+  useEffect(() => {
+    const scene = sceneRef.current;
+    if (!scene || !asteroids) return;
+
+    const cloud = buildAsteroids(asteroids.asteroids, (x, y, z) => place(x, y, z, distanceMode));
+    scene.add(cloud);
+    asteroidsRef.current = cloud;
+
+    return () => {
+      scene.remove(cloud);
+      cloud.geometry.dispose();
+      (cloud.material as THREE.Material).dispose();
+      asteroidsRef.current = null;
+    };
+  }, [asteroids, distanceMode]);
 
   // Orbit paths. Rebuilt only when the paths or the radial mapping change.
   useEffect(() => {
@@ -469,6 +573,39 @@ export function SolarSystem({
     }
   }, [snapshot, distanceMode]);
 
+  // Moons. Kept separate from the planets because they are positioned relative to their parent
+  // and only make sense once the camera is close enough to that planet to tell them apart.
+  useEffect(() => {
+    const group = moonGroupRef.current;
+    if (!group || !moons || !snapshot) return;
+
+    disposeChildren(group);
+    moonEntriesRef.current = [];
+
+    const planets = new Map(snapshot.bodies.map((body) => [body.body, body]));
+
+    for (const moon of moons.moons) {
+      const parent = planets.get(moon.planet);
+      if (!parent || moon.radius_m === null) continue;
+
+      // Earth's Moon is already in the planet snapshot, so drawing it here would double it.
+      if (moon.name === "Moon") continue;
+
+      const position = place(moon.x_au, moon.y_au, moon.z_au, distanceMode);
+      const radius = trueRadius(moon.radius_m);
+
+      const material = createSurfaceMaterial("moon");
+      const toSun = position.clone().negate().normalize();
+      if ("uLightDir" in material.uniforms) material.uniforms.uLightDir.value.copy(toSun);
+
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 48, 32), material);
+      mesh.position.copy(position);
+      group.add(mesh);
+
+      moonEntriesRef.current.push({ name: moon.name, mesh, radius, planet: moon.planet });
+    }
+  }, [moons, snapshot, distanceMode]);
+
   // Focus: glide to a body and stop at a distance that frames it.
   useEffect(() => {
     const state = view.current;
@@ -528,57 +665,4 @@ function disposeChildren(group: THREE.Group): void {
       }
     });
   }
-}
-
-/**
- * Decorative starfield.
- *
- * Explicitly not a star catalogue — these are not real stars at real positions, which the panel
- * states. Most are kept very dim: a field of uniformly bright dots reads as confetti, while a
- * real sky is mostly faint with a few bright points.
- */
-function buildStarfield(): THREE.Points {
-  const count = 9000;
-  const positions = new Float32Array(count * 3);
-  const colours = new Float32Array(count * 3);
-
-  const colour = new THREE.Color();
-
-  for (let index = 0; index < count; index += 1) {
-    // A Fibonacci sphere: even, deterministic, and no clustering at the poles.
-    const y = 1 - (2 * (index + 0.5)) / count;
-    const ring = Math.sqrt(Math.max(0, 1 - y * y));
-    const angle = index * 2.399963229728653;
-
-    const distance = 6000;
-    positions[index * 3] = Math.cos(angle) * ring * distance;
-    positions[index * 3 + 1] = y * distance;
-    positions[index * 3 + 2] = Math.sin(angle) * ring * distance;
-
-    const jitter = Math.abs(Math.sin(index * 12.9898) * 43758.5453) % 1;
-    // A steep power keeps the great majority faint and lets a handful stand out.
-    const brightness = 0.06 + Math.pow(jitter, 7) * 0.94;
-    // Stars run blue-white through yellow to red; a narrow hue spread avoids a disco sky.
-    colour.setHSL(0.5 + (jitter - 0.5) * 0.16, 0.22, brightness * 0.75);
-
-    colours[index * 3] = colour.r;
-    colours[index * 3 + 1] = colour.g;
-    colours[index * 3 + 2] = colour.b;
-  }
-
-  const geometry = new THREE.BufferGeometry();
-  geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
-  geometry.setAttribute("color", new THREE.BufferAttribute(colours, 3));
-
-  return new THREE.Points(
-    geometry,
-    new THREE.PointsMaterial({
-      vertexColors: true,
-      size: 1.35,
-      sizeAttenuation: false,
-      transparent: true,
-      opacity: 0.85,
-      depthWrite: false,
-    }),
-  );
 }
