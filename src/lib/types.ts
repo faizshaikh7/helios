@@ -136,5 +136,53 @@ export type DecayResponse = {
   notice: string;
 };
 
+/** One arXiv record as returned by the science service. */
+export type Paper = {
+  arxiv_id: string;
+  title: string;
+  authors: string[];
+  summary: string;
+  published: string;
+  updated: string;
+  categories: string[];
+  doi: string | null;
+  journal_ref: string | null;
+  url: string;
+  peer_reviewed_signal: boolean;
+};
+
+/** Response from `POST /api/literature/search`. */
+export type LiteratureSearchResponse = {
+  query: string;
+  count: number;
+  papers: Paper[];
+  citations: Value[];
+  source: string;
+  caveat: string;
+  notice: string;
+};
+
+/**
+ * Verdict on one claimed citation.
+ *
+ * `not_found` is the load-bearing case: well-formed, resolves to nothing, and therefore almost
+ * certainly invented. `unchecked` is deliberately distinct — an unreachable service is not
+ * evidence against a citation.
+ */
+export type CitationVerdict = {
+  claimed: string;
+  status: "verified" | "not_found" | "malformed" | "unchecked";
+  paper: Paper | null;
+  note: string | null;
+};
+
+/** Response from `POST /api/literature/verify`. */
+export type CitationVerifyResponse = {
+  results: CitationVerdict[];
+  summary: { claimed: number; verified: number; unresolved: number; unchecked: number };
+  interpretation: string;
+  notice: string;
+};
+
 /** Typed error body returned by the service. */
 export type ApiError = { error: { code: string; message: string } };

@@ -200,6 +200,43 @@ export const scienceTools = {
     }),
     execute: async (input) => callScience("/api/decay", input),
   }),
+
+  searchLiterature: tool({
+    description:
+      "Search the scientific literature on arXiv and return real papers with identifiers, " +
+      "authors, abstracts and links. Use whenever a question calls for references, prior work, " +
+      "published methods, or 'what does the research say'. This is the ONLY acceptable source " +
+      "of a citation: every reference you give must come from a result this tool returned. " +
+      "arXiv is a preprint server, so a record existing means the paper exists, not that it is " +
+      "peer-reviewed or correct.",
+    inputSchema: z.object({
+      query: z
+        .string()
+        .min(3)
+        .max(400)
+        .describe("Search terms. Topic keywords work better than a full sentence."),
+      max_results: z.number().int().min(1).max(25).default(8),
+    }),
+    execute: async (input) => callScience("/api/literature/search", input),
+  }),
+
+  verifyCitations: tool({
+    description:
+      "Check whether claimed arXiv identifiers correspond to real papers. Use this before " +
+      "repeating any citation you did not get from searchLiterature - including one you " +
+      "remember, one the user supplied, or one you are about to write from memory. Returns " +
+      "'verified' (real), 'not_found' (well-formed but no such paper - treat as fabricated), " +
+      "'malformed' (not an identifier), or 'unchecked' (service unreachable, which is not " +
+      "evidence either way).",
+    inputSchema: z.object({
+      arxiv_ids: z
+        .array(z.string().min(1).max(80))
+        .min(1)
+        .max(20)
+        .describe("Claimed arXiv identifiers, in any common form."),
+    }),
+    execute: async (input) => callScience("/api/literature/verify", input),
+  }),
 } as const;
 
 /** Instructions given to the agent. */
@@ -231,6 +268,18 @@ explicitly as your own inference and not a computed result - for example "not co
 around local sunrise, so contrast may be poor". Silently mixing a reasoned guess in among
 computed numbers is the single worst thing you can do here, because the reader cannot tell which
 is which.
+
+**Never cite from memory.** A reference you recall is indistinguishable, in the text you
+write, from one you invented: the authors look right, the title sounds right, the identifier is
+well-formed. So a citation is only allowed if searchLiterature returned it, or verifyCitations
+confirmed it. If you find yourself about to write a paper title, an author name, or an arXiv
+identifier that did not come back from a tool, stop and call one. If a citation comes back
+"not_found", say plainly that it does not resolve rather than quietly dropping it or
+substituting another - the reader needs to know a check ran.
+
+Presence on arXiv is not peer review. Say what a record is: a preprint unless it carries a DOI
+or journal reference, and its conclusions are its authors', not established fact. Citing a paper
+is not endorsing it.
 
 **When a tool returns a range, the range is the answer.** Some quantities - orbital decay
 lifetime above all - depend on things nobody can forecast, so the tool deliberately returns a

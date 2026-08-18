@@ -5,6 +5,7 @@ import { AskPanel } from "@/components/AskPanel";
 import { DecayPanel } from "@/components/DecayPanel";
 import dynamic from "next/dynamic";
 import { GroundTrack } from "@/components/GroundTrack";
+import { LiteraturePanel } from "@/components/LiteraturePanel";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
 import type {
@@ -681,6 +682,10 @@ export default function Home() {
         {/* Independent of the satellite query above: this asks about an orbit, not an object,
             which is the form the question takes during mission design. */}
         <DecayPanel />
+
+        {/* Also independent of the satellite query: this asks about the published record,
+            not about an object in orbit. */}
+        <LiteraturePanel />
 
         <footer className="mt-8 border-t border-edge pt-5 text-[11px] leading-5 text-faint">
           {passes?.notice ??

@@ -23,7 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from science import catalog, decay, eclipse, elements, orbit
+from science import catalog, decay, eclipse, elements, literature, orbit
 from science.provenance import Receipt, Tier, Value
 
 app = FastAPI(
@@ -108,6 +108,12 @@ async def _catalog_not_found_handler(_: Request, exc: catalog.CatalogNotFound) -
 async def _catalog_error_handler(_: Request, exc: catalog.CatalogError) -> JSONResponse:
     """Turn catalog outages into a typed 502 rather than an unhandled 500."""
     return _error("catalog_unavailable", str(exc), 502)
+
+
+@app.exception_handler(literature.LiteratureError)
+async def _literature_error_handler(_: Request, exc: literature.LiteratureError) -> JSONResponse:
+    """Report a literature-service failure as an upstream problem, not a client error."""
+    return _error("literature_unavailable", str(exc), status=502)
 
 
 @app.exception_handler(RequestValidationError)
@@ -647,6 +653,83 @@ def decay_lifetime(request: DecayRequest) -> dict[str, Any]:
             "Circular orbit at a single representative altitude, constant ballistic "
             "coefficient, orbit-averaged atmosphere. No manoeuvres, no attitude changes, no "
             "geomagnetic storms, no eccentricity decay."
+        ),
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# Literature and citation verification
+# --------------------------------------------------------------------------------------------
+
+
+class LiteratureSearchRequest(BaseModel):
+    """Parameters for a literature search."""
+
+    query: str = Field(min_length=3, max_length=400)
+    max_results: int = Field(default=8, ge=1, le=literature.MAX_RESULTS_CAP)
+
+
+@app.post("/api/literature/search")
+def literature_search(request: LiteratureSearchRequest) -> dict[str, Any]:
+    """Search the scientific literature and return records with provenance.
+
+    This exists so the agent has a way to cite that does not involve remembering. Everything it
+    returns was fetched; nothing was recalled.
+
+    Args:
+        request: Search terms and result count.
+
+    Returns:
+        Matching records, each also expressed as a tiered value carrying its receipt.
+    """
+    papers = literature.search(request.query, max_results=request.max_results)
+
+    return {
+        "query": request.query,
+        "count": len(papers),
+        "papers": [literature.as_dict(paper) for paper in papers],
+        "citations": [literature.citation_value(paper) for paper in papers],
+        "source": "arXiv",
+        "caveat": (
+            "arXiv is a preprint server. A record existing means the paper exists, not that it "
+            "is peer-reviewed or correct. Records carrying a DOI or journal reference have a "
+            "published version; the absence of one is not evidence of rejection."
+        ),
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+class CitationVerifyRequest(BaseModel):
+    """Identifiers to check against the source of record."""
+
+    arxiv_ids: list[str] = Field(min_length=1, max_length=20)
+
+
+@app.post("/api/literature/verify")
+def literature_verify(request: CitationVerifyRequest) -> dict[str, Any]:
+    """Check whether claimed citations actually exist.
+
+    A fabricated reference is indistinguishable from a real one by inspection: the authors look
+    right, the title sounds right, the identifier is well-formed. The only thing that separates
+    them is whether it resolves. This route is that check, exposed so an answer's citations can
+    be audited rather than trusted.
+
+    Args:
+        request: Claimed identifiers.
+
+    Returns:
+        A verdict per identifier, plus a summary count.
+    """
+    outcome = literature.verify_citations(request.arxiv_ids)
+
+    return {
+        **outcome,
+        "interpretation": (
+            "'verified' resolved to a real record. 'not_found' is well-formed but resolves to "
+            "nothing - treat as fabricated unless shown otherwise. 'malformed' is not an arXiv "
+            "identifier at all. 'unchecked' means the service could not be reached, which is "
+            "not evidence either way."
         ),
         "notice": OPERATIONAL_NOTICE,
     }
