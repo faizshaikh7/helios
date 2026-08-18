@@ -28,7 +28,7 @@ from __future__ import annotations
 import math
 import warnings
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from functools import lru_cache
 
 from science.provenance import Receipt, Tier, Value
@@ -393,12 +393,22 @@ def snapshot(when: datetime) -> dict[str, object]:
         position = _barycentric(name, iso_tdb)
         facts = BODY_FACTS[name]
 
+        # Heliocentric ecliptic is what a renderer needs: orbits lie in this plane, so bodies
+        # drawn from these coordinates sit on their own orbit paths. The barycentric ICRF values
+        # are kept alongside because that is the frame the positions were computed in, and
+        # silently replacing them would hide a frame conversion.
+        ecliptic = to_ecliptic(position.minus(_barycentric("sun", iso_tdb)))
+
         bodies.append(
             {
                 "body": name,
                 "x_au": round(position.x / AU_M, 9),
                 "y_au": round(position.y / AU_M, 9),
                 "z_au": round(position.z / AU_M, 9),
+                "ecliptic_x_au": round(ecliptic.x / AU_M, 9),
+                "ecliptic_y_au": round(ecliptic.y / AU_M, 9),
+                "ecliptic_z_au": round(ecliptic.z / AU_M, 9),
+                "distance_from_sun_au": round(ecliptic.norm / AU_M, 9),
                 "distance_from_barycentre_au": round(position.norm / AU_M, 9),
                 "radius_m": facts["radius_m"],
                 "colour": facts["colour"],
@@ -409,7 +419,7 @@ def snapshot(when: datetime) -> dict[str, object]:
     return {
         "at_utc": when.isoformat(),
         "at_tdb": iso_tdb,
-        "frame": "ICRF, solar-system barycentre",
+        "frame": "ICRF barycentric; ecliptic heliocentric coordinates supplied alongside",
         "tier": Tier.DERIVED.value,
         "bodies": bodies,
         "accuracy": (
@@ -418,3 +428,96 @@ def snapshot(when: datetime) -> dict[str, object]:
             "far below one pixel at any zoom, and unusable for navigation or timing work."
         ),
     }
+
+
+# --------------------------------------------------------------------------------------------
+# Ecliptic frame, and orbit paths
+# --------------------------------------------------------------------------------------------
+
+# Obliquity of the ecliptic at J2000 (IAU 2006), degrees.
+#
+# ICRF is an *equatorial* frame: its xy-plane is Earth's equator. The planets orbit in the
+# *ecliptic*, tilted from it by this angle. Rendering ICRF coordinates against a flat orbital
+# plane therefore throws every body up to 23 degrees off its own orbit -- which is exactly what
+# the first version of the solar-system view did.
+OBLIQUITY_DEG = 23.4392911
+
+# Sidereal orbital periods in Julian years, used to sample one full revolution.
+ORBITAL_PERIOD_YEARS: dict[str, float] = {
+    "mercury": 0.2408467,
+    "venus": 0.6151973,
+    "earth": 1.0000174,
+    "mars": 1.8808476,
+    "jupiter": 11.862615,
+    "saturn": 29.447498,
+    "uranus": 84.016846,
+    "neptune": 164.79132,
+}
+
+
+def to_ecliptic(vector: Vector) -> Vector:
+    """Rotate an ICRF equatorial vector into ecliptic coordinates.
+
+    A rotation about the x-axis by the obliquity. The x-axis is shared by both frames -- it
+    points at the March equinox, which is precisely where the two planes intersect -- so only y
+    and z change.
+
+    Args:
+        vector: Position in ICRF equatorial coordinates.
+
+    Returns:
+        The same position expressed in ecliptic coordinates.
+    """
+    angle = math.radians(OBLIQUITY_DEG)
+    cos_e, sin_e = math.cos(angle), math.sin(angle)
+
+    return Vector(
+        vector.x,
+        vector.y * cos_e + vector.z * sin_e,
+        -vector.y * sin_e + vector.z * cos_e,
+    )
+
+
+@lru_cache(maxsize=16)
+def orbit_path(body: str, samples: int = 180) -> tuple[tuple[float, float, float], ...]:
+    """Trace a body's actual orbit by sampling the ephemeris over one full period.
+
+    The first version of the renderer drew a circle at the body's current distance. That asserts
+    a shape the data does not contain: real orbits are ellipses, offset from the Sun, and a
+    circle through one sampled point is a guess wearing the costume of a measurement. Sampling
+    the ephemeris over a whole revolution produces the real path, and the body then sits exactly
+    on it -- because it is the same computation.
+
+    Cached: an orbit does not change, and Neptune costs 180 ephemeris evaluations.
+
+    Args:
+        body: A planet name. The Sun and Moon have no heliocentric orbit to draw.
+        samples: Points around the path.
+
+    Returns:
+        Ecliptic (x, y, z) points in AU, heliocentric, closed by the caller.
+
+    Raises:
+        EphemerisError: If the body has no tabulated orbital period.
+    """
+    name = _check_body(body)
+    if name not in ORBITAL_PERIOD_YEARS:
+        raise EphemerisError(f"{name} has no heliocentric orbit path to draw")
+
+    period_days = ORBITAL_PERIOD_YEARS[name] * 365.25
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+
+    points: list[tuple[float, float, float]] = []
+    for index in range(samples):
+        when = start + timedelta(days=period_days * index / samples)
+        iso = _to_tdb_iso(when)
+
+        # Heliocentric, not barycentric: an orbit is drawn about the Sun, and the barycentre
+        # wanders by up to a solar radius as Jupiter moves. Using it would make the inner
+        # planets' paths visibly wobble for no physical reason.
+        relative = to_ecliptic(_barycentric(name, iso).minus(_barycentric("sun", iso)))
+        points.append(
+            (relative.x / AU_M, relative.y / AU_M, relative.z / AU_M)
+        )
+
+    return tuple(points)

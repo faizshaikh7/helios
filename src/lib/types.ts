@@ -190,6 +190,16 @@ export type SnapshotBody = {
   x_au: number;
   y_au: number;
   z_au: number;
+  /**
+   * Heliocentric ecliptic coordinates — the frame a renderer needs.
+   *
+   * ICRF is *equatorial*; the planets orbit in the *ecliptic*, tilted 23.44° from it. Drawing
+   * ICRF coordinates against a flat orbital plane throws every body up to 23° off its own orbit.
+   */
+  ecliptic_x_au: number;
+  ecliptic_y_au: number;
+  ecliptic_z_au: number;
+  distance_from_sun_au: number;
   distance_from_barycentre_au: number;
   radius_m: number;
   colour: string;
@@ -210,6 +220,20 @@ export type SnapshotResponse = {
   tier: string;
   bodies: SnapshotBody[];
   accuracy: string;
+  notice: string;
+};
+
+/**
+ * Response from `POST /api/ephemeris/orbits`.
+ *
+ * Real traced ellipses, not circles: each path is sampled from the same ephemeris that places
+ * the bodies, so a planet lies on its own path by construction.
+ */
+export type OrbitsResponse = {
+  frame: string;
+  samples: number;
+  orbits: Record<string, { x_au: number; y_au: number; z_au: number }[]>;
+  note: string;
   notice: string;
 };
 

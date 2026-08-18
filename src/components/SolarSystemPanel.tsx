@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
 import type { DistanceMode, SizeMode } from "@/components/SolarSystem";
-import type { ApiError, SnapshotResponse } from "@/lib/types";
+import type { ApiError, OrbitsResponse, SnapshotResponse } from "@/lib/types";
 
 /** three.js touches WebGL and window, so it must not run on the server. */
 const SolarSystem = dynamic(
@@ -11,7 +11,7 @@ const SolarSystem = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[440px] w-full items-center justify-center rounded-lg border border-edge bg-surface text-xs text-muted">
+      <div className="flex h-[520px] w-full items-center justify-center rounded-lg bg-[#03050b] text-xs text-muted">
         loading solar system…
       </div>
     ),
@@ -19,7 +19,20 @@ const SolarSystem = dynamic(
 );
 
 /** Days either side of today the time control spans. */
-const RANGE_DAYS = 365 * 4;
+const RANGE_DAYS = 365 * 6;
+
+/** Bodies offered as camera targets, in orbital order. */
+const FOCUS_TARGETS = [
+  "sun",
+  "mercury",
+  "venus",
+  "earth",
+  "mars",
+  "jupiter",
+  "saturn",
+  "uranus",
+  "neptune",
+] as const;
 
 /** Format a day offset from now as a UTC date. */
 function dateFromOffset(days: number): Date {
@@ -37,11 +50,34 @@ export function SolarSystemPanel() {
   const [offsetDays, setOffsetDays] = useState(0);
   const [sizeMode, setSizeMode] = useState<SizeMode>("legible");
   const [distanceMode, setDistanceMode] = useState<DistanceMode>("log");
+  const [focus, setFocus] = useState<string | null>(null);
 
   const [snapshot, setSnapshot] = useState<SnapshotResponse | null>(null);
+  const [orbits, setOrbits] = useState<OrbitsResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Orbit paths are fetched once. They are the same curves whatever date is shown, and tracing
+  // Neptune's costs 180 ephemeris evaluations.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    fetch("/api/ephemeris/orbits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ samples: 220 }),
+      signal: controller.signal,
+    })
+      .then((response) => (response.ok ? (response.json() as Promise<OrbitsResponse>) : null))
+      .then((body) => body && setOrbits(body))
+      .catch(() => {
+        // A missing orbit path degrades the picture; it does not break it. The bodies are still
+        // placed correctly, so this failure is deliberately not surfaced as an error.
+      });
+
+    return () => controller.abort();
+  }, []);
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -69,7 +105,7 @@ export function SolarSystemPanel() {
           if (caught instanceof DOMException && caught.name === "AbortError") return;
           setError(caught instanceof Error ? caught.message : String(caught));
         });
-    }, 150);
+    }, 120);
 
     return () => {
       controller.abort();
@@ -79,20 +115,25 @@ export function SolarSystemPanel() {
 
   const shown = dateFromOffset(offsetDays);
 
+  const focused = focus ? snapshot?.bodies.find((item) => item.body === focus) : undefined;
+
   return (
     <section className="mt-10 rounded-lg border border-edge bg-surface p-5">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium tracking-tight text-foreground">Solar system</h2>
-        <span className="text-[11px] text-faint">positions are real; sizes cannot be</span>
+        <span className="text-[11px] text-faint">
+          positions, orbits, tilts and illumination are real
+        </span>
       </header>
 
       <p className="mt-2 max-w-2xl text-xs leading-6 text-muted">
-        Where the planets actually are, computed from the same ephemeris the agent uses. Drag to
-        orbit, scroll to zoom, and move the date to watch them run.
+        Where the planets actually are, on their real traced orbits, lit by the Sun from its real
+        direction. Drag to orbit, scroll to zoom, pick a body to fly to it, and move the date to
+        watch the system run.
       </p>
 
       <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
-        <label className="flex min-w-[16rem] flex-1 flex-col gap-1.5">
+        <label className="flex min-w-[15rem] flex-1 flex-col gap-1.5">
           <span className="flex items-baseline justify-between text-[11px] uppercase tracking-wide text-muted">
             <span>Date</span>
             <span className="font-mono text-sm text-foreground">
@@ -157,9 +198,38 @@ export function SolarSystemPanel() {
             onClick={() => setOffsetDays(0)}
             className="rounded-md border border-edge px-2.5 py-1 text-xs text-muted hover:border-accent"
           >
-            now
+            today
           </button>
         )}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-1.5">
+        <span className="mr-1 text-[11px] uppercase tracking-wide text-muted">Fly to</span>
+        <button
+          type="button"
+          onClick={() => setFocus(null)}
+          className={`rounded-md border px-2 py-1 text-[11px] ${
+            focus === null
+              ? "border-accent bg-surface-inset text-foreground"
+              : "border-edge text-muted hover:border-accent"
+          }`}
+        >
+          system
+        </button>
+        {FOCUS_TARGETS.map((body) => (
+          <button
+            key={body}
+            type="button"
+            onClick={() => setFocus(body)}
+            className={`rounded-md border px-2 py-1 text-[11px] capitalize ${
+              focus === body
+                ? "border-accent bg-surface-inset text-foreground"
+                : "border-edge text-muted hover:border-accent"
+            }`}
+          >
+            {body}
+          </button>
+        ))}
       </div>
 
       {error && (
@@ -168,9 +238,25 @@ export function SolarSystemPanel() {
         </p>
       )}
 
-      <div className="mt-4">
-        <SolarSystem snapshot={snapshot} sizeMode={sizeMode} distanceMode={distanceMode} />
+      <div className="mt-4 overflow-hidden rounded-lg border border-edge">
+        <SolarSystem
+          snapshot={snapshot}
+          orbits={orbits}
+          sizeMode={sizeMode}
+          distanceMode={distanceMode}
+          focus={focus}
+        />
       </div>
+
+      {focused && (
+        <p className="mt-2 text-[11px] leading-5 text-muted">
+          <span className="capitalize text-foreground">{focused.body}</span> ·{" "}
+          <span className="font-mono">{focused.distance_from_sun_au.toFixed(4)}</span> AU from the
+          Sun · radius <span className="font-mono">{(focused.radius_m / 1000).toLocaleString()}</span>{" "}
+          km · position accurate to{" "}
+          <span className="font-mono">{focused.max_error_km.toLocaleString()}</span> km
+        </p>
+      )}
 
       {/* What the picture is, and what it is not. */}
       <dl className="mt-4 grid gap-3 text-[11px] leading-5 sm:grid-cols-2">
@@ -213,21 +299,25 @@ export function SolarSystemPanel() {
         </div>
 
         <div>
-          <dt className="uppercase tracking-wide text-muted">Positions</dt>
+          <dt className="uppercase tracking-wide text-muted">What is real</dt>
           <dd className="mt-1 text-faint">
-            Real, tiered <span className="text-derived">derived</span>, in{" "}
-            {snapshot?.frame ?? "ICRF"}.{" "}
-            {snapshot?.accuracy ?? "Accuracy is stated per body by the service."}
+            Positions and orbit paths, tiered <span className="text-derived">derived</span>, in
+            heliocentric ecliptic coordinates — each orbit is traced from the same ephemeris that
+            places the planet, so a body sits on its own path by construction. Axial tilts,
+            rotation directions and the illumination direction are real too:{" "}
+            <span className="text-foreground">Uranus lies on its side</span> and Venus turns
+            backwards because they do.
           </dd>
         </div>
 
         <div>
-          <dt className="uppercase tracking-wide text-muted">What is decorative</dt>
+          <dt className="uppercase tracking-wide text-muted">What is an impression</dt>
           <dd className="mt-1 text-faint">
-            The starfield is decoration, not a star catalogue — those are not real stars at real
-            positions. The rings mark each body&apos;s <em>current</em> distance, not its orbital
-            path: the real orbit is an ellipse, and drawing a circle through one sampled point
-            would assert a shape the data does not contain.
+            <span className="text-speculative">Surfaces are procedural, not photographs.</span>{" "}
+            Cloud patterns, continents, bands and craters are generated — the right kind of
+            feature in the right place, but not a map of anything. The starfield is decorative,
+            not a star catalogue. Rotation is sped up to be watchable; only its direction and
+            relative rate are true.
           </dd>
         </div>
       </dl>

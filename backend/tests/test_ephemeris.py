@@ -354,3 +354,135 @@ def test_reference_records_its_method() -> None:
     assert provenance["source"] == "orekit"
     assert "JPL" in provenance["method"]
     assert provenance["time_scale"] == "TDB"
+
+
+# --------------------------------------------------------------------------------------------
+# Ecliptic frame and orbit paths
+# --------------------------------------------------------------------------------------------
+
+
+def test_the_ecliptic_transform_flattens_the_orbits() -> None:
+    """In ecliptic coordinates every planet lies close to the plane; in ICRF none does.
+
+    This is the bug the transform exists to fix. ICRF is an *equatorial* frame, so drawing its
+    coordinates against a flat orbital plane throws bodies up to 23 degrees off their own orbits
+    -- which is exactly what the first solar-system render did, and it was visible immediately.
+    """
+    result = ephemeris.snapshot(datetime(2026, 8, 18, tzinfo=UTC))
+
+    equatorial_worst = 0.0
+    ecliptic_worst = 0.0
+
+    for item in result["bodies"]:
+        heliocentric = item["distance_from_sun_au"]
+        barycentric = item["distance_from_barycentre_au"]
+        if heliocentric < 0.05 or barycentric < 0.05:
+            continue  # The Sun sits at both origins; it has no meaningful latitude.
+
+        ecliptic_worst = max(
+            ecliptic_worst,
+            abs(math.degrees(math.asin(item["ecliptic_z_au"] / heliocentric))),
+        )
+        equatorial_worst = max(
+            equatorial_worst, abs(math.degrees(math.asin(item["z_au"] / barycentric)))
+        )
+
+    # Real orbital inclinations are all under 8 degrees; Mercury's 7.0 is the largest.
+    assert ecliptic_worst < 8.0, f"ecliptic latitudes reach {ecliptic_worst:.1f} deg"
+
+    # And the frame genuinely mattered: in ICRF the same bodies are far off the plane.
+    assert equatorial_worst > 15.0, (
+        "equatorial latitudes are unexpectedly small, so this test would pass even without "
+        "the transform and proves nothing"
+    )
+
+
+def test_the_earth_defines_the_ecliptic_plane() -> None:
+    """Earth's ecliptic latitude is zero, by definition.
+
+    The ecliptic *is* Earth's orbital plane, so this is a check against a definition rather than
+    against another implementation, and it pins the obliquity to the right value and sign. A
+    rotation the wrong way would leave Earth at twice the obliquity instead of at zero.
+    """
+    result = ephemeris.snapshot(datetime(2026, 8, 18, tzinfo=UTC))
+    earth = next(item for item in result["bodies"] if item["body"] == "earth")
+
+    latitude = math.degrees(
+        math.asin(earth["ecliptic_z_au"] / earth["distance_from_sun_au"])
+    )
+
+    assert abs(latitude) < 0.02, f"Earth is {latitude:.3f} deg out of the ecliptic"
+
+
+def test_orbit_paths_are_ellipses_with_the_right_apsides() -> None:
+    """A traced orbit spans the body's real perihelion and aphelion.
+
+    A circle would show a constant radius, which is the shape the renderer used to draw. Earth's
+    orbit really runs 0.983 to 1.017 AU, and asserting the spread is what distinguishes a traced
+    ellipse from a circle through one point.
+    """
+    expected = {
+        "earth": (0.983, 1.017),
+        "mars": (1.381, 1.666),
+        "neptune": (29.81, 30.33),
+    }
+
+    for body, (perihelion, aphelion) in expected.items():
+        radii = [
+            math.sqrt(x * x + y * y + z * z) for x, y, z in ephemeris.orbit_path(body, 180)
+        ]
+
+        assert min(radii) == pytest.approx(perihelion, abs=0.02), body
+        assert max(radii) == pytest.approx(aphelion, abs=0.02), body
+
+
+def test_orbit_paths_lie_in_the_ecliptic_and_close_on_themselves() -> None:
+    """Every sampled orbit is nearly planar and returns to where it started.
+
+    Not closing would mean the sampled span is not one period, and the rendered path would show
+    a visible gap or overlap.
+    """
+    for body in ("mercury", "earth", "jupiter"):
+        points = ephemeris.orbit_path(body, 180)
+
+        inclination = max(
+            abs(math.degrees(math.asin(z / math.sqrt(x * x + y * y + z * z))))
+            for x, y, z in points
+        )
+        assert inclination < 8.0, f"{body} path reaches {inclination:.1f} deg from the ecliptic"
+
+        first, last = points[0], points[-1]
+        gap = math.dist(first, last)
+        spacing = math.dist(points[0], points[1])
+
+        # The last sample is one step short of a full revolution, so the closing gap should be
+        # about one step -- not a fraction of the orbit.
+        assert gap < spacing * 2.5, f"{body} orbit does not close: gap {gap:.4f} AU"
+
+
+def test_a_body_sits_on_its_own_traced_orbit() -> None:
+    """The rendered planet lands on the rendered path, because both come from one computation.
+
+    This is what makes the picture trustworthy rather than merely tidy: the orbit is not fitted
+    or idealised, it is the same ephemeris sampled at other times.
+    """
+    when = datetime(2026, 8, 18, tzinfo=UTC)
+    result = ephemeris.snapshot(when)
+
+    for body in ("earth", "mars", "jupiter"):
+        item = next(entry for entry in result["bodies"] if entry["body"] == body)
+        position = (item["ecliptic_x_au"], item["ecliptic_y_au"], item["ecliptic_z_au"])
+
+        path = ephemeris.orbit_path(body, 360)
+        nearest = min(math.dist(position, point) for point in path)
+
+        # Within one sample spacing of the path: the orbit is sampled, not continuous.
+        spacing = math.dist(path[0], path[1])
+        assert nearest < spacing, f"{body} is {nearest:.4f} AU off its own traced orbit"
+
+
+def test_bodies_without_a_heliocentric_orbit_are_refused() -> None:
+    """The Sun and Moon have no heliocentric orbit to draw, and say so."""
+    for body in ("sun", "moon"):
+        with pytest.raises(ephemeris.EphemerisError):
+            ephemeris.orbit_path(body, 60)

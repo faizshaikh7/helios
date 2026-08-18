@@ -815,3 +815,41 @@ def ephemeris_snapshot(request: SnapshotRequest) -> dict[str, Any]:
     )
 
     return {**ephemeris.snapshot(when), "notice": OPERATIONAL_NOTICE}
+
+
+class OrbitsRequest(BaseModel):
+    """Parameters for orbit-path tracing."""
+
+    samples: int = Field(default=180, ge=24, le=512, description="Points per orbit.")
+
+
+@app.post("/api/ephemeris/orbits")
+def ephemeris_orbits(request: OrbitsRequest) -> dict[str, Any]:
+    """Trace each planet's real orbit by sampling the ephemeris over a full revolution.
+
+    Not circles. A real orbit is an ellipse with the Sun at a focus, and a circle drawn through
+    one sampled point asserts a shape the data does not contain. These paths are the same
+    computation that places the planets, so a body sits exactly on its own path.
+
+    Args:
+        request: Sample count.
+
+    Returns:
+        Heliocentric ecliptic points per planet, in AU.
+    """
+    return {
+        "frame": "ecliptic, heliocentric",
+        "samples": request.samples,
+        "orbits": {
+            body: [
+                {"x_au": point[0], "y_au": point[1], "z_au": point[2]}
+                for point in ephemeris.orbit_path(body, request.samples)
+            ]
+            for body in ephemeris.ORBITAL_PERIOD_YEARS
+        },
+        "note": (
+            "Sampled over one sidereal period from the same ephemeris that positions the "
+            "bodies, so each planet lies on its own path by construction."
+        ),
+        "notice": OPERATIONAL_NOTICE,
+    }
