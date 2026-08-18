@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useEffect, useRef, useState } from "react";
-import type { DistanceMode, SizeMode } from "@/components/SolarSystem";
+import type { DistanceMode } from "@/components/SolarSystem";
 import type { ApiError, OrbitsResponse, SnapshotResponse } from "@/lib/types";
 
 /** three.js touches WebGL and window, so it must not run on the server. */
@@ -48,8 +48,7 @@ function dateFromOffset(days: number): Date {
  */
 export function SolarSystemPanel() {
   const [offsetDays, setOffsetDays] = useState(0);
-  const [sizeMode, setSizeMode] = useState<SizeMode>("legible");
-  const [distanceMode, setDistanceMode] = useState<DistanceMode>("log");
+  const [distanceMode, setDistanceMode] = useState<DistanceMode>("linear");
   const [focus, setFocus] = useState<string | null>(null);
 
   const [snapshot, setSnapshot] = useState<SnapshotResponse | null>(null);
@@ -153,26 +152,6 @@ export function SolarSystemPanel() {
         </label>
 
         <div className="flex flex-col gap-1.5">
-          <span className="text-[11px] uppercase tracking-wide text-muted">Body size</span>
-          <div className="flex gap-1.5">
-            {(["legible", "true"] as const).map((mode) => (
-              <button
-                key={mode}
-                type="button"
-                onClick={() => setSizeMode(mode)}
-                className={`rounded-md border px-2.5 py-1 text-xs ${
-                  sizeMode === mode
-                    ? "border-accent bg-surface-inset text-foreground"
-                    : "border-edge text-muted hover:border-accent"
-                }`}
-              >
-                {mode === "legible" ? "legible" : "true scale"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-wide text-muted">Distance</span>
           <div className="flex gap-1.5">
             {(["log", "linear"] as const).map((mode) => (
@@ -242,9 +221,9 @@ export function SolarSystemPanel() {
         <SolarSystem
           snapshot={snapshot}
           orbits={orbits}
-          sizeMode={sizeMode}
           distanceMode={distanceMode}
           focus={focus}
+          onSelect={setFocus}
         />
       </div>
 
@@ -263,19 +242,10 @@ export function SolarSystemPanel() {
         <div>
           <dt className="uppercase tracking-wide text-muted">Body size</dt>
           <dd className="mt-1 text-faint">
-            {sizeMode === "legible" ? (
-              <>
-                <span className="text-speculative">Not to scale, and not in true proportion.</span>{" "}
-                A compressive scaling is applied so the Sun and Mercury fit one view — the Sun is
-                really 16,000 times the Moon&apos;s radius. Do not read size ratios off this.
-              </>
-            ) : (
-              <>
-                <span className="text-observed">True proportion.</span> Every radius is to the
-                same scale as the distances. If the planets have vanished, that is the honest
-                picture — this is why every diagram you have seen distorts them.
-              </>
-            )}
+            <span className="text-observed">Always true to scale.</span> Nothing is exaggerated.
+            A body whose real angular size falls below a few pixels is drawn as a labelled marker
+            instead of a sphere, and becomes a sphere once you are close enough for its true size
+            to mean something — so the picture is never legible at the cost of being wrong.
           </dd>
         </div>
 
@@ -311,15 +281,16 @@ export function SolarSystemPanel() {
         </div>
 
         <div>
-          <dt className="uppercase tracking-wide text-muted">What is an impression</dt>
+          <dt className="uppercase tracking-wide text-muted">Imagery</dt>
           <dd className="mt-1 text-faint">
-            <span className="text-speculative">Surfaces are procedural, not photographs.</span>{" "}
-            Cloud patterns, continents, bands and craters are generated — the right kind of
-            feature in the right place, but not a map of anything. The starfield is decorative,
-            not a star catalogue. Rotation is sped up to be watchable; only its direction and
-            relative rate are true.
+            Surface maps are <span className="text-observed">real observed imagery</span> — the
+            Moon from NASA&apos;s LRO, the planets from Solar System Scope&apos;s NASA-derived
+            maps (CC BY 4.0). Cloud cover on Earth is one fixed snapshot, not current weather.
+            The starfield is decorative and is <em>not</em> a star catalogue. Rotation is sped up
+            to be watchable; only its direction and relative rate are true.
           </dd>
         </div>
+
       </dl>
     </section>
   );

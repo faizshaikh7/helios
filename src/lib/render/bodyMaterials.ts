@@ -1,118 +1,46 @@
 import * as THREE from "three";
 
 /**
- * Procedural surface materials for solar-system bodies.
+ * Materials for solar-system bodies, built on real surface imagery.
  *
- * **Why procedural rather than photographic textures.** Real NASA surface maps are the obvious
- * alternative, and they would look better still. They are also tens of megabytes per body, which
- * would dominate the deploy bundle, and they are photographs — a reader could not tell a real
- * map from a decorative one, which is the confusion this project exists to remove. These are
- * unambiguously *renderings*: the band structure, cloud cover and albedo patterns are generated,
- * not observed, and the panel says so.
+ * **Why maps rather than procedural surfaces.** The first version generated surfaces from noise,
+ * on the reasoning that a rendering is obviously a rendering while a photograph might be mistaken
+ * for one. That reasoning was backwards. A procedurally generated Earth has invented continents:
+ * it is a *fabrication*, and it is the exact thing this project exists to avoid. A real map is
+ * observed data, and observed data gets a source — see `public/textures/ATTRIBUTION.md`.
  *
- * What is real is everything the science service computes: position, orbit, illumination
- * direction, axial tilt and rotation rate. The surface is the only part that is an artist's
- * impression, and it is kept visually distinct from the measured quantities in the caption.
+ * What the maps do not carry is any number. Position, orbit, distance, illumination direction,
+ * axial tilt and rotation rate all come from the science service with their own provenance. A
+ * texture only ever answers "what does this surface look like".
  */
 
-/** Which surface treatment a body gets. */
-export type SurfaceStyle =
-  | "sun"
-  | "rocky"
-  | "venus"
-  | "earth"
-  | "mars"
-  | "gasGiant"
-  | "iceGiant";
+/** Shared loader, so a texture is fetched once however many materials want it. */
+const loader = new THREE.TextureLoader();
 
-/**
- * 3D simplex noise, after Ashima Arts / Stefan Gustavson (MIT licence).
- *
- * The standard implementation. Included inline because the shader must be self-contained, and
- * every procedural surface below is built from octaves of it.
- */
-const NOISE_GLSL = /* glsl */ `
-vec3 mod289(vec3 x){ return x - floor(x * (1.0/289.0)) * 289.0; }
-vec4 mod289(vec4 x){ return x - floor(x * (1.0/289.0)) * 289.0; }
-vec4 permute(vec4 x){ return mod289(((x*34.0)+1.0)*x); }
-vec4 taylorInvSqrt(vec4 r){ return 1.79284291400159 - 0.85373472095314 * r; }
+const cache = new Map<string, THREE.Texture>();
 
-float snoise(vec3 v){
-  const vec2 C = vec2(1.0/6.0, 1.0/3.0);
-  const vec4 D = vec4(0.0, 0.5, 1.0, 2.0);
-  vec3 i  = floor(v + dot(v, C.yyy));
-  vec3 x0 = v - i + dot(i, C.xxx);
-  vec3 g = step(x0.yzx, x0.xyz);
-  vec3 l = 1.0 - g;
-  vec3 i1 = min(g.xyz, l.zxy);
-  vec3 i2 = max(g.xyz, l.zxy);
-  vec3 x1 = x0 - i1 + C.xxx;
-  vec3 x2 = x0 - i2 + C.yyy;
-  vec3 x3 = x0 - D.yyy;
-  i = mod289(i);
-  vec4 p = permute(permute(permute(
-             i.z + vec4(0.0, i1.z, i2.z, 1.0))
-           + i.y + vec4(0.0, i1.y, i2.y, 1.0))
-           + i.x + vec4(0.0, i1.x, i2.x, 1.0));
-  float n_ = 0.142857142857;
-  vec3 ns = n_ * D.wyz - D.xzx;
-  vec4 j = p - 49.0 * floor(p * ns.z * ns.z);
-  vec4 x_ = floor(j * ns.z);
-  vec4 y_ = floor(j - 7.0 * x_);
-  vec4 x = x_ * ns.x + ns.yyyy;
-  vec4 y = y_ * ns.x + ns.yyyy;
-  vec4 h = 1.0 - abs(x) - abs(y);
-  vec4 b0 = vec4(x.xy, y.xy);
-  vec4 b1 = vec4(x.zw, y.zw);
-  vec4 s0 = floor(b0) * 2.0 + 1.0;
-  vec4 s1 = floor(b1) * 2.0 + 1.0;
-  vec4 sh = -step(h, vec4(0.0));
-  vec4 a0 = b0.xzyw + s0.xzyw * sh.xxyy;
-  vec4 a1 = b1.xzyw + s1.xzyw * sh.zzww;
-  vec3 p0 = vec3(a0.xy, h.x);
-  vec3 p1 = vec3(a0.zw, h.y);
-  vec3 p2 = vec3(a1.xy, h.z);
-  vec3 p3 = vec3(a1.zw, h.w);
-  vec4 norm = taylorInvSqrt(vec4(dot(p0,p0), dot(p1,p1), dot(p2,p2), dot(p3,p3)));
-  p0 *= norm.x; p1 *= norm.y; p2 *= norm.z; p3 *= norm.w;
-  vec4 m = max(0.6 - vec4(dot(x0,x0), dot(x1,x1), dot(x2,x2), dot(x3,x3)), 0.0);
-  m = m * m;
-  return 42.0 * dot(m*m, vec4(dot(p0,x0), dot(p1,x1), dot(p2,x2), dot(p3,x3)));
+/** Load a texture from `public/textures`, cached, with colour space set for albedo maps. */
+function texture(file: string, colour = true): THREE.Texture {
+  const key = `${file}:${colour}`;
+  const existing = cache.get(key);
+  if (existing) return existing;
+
+  const loaded = loader.load(`/textures/${file}`);
+  // Albedo maps are authored in sRGB. Without this they render washed out and too bright, which
+  // is one of the commonest reasons a textured planet looks like a toy.
+  if (colour) loaded.colorSpace = THREE.SRGBColorSpace;
+  loaded.anisotropy = 8;
+  cache.set(key, loaded);
+  return loaded;
 }
-
-float fbm(vec3 p, int octaves, float lacunarity, float gain){
-  float sum = 0.0;
-  float amp = 0.5;
-  for (int i = 0; i < 8; i++){
-    if (i >= octaves) break;
-    sum += amp * snoise(p);
-    p *= lacunarity;
-    amp *= gain;
-  }
-  return sum;
-}
-
-/** Ridged noise, for the sharp edges of crater rims and storm boundaries. */
-float ridged(vec3 p, int octaves){
-  float sum = 0.0;
-  float amp = 0.5;
-  for (int i = 0; i < 8; i++){
-    if (i >= octaves) break;
-    sum += amp * (1.0 - abs(snoise(p)));
-    p *= 2.1;
-    amp *= 0.5;
-  }
-  return sum;
-}
-`;
 
 const VERTEX_GLSL = /* glsl */ `
-varying vec3 vObject;
+varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
 void main(){
-  vObject = normalize(position);
+  vUv = uv;
   vNormalW = normalize(mat3(modelMatrix) * normal);
   vec4 worldPosition = modelMatrix * vec4(position, 1.0);
   vWorld = worldPosition.xyz;
@@ -120,148 +48,114 @@ void main(){
 }
 `;
 
+/**
+ * Standard lit body: an albedo map with a physically placed terminator.
+ *
+ * A plain lambert step produces a hard, obviously synthetic edge. Real terminators are softened
+ * by the Sun being an extended source rather than a point, and by atmosphere where there is one,
+ * so the falloff is smoothed slightly.
+ */
 const SURFACE_FRAGMENT_GLSL = /* glsl */ `
-uniform float uTime;
-uniform int   uStyle;
+uniform sampler2D uMap;
 uniform vec3  uLightDir;
-uniform vec3  uColorA;
-uniform vec3  uColorB;
-uniform vec3  uColorC;
-uniform float uSeed;
+uniform float uSoftness;
+uniform float uAmbient;
 
-varying vec3 vObject;
+varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
-${NOISE_GLSL}
+void main(){
+  vec3 albedo = texture2D(uMap, vUv).rgb;
+  vec3 normal = normalize(vNormalW);
 
-/** Latitude-banded gas giant, with a domain warp so the bands churn rather than stripe. */
-vec3 gasGiant(vec3 p, vec3 a, vec3 b, vec3 c){
-  float warp = fbm(p * 2.2 + uSeed, 4, 2.0, 0.5) * 0.22;
-  float lat = p.y + warp;
+  float incidence = dot(normal, normalize(uLightDir));
+  float lambert = smoothstep(-uSoftness, uSoftness, incidence);
 
-  // Several band frequencies beat against each other, which is what stops it reading as
-  // wallpaper. The strong low frequency sets the major belts and zones.
-  float bands = sin(lat * 18.0) * 0.5 + sin(lat * 41.0) * 0.28 + sin(lat * 7.0) * 0.5;
-  bands = bands * 0.5 + 0.5;
-
-  float turbulence = fbm(p * 6.0 + vec3(uTime * 0.008, 0.0, uSeed), 5, 2.1, 0.55);
-  bands = clamp(bands + turbulence * 0.16, 0.0, 1.0);
-
-  vec3 colour = mix(a, b, smoothstep(0.25, 0.75, bands));
-  colour = mix(colour, c, smoothstep(0.72, 0.98, bands) * 0.7);
-
-  // A long-lived oval storm, placed in the southern hemisphere like Jupiter's.
-  vec2 storm = vec2(atan(p.z, p.x) - 1.1, (p.y + 0.24) * 2.9);
-  float oval = 1.0 - smoothstep(0.0, 0.42, length(vec2(storm.x * 0.55, storm.y)));
-  colour = mix(colour, vec3(0.78, 0.36, 0.24), oval * 0.75);
-
-  // Poles are darker and less banded on every gas giant.
-  colour *= 1.0 - smoothstep(0.72, 1.0, abs(p.y)) * 0.35;
-  return colour;
+  gl_FragColor = vec4(albedo * (uAmbient + (1.0 - uAmbient) * lambert), 1.0);
 }
+`;
+
+/**
+ * Earth: day map, night lights, and a cloud layer, blended across the terminator.
+ *
+ * The night side is what makes it read as Earth rather than as a blue ball — city lights appear
+ * exactly where the Sun has set, which is a real consequence of the illumination geometry the
+ * service computes.
+ */
+const EARTH_FRAGMENT_GLSL = /* glsl */ `
+uniform sampler2D uDay;
+uniform sampler2D uNight;
+uniform sampler2D uClouds;
+uniform vec3  uLightDir;
+uniform float uCloudOffset;
+
+varying vec2 vUv;
+varying vec3 vNormalW;
+varying vec3 vWorld;
 
 void main(){
-  vec3 p = vObject;
-  vec3 colour;
-  float roughness = 1.0;
-
-  if (uStyle == 0) {
-    // Sun: granulation plus supergranulation, brightening toward the limb.
-    float granule = fbm(p * 26.0 + vec3(uTime * 0.05, uTime * 0.03, uSeed), 5, 2.2, 0.5);
-    float supergranule = fbm(p * 6.0 - vec3(uTime * 0.02), 3, 2.0, 0.5);
-    float intensity = 0.72 + granule * 0.24 + supergranule * 0.18;
-    colour = mix(uColorA, uColorB, clamp(intensity, 0.0, 1.0));
-    colour += uColorC * pow(clamp(intensity, 0.0, 1.0), 4.0) * 0.5;
-    gl_FragColor = vec4(colour, 1.0);
-    return;
-
-  } else if (uStyle == 1) {
-    // Rocky and cratered. Ridged noise gives rims; a second octave set gives the maria.
-    float craters = ridged(p * 9.0 + uSeed, 5);
-    float maria = fbm(p * 2.4 - uSeed, 4, 2.0, 0.5);
-    float shade = 0.55 + craters * 0.32 + maria * 0.22;
-    colour = mix(uColorA, uColorB, clamp(shade, 0.0, 1.0));
-    colour *= 0.86 + 0.14 * fbm(p * 30.0, 3, 2.0, 0.5);
-
-  } else if (uStyle == 2) {
-    // Venus: opaque, featureless sulphuric cloud deck with slow zonal streaks.
-    float streak = fbm(vec3(p.x * 3.0, p.y * 9.0, p.z * 3.0) + vec3(uTime * 0.02, 0.0, uSeed), 5, 2.1, 0.55);
-    float deck = fbm(p * 4.5 + vec3(uTime * 0.01), 4, 2.0, 0.5);
-    colour = mix(uColorA, uColorB, clamp(0.5 + streak * 0.4 + deck * 0.25, 0.0, 1.0));
-
-  } else if (uStyle == 3) {
-    // Earth: ocean, land, ice caps, and a separate cloud layer above.
-    float land = fbm(p * 2.1 + uSeed, 6, 2.1, 0.52);
-    float detail = fbm(p * 7.0 - uSeed, 4, 2.0, 0.5);
-    float elevation = land + detail * 0.22;
-
-    float isLand = smoothstep(0.02, 0.10, elevation);
-    vec3 ocean = mix(vec3(0.02, 0.10, 0.28), vec3(0.05, 0.24, 0.46), smoothstep(-0.35, 0.02, elevation));
-    vec3 ground = mix(uColorB, uColorC, smoothstep(0.05, 0.32, elevation));
-    colour = mix(ocean, ground, isLand);
-
-    // Ice where it is cold: poles, and high ground at mid latitudes.
-    float cold = smoothstep(0.62, 0.88, abs(p.y)) + smoothstep(0.30, 0.45, elevation) * 0.35;
-    colour = mix(colour, vec3(0.92, 0.94, 0.97), clamp(cold, 0.0, 1.0) * 0.9);
-
-    float cloud = fbm(p * 3.4 + vec3(uTime * 0.012, 0.0, 3.0), 5, 2.2, 0.55);
-    colour = mix(colour, vec3(1.0), smoothstep(0.14, 0.52, cloud) * 0.62);
-    roughness = mix(0.35, 1.0, isLand);
-
-  } else if (uStyle == 4) {
-    // Mars: oxidised dust, darker volcanic regions, bright polar caps.
-    float dust = fbm(p * 2.6 + uSeed, 5, 2.1, 0.5);
-    float terrain = ridged(p * 6.5 - uSeed, 4);
-    colour = mix(uColorA, uColorB, clamp(0.45 + dust * 0.5, 0.0, 1.0));
-    colour = mix(colour, uColorC, smoothstep(0.55, 0.95, terrain) * 0.45);
-
-    float cap = smoothstep(0.80, 0.93, abs(p.y) + dust * 0.05);
-    colour = mix(colour, vec3(0.94, 0.94, 0.92), cap);
-
-  } else if (uStyle == 5) {
-    colour = gasGiant(p, uColorA, uColorB, uColorC);
-
-  } else {
-    // Ice giant: nearly featureless, faint bands, deep methane blue.
-    float band = sin(p.y * 11.0 + fbm(p * 3.0, 3, 2.0, 0.5) * 0.6) * 0.5 + 0.5;
-    float haze = fbm(p * 5.0 + vec3(uTime * 0.006), 4, 2.0, 0.5);
-    colour = mix(uColorA, uColorB, clamp(band * 0.55 + haze * 0.3 + 0.2, 0.0, 1.0));
-    colour = mix(colour, uColorC, smoothstep(0.75, 1.0, band) * 0.3);
-  }
-
-  // Lighting. The Sun is the only source, so the terminator is where it physically belongs.
   vec3 normal = normalize(vNormalW);
   float incidence = dot(normal, normalize(uLightDir));
 
-  // A slightly soft terminator: a hard step reads as a CG artefact, and real limbs are softened
-  // by atmosphere and by the Sun being an extended source rather than a point.
-  float lambert = smoothstep(-0.08, 0.34, incidence);
+  float day = smoothstep(-0.12, 0.18, incidence);
 
-  vec3 lit = colour * (0.045 + 0.955 * lambert);
+  vec3 surface = texture2D(uDay, vUv).rgb;
+  vec3 lights  = texture2D(uNight, vUv).rgb;
 
-  // Weak specular on the smoother bodies only.
-  vec3 viewDir = normalize(cameraPosition - vWorld);
-  float specular = pow(max(dot(reflect(-normalize(uLightDir), normal), viewDir), 0.0), 26.0);
-  lit += vec3(1.0) * specular * (1.0 - roughness) * 0.30 * lambert;
+  // Clouds are sampled at an offset longitude so they are not pinned to the ground beneath them.
+  // They are a fixed snapshot, not current weather - the panel says so.
+  float cloud = texture2D(uClouds, vec2(vUv.x + uCloudOffset, vUv.y)).r;
+
+  vec3 lit = surface * (0.03 + 0.97 * day);
+  lit = mix(lit, vec3(1.0) * (0.05 + 0.95 * day), cloud * 0.7);
+
+  // City lights only where it is genuinely night, and dimmed under cloud.
+  lit += lights * (1.0 - day) * 1.6 * (1.0 - cloud * 0.8);
 
   gl_FragColor = vec4(lit, 1.0);
 }
 `;
 
-/**
- * Additive shell that gives a body an atmospheric limb.
- *
- * Rendered on the back faces of a slightly larger sphere, so the glow appears around the edge
- * rather than washing over the disc. The rim is brightest where the atmosphere is lit and
- * viewed edge-on, which is why a real crescent planet has a bright arc rather than a uniform
- * halo.
- */
-const ATMOSPHERE_FRAGMENT_GLSL = /* glsl */ `
-uniform vec3 uColor;
-uniform vec3 uLightDir;
-uniform float uIntensity;
+/** The Sun: emissive, unlit, with limb darkening so it is not a flat disc. */
+const SUN_FRAGMENT_GLSL = /* glsl */ `
+uniform sampler2D uMap;
+uniform float uTime;
 
+varying vec2 vUv;
+varying vec3 vNormalW;
+varying vec3 vWorld;
+
+void main(){
+  vec3 surface = texture2D(uMap, vec2(vUv.x + uTime * 0.004, vUv.y)).rgb;
+
+  vec3 viewDir = normalize(cameraPosition - vWorld);
+  float facing = abs(dot(normalize(vNormalW), viewDir));
+
+  // Limb darkening: the Sun is measurably dimmer at its edge, because the line of sight there
+  // passes through cooler, higher photosphere.
+  float limb = 0.62 + 0.38 * pow(facing, 0.55);
+
+  gl_FragColor = vec4(surface * limb * 1.3, 1.0);
+}
+`;
+
+/**
+ * Additive limb glow for a body with an atmosphere, and for the Sun's corona.
+ *
+ * Rendered on the back faces of a slightly larger shell. The normals of those faces point away
+ * from the camera, so `max(dot(n, v), 0.0)` clamps to zero across the whole disc rather than
+ * only at the limb, and the glow floods the body — which is exactly how the first version came
+ * out. `abs` measures how edge-on a surface is regardless of which way it faces.
+ */
+const GLOW_FRAGMENT_GLSL = /* glsl */ `
+uniform vec3  uColor;
+uniform vec3  uLightDir;
+uniform float uIntensity;
+uniform float uPower;
+uniform float uLitOnly;
+
+varying vec2 vUv;
 varying vec3 vNormalW;
 varying vec3 vWorld;
 
@@ -269,246 +163,188 @@ void main(){
   vec3 normal = normalize(vNormalW);
   vec3 viewDir = normalize(cameraPosition - vWorld);
 
-  // These shells render on BackSide, so the visible fragments are the *far* wall of the sphere
-  // and their outward normals point away from the camera. Clamping with max(dot, 0.0) therefore
-  // returns zero across the entire disc, not just at the limb, and the "rim" glow floods the
-  // whole body. abs() measures how edge-on the surface is regardless of which way it faces.
   float facing = abs(dot(normal, viewDir));
-  float rim = pow(1.0 - facing, 2.6);
-  float lit = smoothstep(-0.35, 0.5, dot(normal, normalize(uLightDir)));
+  float rim = pow(1.0 - facing, uPower);
 
-  gl_FragColor = vec4(uColor, rim * lit * uIntensity);
+  // An atmosphere only glows where sunlight passes through it; a corona glows all round.
+  float lit = mix(1.0, smoothstep(-0.45, 0.35, dot(normal, normalize(uLightDir))), uLitOnly);
+
+  gl_FragColor = vec4(uColor, clamp(rim * lit * uIntensity, 0.0, 1.0));
 }
 `;
 
-/** Corona around the Sun: a wide, soft, additive falloff. */
-const CORONA_FRAGMENT_GLSL = /* glsl */ `
-uniform vec3 uColor;
-uniform float uTime;
-
-varying vec3 vNormalW;
-varying vec3 vWorld;
-varying vec3 vObject;
-
-${NOISE_GLSL}
-
-void main(){
-  vec3 viewDir = normalize(cameraPosition - vWorld);
-
-  // Same BackSide correction as the atmosphere shell: without abs() the corona renders as an
-  // opaque disc that swallows the inner planets rather than as a halo around the limb.
-  float facing = abs(dot(normalize(vNormalW), viewDir));
-  float rim = 1.0 - facing;
-
-  // A steep falloff so the glow hugs the limb and fades quickly outward, the way a corona
-  // actually does, instead of filling the sphere it lives on.
-  float falloff = pow(rim, 5.0);
-  float flicker = 0.88 + 0.12 * fbm(vObject * 5.0 + vec3(uTime * 0.06), 3, 2.0, 0.5);
-
-  gl_FragColor = vec4(uColor, clamp(falloff * flicker, 0.0, 1.0) * 0.55);
-}
-`;
-
-/** Saturn's rings: radial density structure with a real Cassini division. */
+/** Saturn's rings: a real radial transmission strip, with the planet's shadow cast across it. */
 const RING_FRAGMENT_GLSL = /* glsl */ `
-uniform vec3 uColorA;
-uniform vec3 uColorB;
+uniform sampler2D uMap;
+uniform vec3  uLightDir;
 uniform float uInner;
 uniform float uOuter;
-uniform vec3 uLightDir;
+uniform float uPlanetRadius;
 
-varying vec3 vWorld;
-varying vec2 vUv;
-
-${NOISE_GLSL}
+varying vec3 vLocal;
+varying float vRadius;
 
 void main(){
-  // RingGeometry's uv.x runs radially outward once the geometry is built with that intent.
-  float t = clamp(vUv.x, 0.0, 1.0);
+  float t = clamp((vRadius - uInner) / max(uOuter - uInner, 1e-6), 0.0, 1.0);
+  vec4 sampled = texture2D(uMap, vec2(t, 0.5));
 
-  // Banding: many fine ringlets, from noise rather than a regular pattern.
-  float fine = fbm(vec3(t * 220.0, 0.0, 0.0), 4, 2.0, 0.5) * 0.5 + 0.5;
-  float coarse = fbm(vec3(t * 34.0, 5.0, 0.0), 3, 2.0, 0.5) * 0.5 + 0.5;
+  // The planet's shadow on the rings. A point is shadowed when it lies behind the planet along
+  // the sunward direction and within its radius of that axis. The geometry is simple enough to
+  // do exactly, and the dark wedge it produces is one of the most recognisable things about
+  // Saturn seen from close up.
+  vec3 toSun = normalize(uLightDir);
+  float along = dot(vLocal, toSun);
+  float perpendicular = length(vLocal - toSun * along);
+  float shadow = (along < 0.0 && perpendicular < uPlanetRadius)
+    ? smoothstep(uPlanetRadius, uPlanetRadius * 0.72, perpendicular)
+    : 0.0;
 
-  float density = clamp(coarse * 0.7 + fine * 0.45, 0.0, 1.0);
-
-  // The Cassini division, at roughly 68% of the way out through the main rings.
-  density *= 1.0 - 0.92 * exp(-pow((t - 0.62) / 0.035, 2.0));
-  // The fainter C ring inside.
-  density *= mix(0.35, 1.0, smoothstep(0.0, 0.22, t));
-  // Outer edge falls away rather than stopping dead.
-  density *= 1.0 - smoothstep(0.88, 1.0, t);
-
-  vec3 colour = mix(uColorA, uColorB, fine);
-
-  gl_FragColor = vec4(colour, density * 0.85);
+  gl_FragColor = vec4(sampled.rgb * (1.0 - shadow * 0.88), sampled.a);
 }
 `;
 
 const RING_VERTEX_GLSL = /* glsl */ `
-varying vec3 vWorld;
-varying vec2 vUv;
-
-uniform float uInner;
-uniform float uOuter;
+varying vec3 vLocal;
+varying float vRadius;
 
 void main(){
-  // Radial parameter, recovered from the vertex's own distance from the centre. RingGeometry's
-  // built-in uv is not radial, so it is computed here instead.
-  float radius = length(position.xy);
-  vUv = vec2((radius - uInner) / max(uOuter - uInner, 1e-6), 0.0);
+  vRadius = length(position.xy);
+  vLocal = position;
 
-  vec4 worldPosition = modelMatrix * vec4(position, 1.0);
-  vWorld = worldPosition.xyz;
-  gl_Position = projectionMatrix * viewMatrix * worldPosition;
+  gl_Position = projectionMatrix * viewMatrix * modelMatrix * vec4(position, 1.0);
 }
 `;
 
-/** Per-body surface parameters. */
+/** Per-body appearance. Tilts and rotation periods are real measured properties. */
 export type BodyAppearance = {
-  style: SurfaceStyle;
-  colours: [string, string, string];
-  /** Axial tilt in degrees, a real measured property of the body. */
+  /** Surface map, relative to `public/textures`. */
+  map: string;
+  /** Marker and orbit-line colour, chosen to match the body's real appearance. */
+  colour: string;
+  /** Axial tilt in degrees. */
   tiltDeg: number;
-  /** Sidereal rotation period in hours; negative for retrograde rotation. */
+  /** Sidereal rotation period in hours; negative is retrograde. */
   rotationHours: number;
-  /** Atmospheric limb colour and strength, when the body has an atmosphere worth drawing. */
+  /** Atmospheric limb, where the body has an atmosphere worth drawing. */
   atmosphere?: { colour: string; intensity: number };
-  /** Ring system extent as multiples of the body's radius. */
-  rings?: { inner: number; outer: number; colours: [string, string] };
+  /** Ring extent, in multiples of the body's radius. */
+  rings?: { inner: number; outer: number };
 };
 
-const STYLE_INDEX: Record<SurfaceStyle, number> = {
-  sun: 0,
-  rocky: 1,
-  venus: 2,
-  earth: 3,
-  mars: 4,
-  gasGiant: 5,
-  iceGiant: 6,
-};
-
-/**
- * Appearance of each body.
- *
- * Tilts and rotation periods are real values. Colours are chosen to match how each body actually
- * looks, but the surface *patterns* are generated — see the module docstring.
- */
 export const APPEARANCE: Record<string, BodyAppearance> = {
-  sun: {
-    style: "sun",
-    colours: ["#ff8a1e", "#ffd66b", "#fff4c4"],
-    tiltDeg: 7.25,
-    rotationHours: 609.12,
-  },
-  mercury: {
-    style: "rocky",
-    colours: ["#5a5049", "#a2968a", "#000000"],
-    tiltDeg: 0.034,
-    rotationHours: 1407.6,
-  },
+  sun: { map: "sun.jpg", colour: "#ffcf6b", tiltDeg: 7.25, rotationHours: 609.12 },
+  mercury: { map: "mercury.jpg", colour: "#9c8f84", tiltDeg: 0.034, rotationHours: 1407.6 },
   venus: {
-    style: "venus",
-    colours: ["#b07f37", "#efd9a1", "#000000"],
+    map: "venus_atmosphere.jpg",
+    colour: "#e8c07d",
     tiltDeg: 177.36,
     rotationHours: -5832.5,
-    atmosphere: { colour: "#f3dda6", intensity: 1.1 },
+    atmosphere: { colour: "#f5e2b0", intensity: 0.4 },
   },
   earth: {
-    style: "earth",
-    colours: ["#0a2647", "#3f6b32", "#8a7a58"],
+    map: "earth_daymap.jpg",
+    colour: "#6b9bd6",
     tiltDeg: 23.44,
     rotationHours: 23.934,
-    atmosphere: { colour: "#5aa9ff", intensity: 1.35 },
+    atmosphere: { colour: "#6fb0ff", intensity: 0.5 },
   },
-  moon: {
-    style: "rocky",
-    colours: ["#4a4744", "#b9b4ad", "#000000"],
-    tiltDeg: 6.68,
-    rotationHours: 655.7,
-  },
+  moon: { map: "moon.jpg", colour: "#b0aca6", tiltDeg: 6.68, rotationHours: 655.7 },
   mars: {
-    style: "mars",
-    colours: ["#7d3b1e", "#c2653a", "#4e2415"],
+    map: "mars.jpg",
+    colour: "#c1502e",
     tiltDeg: 25.19,
     rotationHours: 24.623,
-    atmosphere: { colour: "#e0a17a", intensity: 0.45 },
+    atmosphere: { colour: "#e0a17a", intensity: 0.2 },
   },
   jupiter: {
-    style: "gasGiant",
-    colours: ["#8c6b4a", "#e6d3b3", "#c9a06b"],
+    map: "jupiter.jpg",
+    colour: "#d8ca9d",
     tiltDeg: 3.13,
     rotationHours: 9.925,
-    atmosphere: { colour: "#e8d3ad", intensity: 0.5 },
+    atmosphere: { colour: "#e8d3ad", intensity: 0.35 },
   },
   saturn: {
-    style: "gasGiant",
-    colours: ["#a8894f", "#f0e2be", "#d6bd8a"],
+    map: "saturn.jpg",
+    colour: "#e3d9a5",
     tiltDeg: 26.73,
     rotationHours: 10.656,
-    atmosphere: { colour: "#f0e2be", intensity: 0.45 },
-    rings: { inner: 1.24, outer: 2.27, colours: ["#c9b48d", "#f2e8d2"] },
+    atmosphere: { colour: "#f0e2be", intensity: 0.3 },
+    rings: { inner: 1.24, outer: 2.27 },
   },
   uranus: {
-    style: "iceGiant",
-    colours: ["#3f9aa8", "#a8dfe6", "#cdeff2"],
+    map: "uranus.jpg",
+    colour: "#a6d8e0",
     tiltDeg: 97.77,
     rotationHours: -17.24,
-    atmosphere: { colour: "#9fe3ec", intensity: 0.85 },
+    atmosphere: { colour: "#9fe3ec", intensity: 0.32 },
   },
   neptune: {
-    style: "iceGiant",
-    colours: ["#2a4fb5", "#5f86e0", "#8fb0f0"],
+    map: "neptune.jpg",
+    colour: "#5b7fd4",
     tiltDeg: 28.32,
     rotationHours: 16.11,
-    atmosphere: { colour: "#6d97ef", intensity: 0.95 },
+    atmosphere: { colour: "#6d97ef", intensity: 0.34 },
   },
 };
 
-/** Build the procedural surface material for a body. */
-export function createSurfaceMaterial(body: string, seed: number): THREE.ShaderMaterial {
-  const appearance = APPEARANCE[body] ?? APPEARANCE.mercury;
+/** Build the lit surface material for a body. */
+export function createSurfaceMaterial(body: string): THREE.ShaderMaterial {
+  if (body === "sun") {
+    return new THREE.ShaderMaterial({
+      vertexShader: VERTEX_GLSL,
+      fragmentShader: SUN_FRAGMENT_GLSL,
+      uniforms: {
+        uMap: { value: texture("sun.jpg") },
+        uTime: { value: 0 },
+      },
+    });
+  }
+
+  if (body === "earth") {
+    return new THREE.ShaderMaterial({
+      vertexShader: VERTEX_GLSL,
+      fragmentShader: EARTH_FRAGMENT_GLSL,
+      uniforms: {
+        uDay: { value: texture("earth_daymap.jpg") },
+        uNight: { value: texture("earth_nightmap.jpg") },
+        uClouds: { value: texture("earth_clouds.jpg", false) },
+        uLightDir: { value: new THREE.Vector3(1, 0, 0) },
+        uCloudOffset: { value: 0 },
+      },
+    });
+  }
+
+  const appearance = APPEARANCE[body];
 
   return new THREE.ShaderMaterial({
     vertexShader: VERTEX_GLSL,
     fragmentShader: SURFACE_FRAGMENT_GLSL,
     uniforms: {
-      uTime: { value: 0 },
-      uStyle: { value: STYLE_INDEX[appearance.style] },
+      uMap: { value: texture(appearance.map) },
       uLightDir: { value: new THREE.Vector3(1, 0, 0) },
-      uColorA: { value: new THREE.Color(appearance.colours[0]) },
-      uColorB: { value: new THREE.Color(appearance.colours[1]) },
-      uColorC: { value: new THREE.Color(appearance.colours[2]) },
-      uSeed: { value: seed },
+      // A thicker atmosphere scatters light further round the limb, so its terminator is softer.
+      uSoftness: { value: appearance.atmosphere ? 0.16 : 0.06 },
+      uAmbient: { value: 0.025 },
     },
   });
 }
 
-/** Build the additive atmospheric shell for a body that has one. */
-export function createAtmosphereMaterial(colour: string, intensity: number): THREE.ShaderMaterial {
+/** Build an additive limb glow. `litOnly` distinguishes an atmosphere from a corona. */
+export function createGlowMaterial(
+  colour: string,
+  intensity: number,
+  power: number,
+  litOnly: boolean,
+): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     vertexShader: VERTEX_GLSL,
-    fragmentShader: ATMOSPHERE_FRAGMENT_GLSL,
+    fragmentShader: GLOW_FRAGMENT_GLSL,
     uniforms: {
       uColor: { value: new THREE.Color(colour) },
       uLightDir: { value: new THREE.Vector3(1, 0, 0) },
       uIntensity: { value: intensity },
-    },
-    transparent: true,
-    blending: THREE.AdditiveBlending,
-    side: THREE.BackSide,
-    depthWrite: false,
-  });
-}
-
-/** Build the Sun's corona shell. */
-export function createCoronaMaterial(): THREE.ShaderMaterial {
-  return new THREE.ShaderMaterial({
-    vertexShader: VERTEX_GLSL,
-    fragmentShader: CORONA_FRAGMENT_GLSL,
-    uniforms: {
-      uColor: { value: new THREE.Color("#ffb247") },
-      uTime: { value: 0 },
+      uPower: { value: power },
+      uLitOnly: { value: litOnly ? 1 : 0 },
     },
     transparent: true,
     blending: THREE.AdditiveBlending,
@@ -519,19 +355,19 @@ export function createCoronaMaterial(): THREE.ShaderMaterial {
 
 /** Build Saturn's ring material. */
 export function createRingMaterial(
-  colours: [string, string],
   inner: number,
   outer: number,
+  planetRadius: number,
 ): THREE.ShaderMaterial {
   return new THREE.ShaderMaterial({
     vertexShader: RING_VERTEX_GLSL,
     fragmentShader: RING_FRAGMENT_GLSL,
     uniforms: {
-      uColorA: { value: new THREE.Color(colours[0]) },
-      uColorB: { value: new THREE.Color(colours[1]) },
+      uMap: { value: texture("saturn_ring.png") },
+      uLightDir: { value: new THREE.Vector3(1, 0, 0) },
       uInner: { value: inner },
       uOuter: { value: outer },
-      uLightDir: { value: new THREE.Vector3(1, 0, 0) },
+      uPlanetRadius: { value: planetRadius },
     },
     transparent: true,
     side: THREE.DoubleSide,

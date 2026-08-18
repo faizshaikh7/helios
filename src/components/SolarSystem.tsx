@@ -4,72 +4,48 @@ import { useEffect, useRef } from "react";
 import * as THREE from "three";
 import {
   APPEARANCE,
-  createAtmosphereMaterial,
-  createCoronaMaterial,
+  createGlowMaterial,
   createRingMaterial,
   createSurfaceMaterial,
 } from "@/lib/render/bodyMaterials";
 import type { OrbitsResponse, SnapshotResponse } from "@/lib/types";
 
-/**
- * How body radii are mapped to rendered size.
- *
- * `true` is honest and nearly unreadable; `legible` is readable and distorts relative sizes.
- * Both are offered, and which one is active is stated on screen, because every solar-system
- * picture ever printed makes this compromise silently and readers reasonably assume the sizes
- * mean something.
- */
-export type SizeMode = "legible" | "true";
-
 /** Radial mapping. Distances are real in both; `log` only compresses the radial axis. */
 export type DistanceMode = "linear" | "log";
 
-/** Scene units per AU in linear mode. */
+/** Scene units per AU. */
 const UNITS_PER_AU = 1.0;
 
 /** Metres per AU, matching the service. */
 const AU_M = 1.495978707e11;
 
-/** The Sun's true radius in AU, the reference every other body is scaled against. */
-const SUN_RADIUS_AU = 6.957e8 / AU_M;
-
 /**
- * Compressive exponent for legible mode.
+ * Apparent diameter, in pixels, below which a body is drawn as a labelled marker instead of a
+ * sphere.
  *
- * The Sun's radius is about 16,000 times the Moon's. Raising the ratio to this power pulls that
- * down to roughly 5, which fits both in one view. Sizes after this are meaningless as ratios --
- * which is precisely what the on-screen caption says.
+ * This is how the size problem is actually solved, and it removes the compromise the first
+ * version agonised over. A solar-system view cannot show true relative sizes *and* stay legible
+ * — so at system scale, don't draw sizes at all. Draw a marker where the body is, label it, and
+ * render the real thing only once the camera is close enough that its true size covers more than
+ * a few pixels. Nothing is ever exaggerated, and nothing is ever invisible.
  */
-const LEGIBLE_EXPONENT = 0.28;
+const MARKER_THRESHOLD_PX = 9;
 
-const SUN_RADIUS_LINEAR = 0.09;
-const SUN_RADIUS_LOG = 0.8;
-
-/**
- * Map a body's radius to a rendered radius in scene units.
- *
- * The exaggeration is deliberately smaller in true-distance mode. Mercury orbits at 0.39 AU, so
- * a Sun drawn at the compressed view's size would visually engulf it -- the picture would assert
- * an overlap that does not exist, which is a worse lie than the size distortion it was meant to
- * fix.
- */
-function renderedRadius(radiusM: number, sizeMode: SizeMode, distanceMode: DistanceMode): number {
-  if (sizeMode === "true") return (radiusM / AU_M) * UNITS_PER_AU;
-
-  const base = distanceMode === "linear" ? SUN_RADIUS_LINEAR : SUN_RADIUS_LOG;
-  return base * Math.pow(radiusM / AU_M / SUN_RADIUS_AU, LEGIBLE_EXPONENT);
+/** A body's radius in scene units, always true to scale. */
+function trueRadius(radiusM: number): number {
+  return (radiusM / AU_M) * UNITS_PER_AU;
 }
 
 /**
  * Remap a heliocentric ecliptic point for display.
  *
- * Only the radial magnitude is ever changed. Direction — and therefore the whole angular
+ * Only the radial magnitude is ever changed. Direction — and therefore the entire angular
  * arrangement of the system, which is the part carrying real information — is preserved exactly
  * in both modes.
  */
 function place(x: number, y: number, z: number, mode: DistanceMode): THREE.Vector3 {
-  // Ecliptic z is "up" out of the orbital plane; three.js uses y for up, so the axes are
-  // swapped here rather than in the service, which reports a real frame.
+  // Ecliptic z is "up" out of the orbital plane; three.js uses y for up, so the axes are swapped
+  // here rather than in the service, which reports a real frame.
   const vector = new THREE.Vector3(x, z, y);
   const distance = vector.length();
   if (distance === 0) return vector;
@@ -78,68 +54,89 @@ function place(x: number, y: number, z: number, mode: DistanceMode): THREE.Vecto
   return vector.multiplyScalar(scaled / distance);
 }
 
+type BodyEntry = {
+  name: string;
+  pivot: THREE.Group;
+  mesh: THREE.Mesh;
+  shells: THREE.Object3D[];
+  material: THREE.ShaderMaterial;
+  extraMaterials: THREE.ShaderMaterial[];
+  radius: number;
+  rotationRate: number;
+  label: HTMLDivElement;
+  marker: HTMLDivElement;
+};
+
 /**
  * Three.js view of the solar system.
  *
- * The second renderer, alongside Cesium: Cesium owns the Earth, where a geodetic datum and a
- * real ellipsoid matter, and this owns everything beyond it, where the interesting problem is
- * scale rather than geodesy.
+ * The second renderer, alongside Cesium: Cesium owns the Earth, where a geodetic datum and a real
+ * ellipsoid matter, and this owns everything beyond it.
  *
- * Positions, orbit paths, illumination direction, axial tilts and rotation rates are all real.
- * Surface appearance is procedural and is labelled as such — see `lib/render/bodyMaterials.ts`.
+ * Everything geometric is real — positions, traced orbits, distances, illumination direction,
+ * axial tilts, rotation directions, and now sizes too, since bodies are never scaled up. Surface
+ * imagery is real observed data with attribution. The only liberties are the radial compression
+ * option, which is labelled, and rotation speed, which is sped up to be watchable.
  */
 export function SolarSystem({
   snapshot,
   orbits,
-  sizeMode,
   distanceMode,
   focus,
+  onSelect,
 }: {
   snapshot: SnapshotResponse | null;
   orbits: OrbitsResponse | null;
-  sizeMode: SizeMode;
   distanceMode: DistanceMode;
   focus: string | null;
+  onSelect: (body: string) => void;
 }) {
   const mountRef = useRef<HTMLDivElement | null>(null);
-  const sceneRef = useRef<THREE.Scene | null>(null);
+  const overlayRef = useRef<HTMLDivElement | null>(null);
   const bodyGroupRef = useRef<THREE.Group | null>(null);
   const orbitGroupRef = useRef<THREE.Group | null>(null);
-  const animatedRef = useRef<
-    { mesh: THREE.Object3D; material: THREE.ShaderMaterial; rotationRate: number }[]
-  >([]);
+  const entriesRef = useRef<BodyEntry[]>([]);
+  const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
+  const sizeRef = useRef({ width: 1, height: 1 });
+  // Held in a ref so the scene effect can call the latest handler without re-running and
+  // rebuilding the whole scene whenever the parent re-renders.
+  const selectRef = useRef(onSelect);
+  useEffect(() => {
+    selectRef.current = onSelect;
+  }, [onSelect]);
 
-  // Spherical camera state, with a damped target so zoom and focus changes glide.
-  const camera = useRef({
-    theta: 0.85,
-    phi: 1.12,
-    radius: 34,
-    targetRadius: 34,
+  const view = useRef({
+    theta: 0.9,
+    phi: 1.05,
+    radius: 12,
+    targetRadius: 12,
     centre: new THREE.Vector3(),
     targetCentre: new THREE.Vector3(),
   });
 
   useEffect(() => {
     const mount = mountRef.current;
-    if (!mount) return;
+    const overlay = overlayRef.current;
+    if (!mount || !overlay) return;
 
     const scene = new THREE.Scene();
-    sceneRef.current = scene;
 
-    const perspective = new THREE.PerspectiveCamera(
-      42,
+    const camera = new THREE.PerspectiveCamera(
+      38,
       mount.clientWidth / Math.max(mount.clientHeight, 1),
-      0.0005,
-      8000,
+      1e-7,
+      20000,
     );
+    cameraRef.current = camera;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
-    // Filmic tone mapping keeps the Sun from clipping to a flat white disc while leaving the
-    // dim outer planets visible — the dynamic range here is enormous.
+    renderer.setClearColor(0x01030a, 1);
+    // Filmic tone mapping keeps the Sun from clipping to a flat white disc while leaving the dim
+    // outer planets visible. The dynamic range across the solar system is enormous.
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    renderer.toneMappingExposure = 1.15;
+    renderer.toneMappingExposure = 1.0;
     mount.appendChild(renderer.domElement);
 
     const bodyGroup = new THREE.Group();
@@ -151,30 +148,102 @@ export function SolarSystem({
     scene.add(buildStarfield());
 
     const clock = new THREE.Clock();
+    let elapsedTime = 0;
+    const projected = new THREE.Vector3();
+
+    // Screen positions of labels already drawn this frame, used to suppress overlaps.
+    const placed: { x: number; y: number }[] = [];
+
     let frame = 0;
 
     const render = () => {
-      const state = camera.current;
+      const state = view.current;
+      const { width, height } = sizeRef.current;
 
-      // Exponential damping toward the target, so wheel and focus changes read as motion
-      // rather than as teleports.
-      state.radius += (state.targetRadius - state.radius) * 0.12;
-      state.centre.lerp(state.targetCentre, 0.12);
+      // Damping is time-based, not per-frame. A fixed per-frame factor makes the flight speed
+      // depend on the refresh rate: the same journey takes twice as long at 30 fps as at 60,
+      // and stalls entirely when the browser throttles a backgrounded tab. Clamped so a long
+      // stall cannot produce one enormous jump.
+      const delta = Math.min(clock.getDelta(), 0.1);
+      const damping = 1 - Math.exp(-6 * delta);
 
-      perspective.position.set(
+      state.radius += (state.targetRadius - state.radius) * damping;
+      state.centre.lerp(state.targetCentre, damping);
+
+      camera.position.set(
         state.centre.x + state.radius * Math.sin(state.phi) * Math.cos(state.theta),
         state.centre.y + state.radius * Math.cos(state.phi),
         state.centre.z + state.radius * Math.sin(state.phi) * Math.sin(state.theta),
       );
-      perspective.lookAt(state.centre);
+      camera.lookAt(state.centre);
+      camera.updateMatrixWorld();
 
-      const elapsed = clock.getElapsedTime();
-      for (const item of animatedRef.current) {
-        item.material.uniforms.uTime.value = elapsed;
-        item.mesh.rotateY(item.rotationRate);
+      elapsedTime += delta;
+      const elapsed = elapsedTime;
+      // Vertical field of view in radians, used to turn a world size into a pixel size.
+      const pixelsPerRadian = height / THREE.MathUtils.degToRad(camera.fov);
+
+      placed.length = 0;
+
+      for (const entry of entriesRef.current) {
+        entry.mesh.rotateY(entry.rotationRate);
+
+        if ("uTime" in entry.material.uniforms) {
+          entry.material.uniforms.uTime.value = elapsed;
+        }
+        if ("uCloudOffset" in entry.material.uniforms) {
+          entry.material.uniforms.uCloudOffset.value = elapsed * 0.0015;
+        }
+
+        // Decide sphere or marker from the body's real apparent size.
+        const distance = camera.position.distanceTo(entry.pivot.position);
+        const apparentPx = ((2 * entry.radius) / Math.max(distance, 1e-9)) * pixelsPerRadian;
+        const drawSphere = apparentPx >= MARKER_THRESHOLD_PX;
+
+        entry.mesh.visible = drawSphere;
+        for (const shell of entry.shells) shell.visible = drawSphere;
+
+        projected.copy(entry.pivot.position).project(camera);
+        const onScreen =
+          projected.z < 1 &&
+          projected.x > -1.05 &&
+          projected.x < 1.05 &&
+          projected.y > -1.05 &&
+          projected.y < 1.05;
+
+        const screenX = (projected.x * 0.5 + 0.5) * width;
+        const screenY = (-projected.y * 0.5 + 0.5) * height;
+
+        entry.marker.style.display = onScreen && !drawSphere ? "block" : "none";
+
+        // Declutter. At system scale the Moon sits within a pixel or two of the Earth, so their
+        // labels overlap into an unreadable smear. Entries are ordered by significance, so a
+        // label is dropped when a more significant one has already claimed that patch of screen
+        // -- the same thing every real chart does, rather than drawing both and hoping.
+        let visible = onScreen;
+        if (visible) {
+          for (const point of placed) {
+            if (Math.abs(point.x - screenX) < 62 && Math.abs(point.y - screenY) < 13) {
+              visible = false;
+              break;
+            }
+          }
+        }
+
+        entry.label.style.display = visible ? "block" : "none";
+
+        if (onScreen) {
+          entry.marker.style.transform = `translate(${screenX - 5}px, ${screenY - 5}px)`;
+        }
+        if (visible) {
+          placed.push({ x: screenX, y: screenY });
+          // Labels clear the body when it is drawn as a sphere, so they never sit on top of it.
+          const offset = drawSphere ? Math.min(apparentPx * 0.5 + 10, height * 0.4) : 11;
+          entry.label.style.transform = `translate(${screenX + offset}px, ${screenY - 7}px)`;
+        }
       }
 
-      renderer.render(scene, perspective);
+      renderer.render(scene, camera);
       frame = requestAnimationFrame(render);
     };
     render();
@@ -190,12 +259,11 @@ export function SolarSystem({
     };
     const onPointerMove = (event: PointerEvent) => {
       if (!dragging) return;
-      const state = camera.current;
-      state.theta -= (event.clientX - lastX) * 0.005;
-      state.phi = Math.min(
-        Math.PI - 0.04,
-        Math.max(0.04, state.phi - (event.clientY - lastY) * 0.005),
-      );
+      const state = view.current;
+      const dx = event.clientX - lastX;
+      const dy = event.clientY - lastY;
+      state.theta -= dx * 0.005;
+      state.phi = Math.min(Math.PI - 0.03, Math.max(0.03, state.phi - dy * 0.005));
       lastX = event.clientX;
       lastY = event.clientY;
     };
@@ -204,10 +272,12 @@ export function SolarSystem({
     };
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
-      const state = camera.current;
+      const state = view.current;
       state.targetRadius = Math.min(
-        600,
-        Math.max(0.004, state.targetRadius * (1 + event.deltaY * 0.0015)),
+        3000,
+        // The lower bound has to reach a planet's own radius, which is ~4e-5 AU for Earth,
+        // otherwise flying to a body stops short of ever seeing its surface.
+        Math.max(3e-5, state.targetRadius * (1 + event.deltaY * 0.0016)),
       );
     };
 
@@ -219,10 +289,12 @@ export function SolarSystem({
 
     const onResize = () => {
       if (!mount.clientWidth) return;
-      perspective.aspect = mount.clientWidth / Math.max(mount.clientHeight, 1);
-      perspective.updateProjectionMatrix();
+      sizeRef.current = { width: mount.clientWidth, height: mount.clientHeight };
+      camera.aspect = mount.clientWidth / Math.max(mount.clientHeight, 1);
+      camera.updateProjectionMatrix();
       renderer.setSize(mount.clientWidth, mount.clientHeight);
     };
+    onResize();
     const observer = new ResizeObserver(onResize);
     observer.observe(mount);
 
@@ -238,8 +310,7 @@ export function SolarSystem({
     };
   }, []);
 
-  // Orbit paths. Rebuilt only when the paths or the radial mapping change — not on every date
-  // step, since an orbit is the same curve whichever point of it a planet currently occupies.
+  // Orbit paths. Rebuilt only when the paths or the radial mapping change.
   useEffect(() => {
     const group = orbitGroupRef.current;
     if (!group || !orbits) return;
@@ -247,37 +318,45 @@ export function SolarSystem({
     disposeChildren(group);
 
     for (const [body, path] of Object.entries(orbits.orbits)) {
-      const points = path.map((point) =>
-        place(point.x_au, point.y_au, point.z_au, distanceMode),
-      );
-      // Closed: the last sample is one step short of a full revolution.
+      const points = path.map((point) => place(point.x_au, point.y_au, point.z_au, distanceMode));
       points.push(points[0].clone());
 
-      const appearance = APPEARANCE[body];
       group.add(
         new THREE.Line(
           new THREE.BufferGeometry().setFromPoints(points),
           new THREE.LineBasicMaterial({
-            color: new THREE.Color(appearance?.colours[1] ?? "#8899bb"),
+            color: new THREE.Color(APPEARANCE[body]?.colour ?? "#7f8ea8"),
             transparent: true,
-            opacity: 0.28,
+            opacity: 0.34,
           }),
         ),
       );
     }
   }, [orbits, distanceMode]);
 
-  // Bodies.
+  // Bodies, labels and markers.
   useEffect(() => {
     const group = bodyGroupRef.current;
-    if (!group || !snapshot) return;
+    const overlay = overlayRef.current;
+    if (!group || !overlay || !snapshot) return;
 
     disposeChildren(group);
-    animatedRef.current = [];
+    overlay.replaceChildren();
+    entriesRef.current = [];
 
-    snapshot.bodies.forEach((body, index) => {
+    // Significance order for label decluttering: the Sun and planets outrank the Moon, which
+    // otherwise wins by sheer proximity to the Earth and hides it.
+    const priority = [
+      "sun", "jupiter", "saturn", "earth", "mars", "venus",
+      "mercury", "uranus", "neptune", "moon",
+    ];
+    const ordered = [...snapshot.bodies].sort(
+      (a, b) => priority.indexOf(a.body) - priority.indexOf(b.body),
+    );
+
+    for (const body of ordered) {
       const appearance = APPEARANCE[body.body];
-      if (!appearance) return;
+      if (!appearance) continue;
 
       const position = place(
         body.ecliptic_x_au,
@@ -285,99 +364,154 @@ export function SolarSystem({
         body.ecliptic_z_au,
         distanceMode,
       );
-      const radius = Math.max(renderedRadius(body.radius_m, sizeMode, distanceMode), 1e-8);
+      const radius = trueRadius(body.radius_m);
 
-      // A pivot carries the body's real axial tilt, so the spin axis leans correctly — Uranus
-      // is on its side, Venus is upside down, and both are visible facts rather than trivia.
       const pivot = new THREE.Group();
       pivot.position.copy(position);
+      // The body's real axial tilt, so the spin axis leans correctly: Uranus lies on its side
+      // and Venus is upside down because they are.
       pivot.rotation.z = THREE.MathUtils.degToRad(appearance.tiltDeg);
       group.add(pivot);
 
-      const surface = createSurfaceMaterial(body.body, index * 13.37);
-      // Sunlight direction at this body: from the Sun, which sits at the origin.
-      const toSun = position.clone().negate().normalize();
-      if (position.lengthSq() === 0) toSun.set(1, 0, 0);
-      surface.uniforms.uLightDir.value.copy(toSun);
+      const material = createSurfaceMaterial(body.body);
 
-      const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 64, 48), surface);
+      // Sunlight direction at this body. The Sun is at the origin, so it is simply the direction
+      // back toward it — the same geometry that puts the terminator where it belongs.
+      const toSun = position.clone().negate();
+      if (toSun.lengthSq() === 0) toSun.set(1, 0, 0);
+      toSun.normalize();
+      if ("uLightDir" in material.uniforms) material.uniforms.uLightDir.value.copy(toSun);
+
+      const mesh = new THREE.Mesh(new THREE.SphereGeometry(radius, 96, 64), material);
       pivot.add(mesh);
 
-      // Rotation rate scaled to something watchable. Direction and *relative* speed are real:
-      // Jupiter visibly outruns Venus, and Venus turns backwards.
-      const rotationRate = (2 * Math.PI) / (appearance.rotationHours * 60);
-      animatedRef.current.push({ mesh, material: surface, rotationRate });
+      const shells: THREE.Object3D[] = [];
+      const extraMaterials: THREE.ShaderMaterial[] = [];
 
       if (body.body === "sun") {
-        const corona = createCoronaMaterial();
-        const coronaMesh = new THREE.Mesh(
-          new THREE.SphereGeometry(radius * 1.9, 48, 32),
-          corona,
-        );
+        const corona = createGlowMaterial("#ffb347", 0.9, 2.6, false);
+        const coronaMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 2.4, 48, 32), corona);
         pivot.add(coronaMesh);
-        animatedRef.current.push({ mesh: coronaMesh, material: corona, rotationRate: 0 });
-
-        // A real light source, so the shaded bodies and the Sun agree about where light is.
-        const light = new THREE.PointLight(0xfff0d0, 3.0, 0, 0);
-        pivot.add(light);
+        shells.push(coronaMesh);
+        extraMaterials.push(corona);
       }
 
       if (appearance.atmosphere) {
-        const shell = createAtmosphereMaterial(
+        const shell = createGlowMaterial(
           appearance.atmosphere.colour,
           appearance.atmosphere.intensity,
+          2.0,
+          true,
         );
         shell.uniforms.uLightDir.value.copy(toSun);
-        pivot.add(new THREE.Mesh(new THREE.SphereGeometry(radius * 1.055, 48, 32), shell));
+        // A wider shell with a gentler falloff. A thin one concentrates the glow into a hard
+        // bright ring that reads as an outline drawn round the planet rather than as air.
+        const shellMesh = new THREE.Mesh(
+          new THREE.SphereGeometry(radius * 1.055, 64, 48),
+          shell,
+        );
+        pivot.add(shellMesh);
+        shells.push(shellMesh);
+        extraMaterials.push(shell);
       }
 
       if (appearance.rings) {
         const inner = radius * appearance.rings.inner;
         const outer = radius * appearance.rings.outer;
-        const ringMaterial = createRingMaterial(appearance.rings.colours, inner, outer);
+        const ringMaterial = createRingMaterial(inner, outer, radius);
         ringMaterial.uniforms.uLightDir.value.copy(toSun);
 
-        const ring = new THREE.Mesh(
-          new THREE.RingGeometry(inner, outer, 192, 1),
-          ringMaterial,
-        );
+        const ring = new THREE.Mesh(new THREE.RingGeometry(inner, outer, 256, 1), ringMaterial);
         // RingGeometry is built in the xy-plane; the rings lie in the body's equatorial plane,
-        // which the pivot's tilt then carries.
+        // and the pivot's tilt then carries them.
         ring.rotation.x = Math.PI / 2;
         pivot.add(ring);
+        shells.push(ring);
+        extraMaterials.push(ringMaterial);
       }
-    });
-  }, [snapshot, sizeMode, distanceMode]);
 
-  // Focus: glide the camera to a body and zoom to a sensible distance for its size.
+      // Overlay marker and label. HTML rather than sprites, so the type is crisp at any zoom.
+      const marker = document.createElement("button");
+      marker.type = "button";
+      marker.className =
+        "pointer-events-auto absolute left-0 top-0 h-2.5 w-2.5 rounded-full border " +
+        "opacity-90 hover:opacity-100";
+      marker.style.borderColor = appearance.colour;
+      marker.style.background = "transparent";
+      marker.setAttribute("aria-label", body.body);
+      marker.addEventListener("click", () => selectRef.current(body.body));
+
+      const label = document.createElement("button");
+      label.type = "button";
+      label.className =
+        "pointer-events-auto absolute left-0 top-0 whitespace-nowrap text-[10px] " +
+        "uppercase tracking-[0.14em] opacity-70 hover:opacity-100";
+      label.style.color = appearance.colour;
+      label.textContent = body.body;
+      label.addEventListener("click", () => selectRef.current(body.body));
+
+      overlay.append(marker as unknown as HTMLDivElement, label as unknown as HTMLDivElement);
+
+      entriesRef.current.push({
+        name: body.body,
+        pivot,
+        mesh,
+        shells,
+        material,
+        extraMaterials,
+        radius,
+        // Sped up to be watchable. Only the direction and the relative rate are true: Jupiter
+        // visibly outruns Venus, and Venus turns backwards.
+        rotationRate: (2 * Math.PI) / (appearance.rotationHours * 90),
+        label: label as unknown as HTMLDivElement,
+        marker: marker as unknown as HTMLDivElement,
+      });
+    }
+  }, [snapshot, distanceMode]);
+
+  // Focus: glide to a body and stop at a distance that frames it.
   useEffect(() => {
-    const state = camera.current;
+    const state = view.current;
 
     if (!focus || !snapshot) {
       state.targetCentre.set(0, 0, 0);
-      state.targetRadius = distanceMode === "linear" ? 62 : 34;
+      state.targetRadius = distanceMode === "linear" ? 12 : 34;
       return;
     }
 
     const body = snapshot.bodies.find((item) => item.body === focus);
     if (!body) return;
 
-    state.targetCentre.copy(
-      place(body.ecliptic_x_au, body.ecliptic_y_au, body.ecliptic_z_au, distanceMode),
+    const position = place(
+      body.ecliptic_x_au,
+      body.ecliptic_y_au,
+      body.ecliptic_z_au,
+      distanceMode,
     );
-    state.targetRadius = Math.max(
-      renderedRadius(body.radius_m, sizeMode, distanceMode) * 7.5,
-      0.006,
-    );
-  }, [focus, snapshot, sizeMode, distanceMode]);
+    state.targetCentre.copy(position);
+    // Four radii out frames a body with room around it, and is far enough that the near plane
+    // never clips into the surface.
+    state.targetRadius = trueRadius(body.radius_m) * 4.2;
+
+    // Approach from the sunlit side. Camera azimuth is otherwise whatever the user last left it
+    // at, and arriving on a body's night side shows an unlit disc against a black sky - which
+    // looks exactly like the flight having failed. The offset keeps a terminator in view rather
+    // than presenting a flat fully-lit face.
+    if (position.lengthSq() > 0) {
+      const sunward = position.clone().negate().normalize();
+      state.phi = Math.min(Math.PI - 0.25, Math.max(0.25, Math.acos(sunward.y) + 0.12));
+      state.theta = Math.atan2(sunward.z, sunward.x) + 0.6;
+    }
+  }, [focus, snapshot, distanceMode]);
 
   return (
-    <div
-      ref={mountRef}
-      className="h-[520px] w-full cursor-grab touch-none overflow-hidden rounded-lg bg-[#03050b] active:cursor-grabbing"
-      role="img"
-      aria-label="Three-dimensional view of the solar system at the selected instant"
-    />
+    <div className="relative h-[560px] w-full overflow-hidden">
+      <div
+        ref={mountRef}
+        className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
+      />
+      <div ref={overlayRef} className="pointer-events-none absolute inset-0 select-none" />
+    </div>
   );
 }
 
@@ -399,54 +533,52 @@ function disposeChildren(group: THREE.Group): void {
 /**
  * Decorative starfield.
  *
- * Explicitly not a star catalogue: these are not real stars at real positions, which the panel
- * states. Magnitudes and colours are varied only so it does not read as uniform noise — a sky
- * of identical dots looks more artificial than one with structure.
+ * Explicitly not a star catalogue — these are not real stars at real positions, which the panel
+ * states. Most are kept very dim: a field of uniformly bright dots reads as confetti, while a
+ * real sky is mostly faint with a few bright points.
  */
 function buildStarfield(): THREE.Points {
-  const count = 4200;
+  const count = 9000;
   const positions = new Float32Array(count * 3);
   const colours = new Float32Array(count * 3);
-  const sizes = new Float32Array(count);
 
   const colour = new THREE.Color();
 
   for (let index = 0; index < count; index += 1) {
-    // A Fibonacci sphere, so the distribution is even and deterministic — no reshuffling
-    // between mounts, and no clustering at the poles.
+    // A Fibonacci sphere: even, deterministic, and no clustering at the poles.
     const y = 1 - (2 * (index + 0.5)) / count;
-    const radius = Math.sqrt(Math.max(0, 1 - y * y));
+    const ring = Math.sqrt(Math.max(0, 1 - y * y));
     const angle = index * 2.399963229728653;
 
-    const distance = 2200;
-    positions[index * 3] = Math.cos(angle) * radius * distance;
+    const distance = 6000;
+    positions[index * 3] = Math.cos(angle) * ring * distance;
     positions[index * 3 + 1] = y * distance;
-    positions[index * 3 + 2] = Math.sin(angle) * radius * distance;
+    positions[index * 3 + 2] = Math.sin(angle) * ring * distance;
 
-    // Deterministic pseudo-random brightness and hue from the index.
     const jitter = Math.abs(Math.sin(index * 12.9898) * 43758.5453) % 1;
-    const brightness = 0.35 + Math.pow(jitter, 2.4) * 0.65;
-    colour.setHSL(0.55 + (jitter - 0.5) * 0.14, 0.28, brightness);
+    // A steep power keeps the great majority faint and lets a handful stand out.
+    const brightness = 0.06 + Math.pow(jitter, 7) * 0.94;
+    // Stars run blue-white through yellow to red; a narrow hue spread avoids a disco sky.
+    colour.setHSL(0.5 + (jitter - 0.5) * 0.16, 0.22, brightness * 0.75);
 
     colours[index * 3] = colour.r;
     colours[index * 3 + 1] = colour.g;
     colours[index * 3 + 2] = colour.b;
-    sizes[index] = 0.8 + Math.pow(jitter, 6) * 3.4;
   }
 
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute("position", new THREE.BufferAttribute(positions, 3));
   geometry.setAttribute("color", new THREE.BufferAttribute(colours, 3));
-  geometry.setAttribute("size", new THREE.BufferAttribute(sizes, 1));
 
-  const material = new THREE.PointsMaterial({
-    vertexColors: true,
-    size: 2.0,
-    sizeAttenuation: false,
-    transparent: true,
-    opacity: 0.9,
-    depthWrite: false,
-  });
-
-  return new THREE.Points(geometry, material);
+  return new THREE.Points(
+    geometry,
+    new THREE.PointsMaterial({
+      vertexColors: true,
+      size: 1.35,
+      sizeAttenuation: false,
+      transparent: true,
+      opacity: 0.85,
+      depthWrite: false,
+    }),
+  );
 }
