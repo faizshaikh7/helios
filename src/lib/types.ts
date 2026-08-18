@@ -103,5 +103,38 @@ export type EclipseResponse = {
   notice: string;
 };
 
+/**
+ * Response from `POST /api/decay`.
+ *
+ * The lifetime is three values rather than one on purpose: decay depends on solar activity,
+ * which cannot be forecast years ahead, so the bracket is the result. Rendering only `nominal`
+ * would misrepresent what the service computed.
+ */
+export type DecayResponse = {
+  satellite: {
+    norad_id: number;
+    name: string;
+    apogee_altitude_km: number;
+    perigee_altitude_km: number;
+  } | null;
+  altitude_km: number;
+  spacecraft: {
+    mass_kg: number;
+    cross_section_m2: number;
+    drag_coefficient: number;
+    ballistic_term_m2_per_kg: number;
+  };
+  lifetime: { shortest: Value; nominal: Value; longest: Value };
+  spread_factor: number | null;
+  disposal_guideline: {
+    years: number;
+    met_under_every_scenario: boolean;
+    met_under_no_scenario: boolean;
+    note: string;
+  };
+  assumptions: string;
+  notice: string;
+};
+
 /** Typed error body returned by the service. */
 export type ApiError = { error: { code: string; message: string } };

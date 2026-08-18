@@ -23,7 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from science import catalog, eclipse, elements, orbit
+from science import catalog, decay, eclipse, elements, orbit
 from science.provenance import Receipt, Tier, Value
 
 app = FastAPI(
@@ -532,5 +532,121 @@ def eclipse_analysis(request: EclipseRequest) -> dict[str, Any]:
             }
             for item in intervals
         ],
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# Orbital decay lifetime
+# --------------------------------------------------------------------------------------------
+
+# The 25-year post-mission disposal guideline, long the international norm (IADC, and the FCC's
+# stricter 5-year rule for US-licensed LEO since 2024). Reported as context, never as a
+# compliance verdict -- that is a regulatory judgement this tool has no business making.
+DISPOSAL_GUIDELINE_YEARS = 25.0
+
+
+class DecayRequest(BaseModel):
+    """Parameters for an orbital decay lifetime estimate.
+
+    Give either a satellite to read the altitude from, or an altitude directly. The second form
+    is what mission planning actually needs: "how low can we fly and still clear 25 years?" is a
+    question about an orbit that does not exist yet.
+    """
+
+    norad_id: int | None = Field(default=None, ge=1)
+    altitude_km: float | None = Field(default=None, gt=100, le=2000)
+    # Bounds sized for real hardware, not just cubesats: the ISS is ~450 t and presents roughly
+    # 1500 m^2. Caps tight enough to exclude it would reject the most interesting question the
+    # endpoint can answer.
+    mass_kg: float = Field(default=3.3, gt=0, le=1_000_000)
+    cross_section_m2: float = Field(default=0.03, gt=0, le=10_000)
+    drag_coefficient: float = Field(
+        default=2.2,
+        gt=0,
+        le=5,
+        description="2.2 is the standard value for a compact body in free-molecular flow.",
+    )
+
+
+@app.post("/api/decay")
+def decay_lifetime(request: DecayRequest) -> dict[str, Any]:
+    """Estimate how long an orbit survives atmospheric drag, as a range.
+
+    This is the endpoint where the uncertainty *is* the answer. Lifetime depends on atmospheric
+    density, density depends on solar activity, and solar activity cannot be forecast years
+    ahead. A single figure would read as a result while being a guess; the bracket across weak,
+    average and strong solar activity is what the physics actually supports.
+
+    Args:
+        request: Satellite or altitude, plus the spacecraft's drag properties.
+
+    Returns:
+        Shortest, nominal and longest lifetimes with provenance, the spread between them, and
+        where the estimate sits relative to the 25-year disposal guideline.
+
+    Raises:
+        ValueError: If neither or both of `norad_id` and `altitude_km` are given.
+    """
+    if (request.norad_id is None) == (request.altitude_km is None):
+        return _error(
+            "invalid_request",
+            "Provide exactly one of norad_id or altitude_km.",
+            status=422,
+        )
+
+    satellite_info: dict[str, Any] | None = None
+    if request.norad_id is not None:
+        tle = catalog.get_tle(request.norad_id)
+        properties = elements.derived_orbit_properties(tle, orbit.tle_epoch(tle))
+
+        # Mean of apogee and perigee: the simplified model is circular, so feeding it a single
+        # representative altitude is the honest reduction. Using perigee alone would overstate
+        # drag; apogee alone would understate it.
+        apogee_km = properties["apogee_altitude"].value / 1000.0
+        perigee_km = properties["perigee_altitude"].value / 1000.0
+        altitude_km = (apogee_km + perigee_km) / 2.0
+
+        satellite_info = {
+            "norad_id": tle.norad_id,
+            "name": tle.name,
+            "apogee_altitude_km": round(apogee_km, 3),
+            "perigee_altitude_km": round(perigee_km, 3),
+        }
+    else:
+        altitude_km = float(request.altitude_km)  # type: ignore[arg-type]
+
+    ballistic_term = request.drag_coefficient * request.cross_section_m2 / request.mass_kg
+    estimates = decay.lifetime_range(altitude_km, ballistic_term)
+
+    shortest = estimates["shortest"].value
+    longest = estimates["longest"].value
+
+    return {
+        "satellite": satellite_info,
+        "altitude_km": round(altitude_km, 3),
+        "spacecraft": {
+            "mass_kg": request.mass_kg,
+            "cross_section_m2": request.cross_section_m2,
+            "drag_coefficient": request.drag_coefficient,
+            "ballistic_term_m2_per_kg": round(ballistic_term, 6),
+        },
+        "lifetime": estimates,
+        "spread_factor": round(longest / shortest, 2) if shortest > 0 else None,
+        "disposal_guideline": {
+            "years": DISPOSAL_GUIDELINE_YEARS,
+            "met_under_every_scenario": bool(longest <= DISPOSAL_GUIDELINE_YEARS),
+            "met_under_no_scenario": bool(shortest > DISPOSAL_GUIDELINE_YEARS),
+            "note": (
+                "Context, not a compliance finding. Whether a mission complies depends on its "
+                "licensing regime, its disposal plan, and hardware this tool knows nothing "
+                "about. US-licensed LEO missions face a stricter 5-year rule."
+            ),
+        },
+        "assumptions": (
+            "Circular orbit at a single representative altitude, constant ballistic "
+            "coefficient, orbit-averaged atmosphere. No manoeuvres, no attitude changes, no "
+            "geomagnetic storms, no eccentricity decay."
+        ),
         "notice": OPERATIONAL_NOTICE,
     }

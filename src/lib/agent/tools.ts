@@ -176,6 +176,30 @@ export const scienceTools = {
     }),
     execute: async (input) => callScience("/api/eclipse", input),
   }),
+
+  decayLifetime: tool({
+    description:
+      "Estimate how long an orbit survives atmospheric drag before reentry. Use for questions " +
+      "about orbital lifetime, deorbit time, decay, reentry timing, or the 25-year disposal " +
+      "guideline. Give either norad_id (reads the altitude from the current orbit) or " +
+      "altitude_km (for an orbit that does not exist yet, e.g. mission planning). " +
+      "Returns a RANGE across weak, average and strong solar activity, never a single number: " +
+      "lifetime depends on solar activity, which cannot be forecast years ahead. Report the " +
+      "range as the answer - quoting only the nominal figure misrepresents the result.",
+    inputSchema: z.object({
+      norad_id: noradId.optional(),
+      altitude_km: z
+        .number()
+        .min(100)
+        .max(2000)
+        .optional()
+        .describe("Circular altitude. Give this OR norad_id, not both."),
+      mass_kg: z.number().positive().default(3.3).describe("Default is a 3U cubesat."),
+      cross_section_m2: z.number().positive().default(0.03),
+      drag_coefficient: z.number().positive().max(5).default(2.2),
+    }),
+    execute: async (input) => callScience("/api/decay", input),
+  }),
 } as const;
 
 /** Instructions given to the agent. */
@@ -207,6 +231,13 @@ explicitly as your own inference and not a computed result - for example "not co
 around local sunrise, so contrast may be poor". Silently mixing a reasoned guess in among
 computed numbers is the single worst thing you can do here, because the reader cannot tell which
 is which.
+
+**When a tool returns a range, the range is the answer.** Some quantities - orbital decay
+lifetime above all - depend on things nobody can forecast, so the tool deliberately returns a
+bracket instead of a number. Report the bracket and say what drives it. Collapsing it to the
+middle figure, or presenting the nominal value with the range as a footnote, throws away the
+most important thing the tool computed and turns a defensible estimate into a false prediction.
+If a receipt states a known model bias, carry that across too.
 
 Read the tool's own notes and uncertainty fields and respect them. If a receipt says results
 ignore refraction and terrain, do not claim a pass is workable - only that it is geometrically

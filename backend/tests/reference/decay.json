@@ -1,0 +1,34 @@
+{
+  "_provenance": {
+    "source": "orekit",
+    "method": "NumericalPropagator, DormandPrince853, 8x8 gravity + NRLMSISE-00 drag",
+    "solar_activity": "NASA MSFC AVERAGE",
+    "orekit_jpype_version": "13.1.7.0",
+    "generated_utc": "2026-08-18T08:12:47+00:00",
+    "generator": "tools/reference/generate_decay.py",
+    "note": "Full numerical propagation with a real force model, used to measure how far the simplified circular-orbit model in science/decay.py departs from it. The two are not expected to agree closely; the point is to know the size of the gap and state it."
+  },
+  "cases": [
+    {
+      "start_altitude_km": 250.0,
+      "ballistic_term_m2_per_kg": 0.02,
+      "lifetime_days": 5.93,
+      "lifetime_years": 0.0162,
+      "decayed": true
+    },
+    {
+      "start_altitude_km": 300.0,
+      "ballistic_term_m2_per_kg": 0.02,
+      "lifetime_days": 22.12,
+      "lifetime_years": 0.0606,
+      "decayed": true
+    },
+    {
+      "start_altitude_km": 350.0,
+      "ballistic_term_m2_per_kg": 0.02,
+      "lifetime_days": 66.67,
+      "lifetime_years": 0.1825,
+      "decayed": true
+    }
+  ]
+}

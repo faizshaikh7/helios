@@ -448,3 +448,97 @@ def test_naive_timestamps_are_treated_as_utc() -> None:
 
     assert aware.status_code == naive.status_code == 200
     assert aware.json()["latitude"]["value"] == naive.json()["latitude"]["value"]
+
+
+# --------------------------------------------------------------------------------------------
+# Decay endpoint contract
+# --------------------------------------------------------------------------------------------
+
+
+def test_decay_requires_exactly_one_of_satellite_or_altitude() -> None:
+    """Neither input, or both, is refused rather than silently preferring one.
+
+    Accepting both and quietly ignoring the altitude would answer a different question than the
+    caller asked, and would do it without any error - the failure mode this project is built to
+    eliminate.
+    """
+    for payload in ({}, {"norad_id": 25544, "altitude_km": 500}):
+        response = client.post("/api/decay", json=payload)
+
+        assert response.status_code == 422, f"{payload} was accepted"
+        assert "exactly one" in response.json()["error"]["message"].lower()
+
+
+def test_decay_reports_a_range_not_a_number() -> None:
+    """The response carries three ordered lifetimes, all tiered predicted.
+
+    A caller must not be able to read a single confident figure off this endpoint, because the
+    dominant uncertainty - future solar activity - is not forecastable.
+    """
+    response = client.post("/api/decay", json={"altitude_km": 550})
+    assert response.status_code == 200
+
+    body = response.json()
+    lifetime = body["lifetime"]
+
+    assert set(lifetime) == {"shortest", "nominal", "longest"}
+    assert lifetime["shortest"]["value"] < lifetime["nominal"]["value"]
+    assert lifetime["nominal"]["value"] < lifetime["longest"]["value"]
+
+    for entry in lifetime.values():
+        assert entry["tier"] == "predicted"
+        assert entry["unit"] == "years"
+        assert entry["receipt"]["uncertainty"]["model_bias"], "the measured bias must be stated"
+
+    assert body["spread_factor"] > 1.0
+
+
+def test_decay_from_a_satellite_uses_its_own_orbit() -> None:
+    """Given a catalog number, the altitude comes from the element set, not a default."""
+    response = client.post("/api/decay", json={"norad_id": 25544})
+    assert response.status_code == 200
+
+    body = response.json()
+    satellite = body["satellite"]
+
+    assert satellite["norad_id"] == 25544
+    assert satellite["perigee_altitude_km"] < satellite["apogee_altitude_km"]
+
+    # The representative altitude must lie between the apsides, not outside them.
+    assert satellite["perigee_altitude_km"] <= body["altitude_km"]
+    assert body["altitude_km"] <= satellite["apogee_altitude_km"]
+
+
+def test_decay_guideline_flags_are_mutually_exclusive() -> None:
+    """An orbit cannot both meet and fail the guideline under every scenario.
+
+    When neither flag is set the range straddles the threshold, which is a real answer rather
+    than an indeterminate one, so the pair must never both be true.
+    """
+    for altitude in (300, 550, 900):
+        guideline = client.post("/api/decay", json={"altitude_km": altitude}).json()[
+            "disposal_guideline"
+        ]
+
+        assert not (
+            guideline["met_under_every_scenario"] and guideline["met_under_no_scenario"]
+        ), f"{altitude} km reported as both compliant and non-compliant"
+
+
+def test_decay_responds_to_the_spacecraft_it_is_given() -> None:
+    """A dense spacecraft outlives a flimsy one at the same altitude.
+
+    Guards against the parameters being accepted and then dropped - the endpoint would still
+    return a plausible-looking lifetime for every input.
+    """
+    cubesat = client.post(
+        "/api/decay", json={"altitude_km": 450, "mass_kg": 3.3, "cross_section_m2": 0.03}
+    ).json()
+    dense = client.post(
+        "/api/decay", json={"altitude_km": 450, "mass_kg": 150, "cross_section_m2": 1.2}
+    ).json()
+
+    assert dense["spacecraft"]["ballistic_term_m2_per_kg"] < (
+        cubesat["spacecraft"]["ballistic_term_m2_per_kg"]
+    )
+    assert dense["lifetime"]["nominal"]["value"] > cubesat["lifetime"]["nominal"]["value"]

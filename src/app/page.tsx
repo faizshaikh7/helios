@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AskPanel } from "@/components/AskPanel";
+import { DecayPanel } from "@/components/DecayPanel";
 import dynamic from "next/dynamic";
 import { GroundTrack } from "@/components/GroundTrack";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -676,6 +677,10 @@ export default function Home() {
             </p>
           </section>
         )}
+
+        {/* Independent of the satellite query above: this asks about an orbit, not an object,
+            which is the form the question takes during mission design. */}
+        <DecayPanel />
 
         <footer className="mt-8 border-t border-edge pt-5 text-[11px] leading-5 text-faint">
           {passes?.notice ??
