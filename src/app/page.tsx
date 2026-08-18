@@ -6,6 +6,7 @@ import { DecayPanel } from "@/components/DecayPanel";
 import dynamic from "next/dynamic";
 import { GroundTrack } from "@/components/GroundTrack";
 import { LiteraturePanel } from "@/components/LiteraturePanel";
+import { SolarSystemPanel } from "@/components/SolarSystemPanel";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
 import type {
@@ -686,6 +687,10 @@ export default function Home() {
         {/* Also independent of the satellite query: this asks about the published record,
             not about an object in orbit. */}
         <LiteraturePanel />
+
+        {/* The second renderer. Cesium owns the Earth, where a real ellipsoid and a geodetic
+            datum matter; three.js owns everything past it, where the hard problem is scale. */}
+        <SolarSystemPanel />
 
         <footer className="mt-8 border-t border-edge pt-5 text-[11px] leading-5 text-faint">
           {passes?.notice ??

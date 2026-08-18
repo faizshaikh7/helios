@@ -23,7 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
-from science import catalog, decay, eclipse, elements, literature, orbit
+from science import catalog, decay, eclipse, elements, ephemeris, literature, orbit
 from science.provenance import Receipt, Tier, Value
 
 app = FastAPI(
@@ -114,6 +114,12 @@ async def _catalog_error_handler(_: Request, exc: catalog.CatalogError) -> JSONR
 async def _literature_error_handler(_: Request, exc: literature.LiteratureError) -> JSONResponse:
     """Report a literature-service failure as an upstream problem, not a client error."""
     return _error("literature_unavailable", str(exc), status=502)
+
+
+@app.exception_handler(ephemeris.EphemerisError)
+async def _ephemeris_error_handler(_: Request, exc: ephemeris.EphemerisError) -> JSONResponse:
+    """An unsupported body is the caller's mistake, so 422 rather than 500."""
+    return _error("unsupported_body", str(exc), status=422)
 
 
 @app.exception_handler(RequestValidationError)
@@ -733,3 +739,79 @@ def literature_verify(request: CitationVerifyRequest) -> dict[str, Any]:
         ),
         "notice": OPERATIONAL_NOTICE,
     }
+
+
+# --------------------------------------------------------------------------------------------
+# Solar system
+# --------------------------------------------------------------------------------------------
+
+
+class BodyRequest(BaseModel):
+    """Parameters for a planetary-position query."""
+
+    body: str = Field(
+        default="mars",
+        description=f"One of: {', '.join(ephemeris.BODIES)}.",
+    )
+    at_utc: str | None = Field(
+        default=None, description="ISO-8601 UTC instant. Omit for the current moment."
+    )
+
+
+@app.post("/api/ephemeris/body")
+def ephemeris_body(request: BodyRequest) -> dict[str, Any]:
+    """Where a Sun, Moon or planet is, and where it appears from Earth.
+
+    Positions come from an analytic series rather than a JPL kernel, and every value states the
+    measured cost of that choice. See `science/ephemeris.py`.
+
+    Args:
+        request: Body and instant.
+
+    Returns:
+        Barycentric position, apparent sky position from Earth, and the measured accuracy.
+    """
+    when = (
+        _parse_instant(request.at_utc, "at_utc") if request.at_utc else datetime.now(UTC)
+    )
+    body = request.body.strip().lower()
+
+    result: dict[str, Any] = {
+        "body": body,
+        "at_utc": when.isoformat(),
+        "barycentric": ephemeris.barycentric_position(body, when),
+        "accuracy": ephemeris.ACCURACY.get(body),
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+    # The Earth has no apparent position in its own sky, so that half is simply absent rather
+    # than filled with something meaningless.
+    if body != "earth":
+        result["apparent_from_earth"] = ephemeris.apparent_from_earth(body, when)
+
+    return result
+
+
+class SnapshotRequest(BaseModel):
+    """Parameters for a whole-system snapshot."""
+
+    at_utc: str | None = Field(
+        default=None, description="ISO-8601 UTC instant. Omit for the current moment."
+    )
+
+
+@app.post("/api/ephemeris/snapshot")
+def ephemeris_snapshot(request: SnapshotRequest) -> dict[str, Any]:
+    """Positions of every supported body at one instant, for rendering.
+
+    Args:
+        request: The instant.
+
+    Returns:
+        One entry per body with barycentric AU coordinates, radius, colour, and stated accuracy.
+    """
+    when = (
+        _parse_instant(request.at_utc, "at_utc") if request.at_utc else datetime.now(UTC)
+    )
+
+    return {**ephemeris.snapshot(when), "notice": OPERATIONAL_NOTICE}

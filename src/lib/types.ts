@@ -184,5 +184,34 @@ export type CitationVerifyResponse = {
   notice: string;
 };
 
+/** One body in a solar-system snapshot. */
+export type SnapshotBody = {
+  body: string;
+  x_au: number;
+  y_au: number;
+  z_au: number;
+  distance_from_barycentre_au: number;
+  radius_m: number;
+  colour: string;
+  max_error_km: number;
+};
+
+/**
+ * Response from `POST /api/ephemeris/snapshot`.
+ *
+ * Plain numbers rather than tiered values: a renderer consumes ten positions at once, and a
+ * receipt per coordinate would be forty copies of identical provenance. The tier and accuracy
+ * are stated once for the whole snapshot instead.
+ */
+export type SnapshotResponse = {
+  at_utc: string;
+  at_tdb: string;
+  frame: string;
+  tier: string;
+  bodies: SnapshotBody[];
+  accuracy: string;
+  notice: string;
+};
+
 /** Typed error body returned by the service. */
 export type ApiError = { error: { code: string; message: string } };

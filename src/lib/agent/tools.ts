@@ -237,6 +237,38 @@ export const scienceTools = {
     }),
     execute: async (input) => callScience("/api/literature/verify", input),
   }),
+
+  planetPosition: tool({
+    description:
+      "Get where the Sun, Moon or a planet is: barycentric position in AU, plus right " +
+      "ascension, declination, distance and light travel time as seen from Earth. Use for " +
+      "questions about planets, the Moon, the Sun, where a body is in the sky, or how far away " +
+      "it is. Positions come from an analytic series, accurate to between 1e-6 and 3e-4 of the " +
+      "body's distance depending on the body - good for orientation and 'where is it now', not " +
+      "for navigation or occultation timing. Report the stated accuracy alongside the answer. " +
+      "Only the Sun, Moon and eight planets are available: no asteroids, comets or exoplanets.",
+    inputSchema: z.object({
+      body: z
+        .enum([
+          "sun",
+          "mercury",
+          "venus",
+          "earth",
+          "moon",
+          "mars",
+          "jupiter",
+          "saturn",
+          "uranus",
+          "neptune",
+        ])
+        .describe("Which body."),
+      at_utc: z
+        .string()
+        .optional()
+        .describe("ISO-8601 UTC instant, e.g. 2026-08-18T00:00:00Z. Omit for now."),
+    }),
+    execute: async (input) => callScience("/api/ephemeris/body", input),
+  }),
 } as const;
 
 /** Instructions given to the agent. */
@@ -251,8 +283,11 @@ second and element sets are updated daily.
 
 How to answer:
 - Call the tools you need. Chain them when a question requires it.
-- Report numbers exactly as the tools return them, with their units. Do not round away
-  significant digits and do not convert units silently - say so if you convert.
+- Report numbers exactly as the tools return them, in the units the tool used. Do not round away
+  significant digits. **Do not convert units unless the question asked for a different unit** -
+  an unrequested conversion adds a hand-done arithmetic step that nothing checks, and a slip
+  there produces a wrong number sitting beside correct ones. If you do convert, say so and show
+  the original value too.
 - State the trust tier of what you report. A measured element-set epoch is "observed", a
   quantity computed from it is "derived", and anything propagated to a future time is
   "predicted" - predictions carry error that grows with time from the element set's epoch.
