@@ -6,10 +6,13 @@ and sources — instead of guessed by a language model.
 Helios is the project. **Cosma** is the platform it is building toward; **Atlas** is the
 scientific agent that reasons over it.
 
-> **Status: working, not deployed.** Seven tools, each differential-tested against an
-> independent implementation; a tool-calling agent; and an evaluation harness with 157
-> questions whose ground truth came from Orekit. Runs locally; no public URL yet. Nothing here
-> claims a capability that isn't shipped — where a measurement is incomplete, it says so.
+> **Status: live.** Fifteen tools spanning Earth orbit, the solar system and literature — the
+> numerical ones checked against an independent implementation before counting as done; ten of
+> them exposed to a tool-calling agent; an evaluation harness with 157 questions whose ground
+> truth came from Orekit; and 394 tests on every push. Nothing here claims a capability that
+> isn't shipped — where a measurement is incomplete, it says so.
+>
+> **[space-sim-lemon.vercel.app](https://space-sim-lemon.vercel.app)**
 
 ---
 
@@ -44,6 +47,12 @@ Every number returned carries where it came from.
 Measured against **157 questions whose answers were computed by Orekit** — an independent
 implementation, never by the code being graded. Seven satellites spanning low Earth orbit,
 sun-synchronous, geostationary, medium Earth orbit, and a highly eccentric orbit.
+
+**What this number covers:** the Earth-orbit tools, across the eight categories in the table
+below. The decay, literature and solar-system tools came later and are not in this chart — they
+are verified by their own differential tests, described under [Current scope](#current-scope),
+but they have not been through the agent-versus-bare-model comparison. Saying "99.4%" of the
+whole system would be extending a measurement past what was measured.
 
 **143 of the 157 cannot be answered from memory.** That constraint is what makes the comparison
 mean anything: *"what is the ISS's altitude"* sits in every model's training data, so a set of
@@ -122,18 +131,27 @@ independently computed upper bound to compare against.
 
 ### Reproducing it
 
+The science service runs from `backend/`, which is its own Python project.
+
 ```bash
 # Ground truth, from the independent implementation
-uv run python tools/eval/generate_questions.py
+cd backend && uv run python ../tools/eval/generate_questions.py
 
-# Pin the science service to the same element sets the ground truth used
-EVAL_FIXTURES=eval/tle_fixtures.json uv run uvicorn api.main:app --port 8787
+# Pin the science service to the same element sets the ground truth used, and start the web app
+EVAL_FIXTURES=../eval/tle_fixtures.json uv run uvicorn api.main:app --port 8787
+npm run dev:web
 
-uv run python tools/eval/run_eval.py --solver ceiling
-uv run python tools/eval/run_eval.py --solver baseline --provider gemini
-uv run python tools/eval/run_eval.py --solver grounded --provider gemini
-uv run python tools/eval/make_chart.py
+# The ceiling solver calls the tools directly and needs no model
+cd backend
+uv run python ../tools/eval/run_eval.py --solver ceiling
+uv run python ../tools/eval/run_eval.py --solver baseline --provider gemini --delay 10
+uv run python ../tools/eval/run_eval.py --solver grounded --provider gemini --delay 10
+uv run python ../tools/eval/make_chart.py
 ```
+
+Pinning is not optional. Without `EVAL_FIXTURES` the catalog serves live element sets while the
+ground truth was computed from frozen ones, so the system is graded against a target it was
+never given — and the error grows silently as the elements age.
 
 ## Stack
 
@@ -141,20 +159,31 @@ uv run python tools/eval/make_chart.py
 |---|---|
 | Web | Next.js 16, React 19, TypeScript, Tailwind 4 |
 | Science | Python 3.13 — astropy, skyfield, sgp4 |
-| Orbital data | Celestrak |
-| Hosting | Vercel (one project, both runtimes) |
+| Rendering | Cesium for Earth orbit, three.js for the solar system |
+| Orbital data | Celestrak · JPL Horizons and SBDB · Yale Bright Star Catalogue |
+| Hosting | Vercel — one project, two services, one domain |
 
 Python owns the science because the validated ecosystem lives there and there is no JavaScript
 binding to SPICE. The rule throughout is to integrate existing, flight-proven implementations
 rather than write competing ones.
+
+Two renderers, deliberately. Cesium has correct WGS84 geodesy, terrain occlusion and
+time-dynamic entities, which is what Earth orbit needs; three.js handles the solar system.
+Forcing one renderer across 26 orders of magnitude is a floating-point precision trap — two
+regimes, two renderers.
+
+The deployment is two Vercel services sharing a domain: `web` (Next.js, the UI and the agent
+loop) and `science` (FastAPI, everything under `/api`). The web service reaches science over a
+service binding rather than a public URL, so the hop is deployment-aware and never leaves the
+project.
 
 ## Running locally
 
 Requires Node 24+ and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-npm install          # web dependencies
-uv sync --extra dev  # science dependencies (uv provides Python 3.13)
+npm install                        # web dependencies
+cd backend && uv sync --extra dev  # science dependencies (uv provides Python 3.13)
 ```
 
 Two processes, in separate terminals — the science service and the web app are separate
@@ -168,18 +197,22 @@ npm run dev:web      # Next.js on http://localhost:3002
 The tools work with no configuration. To use the agent, add a provider key to `.env.local`
 (see `.env.example`) or run a local Ollama.
 
-Checks:
+Checks — every one of these runs in CI on every push, alongside a production build:
 
 ```bash
 npm run typecheck
 npm run lint
-uv run pytest -q
-uv run ruff check .
+npm run test:web   # 21 tests, Node's own runner — no framework, no build step
+npm run test:py    # 373 tests
+npm run lint:py
 ```
 
 ## Current scope
 
-Seven tools, each verified against Orekit before counting as done:
+Fifteen endpoints on the science service, ten of them exposed to the agent as typed tools. Each
+was verified against an independent source before counting as done.
+
+**Earth orbit**
 
 | Tool | Agreement with the independent implementation |
 |---|---|
@@ -188,17 +221,67 @@ Seven tools, each verified against Orekit before counting as done:
 | Frame conversion | GCRF→ITRF 2.5 cm; TEME→ITRF 1.12 m, against a 44 km frame-confusion error |
 | Orbital elements | a to 1 m, e to 1e-9, angles to 1e-6° |
 | State at an instant | Sub-satellite point, altitude, speed |
+| Ground track | Sub-satellite path over a window |
 | Ground-station access | 16/16 pass counts, 15/15 peak elevations |
 | Eclipse and beta angle | Conical shadow, umbra and penumbra separated, boundaries to 2 s |
+| Orbital decay lifetime | Answers with a **range**, not a number — see below |
 
-Underneath those, time scales agree with Orekit to under a nanosecond across the 2012 and 2017
-leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
+**The solar system**
+
+| Tool | Agreement with the independent implementation |
+|---|---|
+| Planetary ephemeris | Analytic model within 1e-3 of distance against JPL, measured per body |
+| Moons | 20 major moons from JPL Horizons elements, within 3% of orbit radius |
+| Asteroids | 763 catalogued bodies from JPL SBDB |
+| Bright stars | 8,355 stars from the Yale Bright Star Catalogue via VizieR |
+
+**Literature**
+
+| Tool | What it guarantees |
+|---|---|
+| Search | Returns only what the tool actually fetched |
+| Citation verification | Resolves claimed identifiers and names the ones that do not exist |
+
+Underneath all of it, time scales agree with Orekit to under a nanosecond across the 2012 and
+2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**159 tests**, run on every push.
+**394 tests** — 373 Python, 21 TypeScript — run on every push.
 
-Not built yet: a public deployment, the Cesium globe, and the sandboxed code path for questions
-no fixed tool covers.
+### Three things worth singling out
+
+**Decay lifetime answers with a range.** Orbital lifetime depends on solar activity, and solar
+activity is not forecastable years ahead, so a single confident number would be close to
+dishonest. The simplified model is graded against full numerical propagation: it runs 1.14× to
+1.39× long across the reference cases, always in the same direction, and that bias is smaller
+than the 3–5× solar spread it reports. A test asserts that ordering — if it ever inverted, the
+range would be measuring model error rather than physics.
+
+**The agent may only cite what the tool fetched.** A fabricated reference is indistinguishable
+from a real one by reading it, so `/api/literature/verify` resolves claimed identifiers against
+the source and names the ones that do not exist. The constraint held end to end, including while
+the tool was failing — which is when it counts.
+
+**The solar system states its own distortion.** Bodies are always true to scale; below nine
+pixels of real angular size they draw as labelled markers, so nothing is exaggerated and nothing
+is invisible. There is a true-scale toggle that makes the planets vanish, which is the honest
+picture. Orbits are traced from the ephemeris, so each planet sits on its own path by
+construction rather than by adjustment.
+
+### Not built yet
+
+The sandboxed code path for questions no fixed tool covers. It is deliberately last: shipping
+code generation before the evaluation harness existed would have produced a system whose errors
+could not be detected. The harness exists now, so the escape hatch can be graded by it.
+
+### On the public deployment
+
+The agent endpoint is public and unauthenticated — a stranger has to be able to ask a question
+for this to make its argument at all. It is protected by a per-client rate limit and a shared
+daily budget on model calls, charged by what a question actually cost rather than by request
+count. Both limiters hold their counters in process memory, so under concurrency the effective
+ceiling is per-instance rather than global. That is a real reduction in blast radius, not a hard
+cap, and it is written down as the former.
 
 ## Not for operational use
 
