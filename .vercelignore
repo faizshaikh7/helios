@@ -18,7 +18,12 @@ docs/
 .github/
 
 # Large local caches and downloads.
-data/
+#
+# Anchored with a leading slash. A bare `data/` matches at ANY depth, which also excluded
+# `backend/science/data/` -- the bundled star, moon, asteroid and atmosphere datasets. The four
+# routes that read them returned 500 in production while every other route worked, because the
+# service imported fine and only failed when a request reached the missing file.
+/data/
 .venv/
 .pytest_cache/
 .ruff_cache/
