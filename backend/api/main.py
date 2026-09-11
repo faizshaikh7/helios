@@ -23,6 +23,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
+from api.ratelimit import rate_limit_middleware
 from science import (
     catalog,
     decay,
@@ -39,6 +40,12 @@ app = FastAPI(
     title="Helios science service",
     description="Orbital mechanics with explicit frames, time scales, units, and provenance.",
 )
+
+# Every route here is public and unauthenticated, and the catalog reaches Celestrak on a miss.
+# The limiter protects that upstream and this deployment's CPU; see api/ratelimit.py for what it
+# does and does not guarantee. Enforced only on a deployment, so the evaluation harness is
+# unaffected when it runs locally.
+app.middleware("http")(rate_limit_middleware)
 
 # Shown alongside every prediction. The licence disclaims warranty; this states the operational
 # limit in the place a user will actually read it.

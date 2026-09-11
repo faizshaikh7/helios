@@ -39,6 +39,38 @@ export const DEFAULT_MODELS: Record<ProviderId, string> = {
   ollama: "qwen3",
 };
 
+/**
+ * Models a caller may request, per provider.
+ *
+ * The agent endpoint is public, and the model name arrives from the request body. Without an
+ * allowlist a stranger chooses what this deployment's key pays for -- and the expensive choice
+ * and the cheap one are one string apart. Only models this project has actually run are listed;
+ * adding one is a deliberate act, not a side effect of someone else's request.
+ *
+ * Ollama is unrestricted (empty list) because it runs on the caller's own machine against their
+ * own hardware. There is no shared quota to protect, and which models are pulled locally varies
+ * per user, so an allowlist there would only break working setups.
+ */
+export const ALLOWED_MODELS: Record<ProviderId, readonly string[]> = {
+  // The lite variant is the default; the full flash model is permitted for a local run against a
+  // paid key, where its 20-per-day free tier cap does not apply.
+  gemini: ["gemini-3.5-flash-lite", "gemini-3.5-flash"],
+  grok: ["grok-4.5"],
+  ollama: [],
+};
+
+/**
+ * Check whether a provider may be asked for a given model.
+ *
+ * @param provider - Provider the request selected.
+ * @param model - Model identifier from the request.
+ * @returns True if the model is permitted for that provider.
+ */
+export function isModelAllowed(provider: ProviderId, model: string): boolean {
+  const allowed = ALLOWED_MODELS[provider];
+  return allowed.length === 0 || allowed.includes(model);
+}
+
 /** Where a local Ollama server listens, using its OpenAI-compatible surface. */
 const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL ?? "http://127.0.0.1:11434/v1";
 

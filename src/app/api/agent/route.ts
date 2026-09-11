@@ -1,7 +1,12 @@
 import { ToolLoopAgent, isStepCount } from "ai";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { DEFAULT_MODELS, type ProviderId, resolveModel } from "@/lib/agent/models";
+import { DEFAULT_MODELS, isModelAllowed, type ProviderId, resolveModel } from "@/lib/agent/models";
+import {
+  agentRateLimiter,
+  clientIdFromHeaders,
+  rateLimitingEnabled,
+} from "@/lib/agent/rateLimit";
 import { AGENT_INSTRUCTIONS, type CollectedCall, scienceTools } from "@/lib/agent/tools";
 
 /**
@@ -53,6 +58,32 @@ export async function POST(request: Request): Promise<Response> {
   const provider: ProviderId = parsed.data.provider ?? defaultProvider();
   const model = parsed.data.model ?? DEFAULT_MODELS[provider];
 
+  // Checked before anything is spent. The model name reaches here from a public request body, so
+  // an unlisted one is refused rather than billed.
+  if (!isModelAllowed(provider, model)) {
+    return NextResponse.json(
+      {
+        error: {
+          code: "model_not_allowed",
+          message: `Model "${model}" is not available for provider "${provider}" on this deployment.`,
+        },
+      },
+      { status: 422 },
+    );
+  }
+
+  // Enforced only on a deployment; see rateLimitingEnabled for why the evaluation harness must
+  // not be limited when it runs against a local server.
+  if (rateLimitingEnabled()) {
+    const decision = agentRateLimiter.check(clientIdFromHeaders(request.headers));
+    if (!decision.allowed) {
+      return NextResponse.json(
+        { error: { code: decision.code, message: decision.message } },
+        { status: 429, headers: { "retry-after": String(decision.retryAfterS) } },
+      );
+    }
+  }
+
   try {
     const grounded = parsed.data.mode === "grounded";
 
@@ -70,6 +101,12 @@ export async function POST(request: Request): Promise<Response> {
     });
 
     const result = await agent.generate({ prompt: parsed.data.question });
+
+    // Charged with what the question actually cost: one model call per tool-calling round. A
+    // one-step baseline question and an eight-step grounded one are not the same draw on the
+    // provider quota, and billing them alike would make the budget meaningless in both
+    // directions.
+    if (rateLimitingEnabled()) agentRateLimiter.recordUsage(result.steps.length);
 
     const calls: CollectedCall[] = [];
     for (const step of result.steps) {
@@ -97,6 +134,11 @@ export async function POST(request: Request): Promise<Response> {
     });
   } catch (caught) {
     const detail = caught instanceof Error ? caught.message : String(caught);
+
+    // A failure that reached the provider still consumed quota -- a rate-limit rejection is the
+    // clearest case. Charging one call is the conservative reading: undercounting failures is
+    // how a budget quietly stops holding under exactly the conditions it exists for.
+    if (rateLimitingEnabled()) agentRateLimiter.recordUsage(1);
 
     // A refused connection to a local Ollama is the commonest first-run failure, and the raw
     // ECONNREFUSED says nothing about how to fix it. Translate it into the actual next step.

@@ -10,6 +10,7 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
+    "test:web": "node --test \"src/**/*.test.ts\"",
     "test:py": "cd backend && uv run pytest -q",
     "lint:py": "cd backend && uv run ruff check .",
     "cesium:assets": "node scripts/copy-cesium-assets.mjs",
