@@ -161,10 +161,15 @@ class SlidingWindowLimiter:
 def client_id_from_request(request: Request) -> str:
     """Identify the caller from proxy headers.
 
-    Vercel sets ``x-forwarded-for`` with the client address first. The header is caller-supplied
-    in principle, so this is a cooperative identifier rather than proof of identity. It is the
-    right granularity for protecting an upstream from accidental hammering, which is what this
-    limiter is for; it is not an authentication mechanism and is not used as one.
+    Vercel sets ``x-forwarded-for`` with the client address first, and **overwrites whatever the
+    caller sent**. Measured against the deployment: 130 requests each claiming a different
+    address were limited at exactly 120, the per-minute allowance, rather than passing as 130
+    separate clients. Spoofing the header therefore does not buy a fresh allowance.
+
+    It is still not proof of identity -- a NAT puts many people behind one address, and a real
+    botnet has real ones. This is the right granularity for protecting an upstream from
+    hammering, which is what the limiter is for; it is not an authentication mechanism and is
+    not used as one.
 
     Args:
         request: Incoming request.

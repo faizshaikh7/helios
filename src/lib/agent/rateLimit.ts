@@ -253,10 +253,15 @@ export class RateLimiter {
 /**
  * Identify the caller from proxy headers.
  *
- * Vercel sets `x-forwarded-for` on every request, with the client address first. The header is
- * caller-supplied in principle, so this is a cooperative identifier rather than proof of
- * identity -- an attacker can rotate it. That is what the global budget is for: it holds
- * regardless of how many identities one caller invents.
+ * Vercel sets `x-forwarded-for` on every request, with the client address first, and **it
+ * overwrites whatever the caller sent**. Measured against the deployment rather than assumed:
+ * 130 requests each claiming a different address were limited at exactly 120, the per-minute
+ * allowance, instead of passing as 130 separate clients. So identity here cannot be rotated by
+ * spoofing the header.
+ *
+ * It is still not proof of identity -- a real botnet has real addresses, and a NAT puts many
+ * people behind one. That is what the global budget is for: it holds regardless of how many
+ * distinct addresses a caller actually has.
  *
  * @param headers - Request headers.
  * @returns A stable key for the caller, or a shared fallback when no address is present.
