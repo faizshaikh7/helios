@@ -224,10 +224,24 @@ describe("client identification", () => {
 });
 
 describe("default policy", () => {
-  it("keeps the daily budget under the Gemini free tier's 500 requests per day", () => {
-    // The budget exists to fail with this endpoint's own clear error rather than the provider's
-    // opaque one. If it ever rises above the provider's cap, it stops doing that.
-    assert.ok(DEFAULT_RATE_LIMIT.budgetLimit < 500);
+  it("leaves the aggregate budget near the provider cap across several instances", () => {
+    // The budget cannot be shared without shared state, so the real ceiling is
+    // instances x budgetLimit. Setting it to the provider's own 500/day would overshoot by
+    // whatever the instance count is, which is the mistake this asserts against: at a plausible
+    // spread of a few instances the aggregate must still land in the region of the cap.
+    const PLAUSIBLE_INSTANCES = 4;
+
+    assert.ok(DEFAULT_RATE_LIMIT.budgetLimit < 500, "one instance must not exceed the cap alone");
+    assert.ok(
+      DEFAULT_RATE_LIMIT.budgetLimit * PLAUSIBLE_INSTANCES <= 1000,
+      "aggregate across plausible concurrency must stay within twice the provider cap",
+    );
+  });
+
+  it("still serves a useful number of questions on a single instance", () => {
+    // The other direction: a budget tightened for the aggregate must not make the common
+    // single-instance case useless.
+    assert.ok(DEFAULT_RATE_LIMIT.budgetLimit >= 100);
   });
 
   it("allows a burst smaller than the sustained allowance", () => {

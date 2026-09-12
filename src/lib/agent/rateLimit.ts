@@ -54,16 +54,29 @@ const DAY = 24 * HOUR;
  * Default policy.
  *
  * The daily budget is set below the Gemini free tier's 500 requests per day for the lite model,
- * leaving headroom so that hitting this limit produces *this* endpoint's clear 429 rather than
- * the provider's opaque one. A caller who sees "the service has used its budget for today" can
- * act on it; a raw provider quota error reads like a bug.
+ * so that exhaustion produces *this* endpoint's clear 429 rather than the provider's opaque one.
+ * A caller who sees "the service has used its budget for today" can act on it; a raw provider
+ * quota error reads like a bug.
+ *
+ * **The figure is per instance, so it is chosen for the aggregate, not for one process.** The
+ * budget cannot be shared without shared state, so under concurrency the real ceiling is
+ * `instances x budgetLimit`. Setting this to the provider's own cap would therefore overshoot it
+ * by whatever the instance count happens to be. At 150 the aggregate stays near 500 across the
+ * handful of instances this workload actually spreads over, while a single-instance deployment
+ * -- the common case -- still serves 150 questions a day, far more than a demo needs.
+ *
+ * The provider's free tier is itself a hard cap, and it is the one that bounds *spend*: with no
+ * billing attached, exceeding it costs nothing and simply fails. This budget exists to make that
+ * boundary legible and to keep one caller from consuming the day's allowance, not to be the last
+ * line of defence against a bill. If a paid key is ever attached, that changes: the budget
+ * becomes the only thing between a caller and real money, and a shared counter earns its keep.
  */
 export const DEFAULT_RATE_LIMIT: RateLimitConfig = {
   burstLimit: 5,
   burstWindowMs: MINUTE,
   sustainedLimit: 40,
   sustainedWindowMs: HOUR,
-  budgetLimit: 450,
+  budgetLimit: 150,
   budgetWindowMs: DAY,
   maxTrackedClients: 10_000,
 };
