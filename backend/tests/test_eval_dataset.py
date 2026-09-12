@@ -227,3 +227,77 @@ def test_pinned_fixtures_do_not_expire_mid_run() -> None:
         )
     finally:
         catalog.clear_cache()
+
+
+# Independent expectations for how far each body can be from Earth, in AU. Derived from published
+# semi-major axes and eccentricities, not from this project's ephemeris: the widest separation is
+# the sum of the two aphelia and the closest is the difference of the extremes. A generator using
+# the wrong origin (heliocentric rather than geocentric) or the wrong unit fails these.
+EXPECTED_EARTH_DISTANCE_AU: dict[str, tuple[float, float]] = {
+    "mercury": (0.50, 1.50),
+    "venus": (0.25, 1.76),
+    "mars": (0.36, 2.70),
+    "jupiter": (3.92, 6.48),
+    "saturn": (8.00, 11.15),
+    "uranus": (17.25, 21.15),
+    "neptune": (28.70, 31.45),
+    # 356,500 to 406,700 km.
+    "moon": (0.00238, 0.00272),
+    # Earth's own perihelion and aphelion.
+    "sun": (0.980, 1.020),
+}
+
+
+def test_planetary_distances_lie_inside_published_ranges() -> None:
+    """Every planetary answer falls within the range that body's orbit permits.
+
+    This is the check that catches an origin or unit error. A heliocentric distance would put
+    Mars at 1.4-1.7 AU rather than 0.4-2.7, and metres or kilometres would miss by orders of
+    magnitude -- both of which look entirely plausible in isolation.
+    """
+    questions = _by_category("earth_distance")
+    assert questions, "no planetary questions in the dataset"
+
+    for question in questions:
+        body = question["context"]["body"]
+        low, high = EXPECTED_EARTH_DISTANCE_AU[body]
+        value = question["answer"]["value"]
+
+        assert question["answer"]["unit"] == "AU", f"{body} is not in AU"
+        assert low <= value <= high, (
+            f"{body} at {question['context']['epoch_utc']} is {value} AU, outside the "
+            f"{low}-{high} AU its orbit allows"
+        )
+
+
+def test_planetary_tolerances_scale_with_distance() -> None:
+    """Tolerance is relative, not one fixed figure across three orders of magnitude.
+
+    A single absolute tolerance cannot serve this set: tight enough to be meaningful at Neptune
+    is unreachable at the Moon, and loose enough for Neptune would make the Moon question free.
+    If this ever collapses to a constant, the far bodies stop being tested and the near ones
+    stop being answerable.
+    """
+    questions = _by_category("earth_distance")
+
+    for question in questions:
+        value = question["answer"]["value"]
+        tolerance = question["answer"]["tolerance_abs"]
+
+        assert tolerance > 0, "a zero tolerance can never be met"
+        # Either it tracks the distance, or it is the documented floor for the Moon.
+        assert tolerance == pytest.approx(value * 1.0e-4) or tolerance == pytest.approx(1.0e-5), (
+            f"tolerance {tolerance} for {question['context']['body']} is neither 1e-4 of "
+            f"{value} AU nor the 1e-5 AU floor"
+        )
+
+
+def test_planetary_questions_are_not_answerable_from_recall() -> None:
+    """No planetary question is marked as a memorizable control.
+
+    At 1e-4 relative, recalling a round number fails -- the Sun's distance varies by 0.017 AU
+    over a year against a tolerance of about 1e-4, and the Moon's by some 50,000 km against a
+    floor of roughly 1,500 km. Marking any of these memorizable would misdescribe the dataset.
+    """
+    for question in _by_category("earth_distance"):
+        assert question["memorizable"] is False

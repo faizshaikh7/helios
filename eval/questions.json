@@ -2,16 +2,17 @@
   "_provenance": {
     "source": "orekit",
     "orekit_jpype_version": "13.1.7.0",
-    "generated_utc": "2026-08-12T12:42:30+00:00",
+    "generated_utc": "2026-09-12T11:54:58+00:00",
     "generator": "tools/eval/generate_questions.py",
     "note": "Ground truth from an independent implementation, never from the code being graded. Questions are weighted toward quantities a language model cannot recall; the memorizable minority is a control, not filler."
   },
   "summary": {
-    "total": 157,
+    "total": 202,
     "memorizable_control": 14,
-    "unmemorizable": 143,
+    "unmemorizable": 188,
     "categories": [
       "altitude",
+      "earth_distance",
       "inclination",
       "max_elevation",
       "orbital_period",
@@ -2922,6 +2923,771 @@
         "norad_id": 41328,
         "regime": "medium Earth orbit",
         "epoch_utc": "2026-08-14T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0157",
+      "category": "earth_distance",
+      "question": "How far is Mercury from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.125667,
+        "unit": "AU",
+        "tolerance_abs": 0.00011256669376893651
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mercury",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0158",
+      "category": "earth_distance",
+      "question": "How far is Mercury from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.332258,
+        "unit": "AU",
+        "tolerance_abs": 0.0001332258019930473
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mercury",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0159",
+      "category": "earth_distance",
+      "question": "How far is Mercury from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.970563,
+        "unit": "AU",
+        "tolerance_abs": 9.705626946003131e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mercury",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0160",
+      "category": "earth_distance",
+      "question": "How far is Mercury from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.319831,
+        "unit": "AU",
+        "tolerance_abs": 0.00013198305171029285
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mercury",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0161",
+      "category": "earth_distance",
+      "question": "How far is Mercury from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.242439,
+        "unit": "AU",
+        "tolerance_abs": 0.00012424390789818554
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mercury",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0162",
+      "category": "earth_distance",
+      "question": "How far is Venus from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.712159,
+        "unit": "AU",
+        "tolerance_abs": 7.121593834391284e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "venus",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0163",
+      "category": "earth_distance",
+      "question": "How far is Venus from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.448542,
+        "unit": "AU",
+        "tolerance_abs": 4.485422670139147e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "venus",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0164",
+      "category": "earth_distance",
+      "question": "How far is Venus from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.21689,
+        "unit": "AU",
+        "tolerance_abs": 0.00012168900146817097
+      },
+      "memorizable": false,
+      "context": {
+        "body": "venus",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0165",
+      "category": "earth_distance",
+      "question": "How far is Venus from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.296428,
+        "unit": "AU",
+        "tolerance_abs": 0.0001296427950646989
+      },
+      "memorizable": false,
+      "context": {
+        "body": "venus",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0166",
+      "category": "earth_distance",
+      "question": "How far is Venus from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.697241,
+        "unit": "AU",
+        "tolerance_abs": 6.972411525342044e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "venus",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0167",
+      "category": "earth_distance",
+      "question": "How far is Mars from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.950008,
+        "unit": "AU",
+        "tolerance_abs": 0.00019500077398507189
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mars",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0168",
+      "category": "earth_distance",
+      "question": "How far is Mars from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.767459,
+        "unit": "AU",
+        "tolerance_abs": 0.00017674591873762752
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mars",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0169",
+      "category": "earth_distance",
+      "question": "How far is Mars from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.763727,
+        "unit": "AU",
+        "tolerance_abs": 7.63726727365871e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mars",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0170",
+      "category": "earth_distance",
+      "question": "How far is Mars from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.778151,
+        "unit": "AU",
+        "tolerance_abs": 0.0001778150772850796
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mars",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0171",
+      "category": "earth_distance",
+      "question": "How far is Mars from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 2.356107,
+        "unit": "AU",
+        "tolerance_abs": 0.00023561074431994889
+      },
+      "memorizable": false,
+      "context": {
+        "body": "mars",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0172",
+      "category": "earth_distance",
+      "question": "How far is Jupiter from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 6.2857,
+        "unit": "AU",
+        "tolerance_abs": 0.0006285700499853243
+      },
+      "memorizable": false,
+      "context": {
+        "body": "jupiter",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0173",
+      "category": "earth_distance",
+      "question": "How far is Jupiter from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 6.08434,
+        "unit": "AU",
+        "tolerance_abs": 0.0006084340306612607
+      },
+      "memorizable": false,
+      "context": {
+        "body": "jupiter",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0174",
+      "category": "earth_distance",
+      "question": "How far is Jupiter from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 4.576226,
+        "unit": "AU",
+        "tolerance_abs": 0.00045762263336813645
+      },
+      "memorizable": false,
+      "context": {
+        "body": "jupiter",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0175",
+      "category": "earth_distance",
+      "question": "How far is Jupiter from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 6.327219,
+        "unit": "AU",
+        "tolerance_abs": 0.0006327219190263162
+      },
+      "memorizable": false,
+      "context": {
+        "body": "jupiter",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0176",
+      "category": "earth_distance",
+      "question": "How far is Jupiter from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 4.808255,
+        "unit": "AU",
+        "tolerance_abs": 0.0004808255323430289
+      },
+      "memorizable": false,
+      "context": {
+        "body": "jupiter",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0177",
+      "category": "earth_distance",
+      "question": "How far is Saturn from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 8.835277,
+        "unit": "AU",
+        "tolerance_abs": 0.0008835276797732034
+      },
+      "memorizable": false,
+      "context": {
+        "body": "saturn",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0178",
+      "category": "earth_distance",
+      "question": "How far is Saturn from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 8.490702,
+        "unit": "AU",
+        "tolerance_abs": 0.0008490702285120593
+      },
+      "memorizable": false,
+      "context": {
+        "body": "saturn",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0179",
+      "category": "earth_distance",
+      "question": "How far is Saturn from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 10.337492,
+        "unit": "AU",
+        "tolerance_abs": 0.0010337492477758706
+      },
+      "memorizable": false,
+      "context": {
+        "body": "saturn",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0180",
+      "category": "earth_distance",
+      "question": "How far is Saturn from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 8.229168,
+        "unit": "AU",
+        "tolerance_abs": 0.0008229168313418656
+      },
+      "memorizable": false,
+      "context": {
+        "body": "saturn",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0181",
+      "category": "earth_distance",
+      "question": "How far is Saturn from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 9.69724,
+        "unit": "AU",
+        "tolerance_abs": 0.0009697239561203166
+      },
+      "memorizable": false,
+      "context": {
+        "body": "saturn",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0182",
+      "category": "earth_distance",
+      "question": "How far is Uranus from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 19.705124,
+        "unit": "AU",
+        "tolerance_abs": 0.001970512361385694
+      },
+      "memorizable": false,
+      "context": {
+        "body": "uranus",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0183",
+      "category": "earth_distance",
+      "question": "How far is Uranus from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 19.130117,
+        "unit": "AU",
+        "tolerance_abs": 0.0019130117209337923
+      },
+      "memorizable": false,
+      "context": {
+        "body": "uranus",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0184",
+      "category": "earth_distance",
+      "question": "How far is Uranus from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 19.848198,
+        "unit": "AU",
+        "tolerance_abs": 0.001984819761536807
+      },
+      "memorizable": false,
+      "context": {
+        "body": "uranus",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0185",
+      "category": "earth_distance",
+      "question": "How far is Uranus from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 18.455341,
+        "unit": "AU",
+        "tolerance_abs": 0.0018455340948063058
+      },
+      "memorizable": false,
+      "context": {
+        "body": "uranus",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0186",
+      "category": "earth_distance",
+      "question": "How far is Uranus from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 19.440393,
+        "unit": "AU",
+        "tolerance_abs": 0.0019440393407793655
+      },
+      "memorizable": false,
+      "context": {
+        "body": "uranus",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0187",
+      "category": "earth_distance",
+      "question": "How far is Neptune from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 29.151282,
+        "unit": "AU",
+        "tolerance_abs": 0.002915128249390058
+      },
+      "memorizable": false,
+      "context": {
+        "body": "neptune",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0188",
+      "category": "earth_distance",
+      "question": "How far is Neptune from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 28.89032,
+        "unit": "AU",
+        "tolerance_abs": 0.0028890320029760527
+      },
+      "memorizable": false,
+      "context": {
+        "body": "neptune",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0189",
+      "category": "earth_distance",
+      "question": "How far is Neptune from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 30.866855,
+        "unit": "AU",
+        "tolerance_abs": 0.00308668553378656
+      },
+      "memorizable": false,
+      "context": {
+        "body": "neptune",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0190",
+      "category": "earth_distance",
+      "question": "How far is Neptune from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 29.038547,
+        "unit": "AU",
+        "tolerance_abs": 0.0029038547396801366
+      },
+      "memorizable": false,
+      "context": {
+        "body": "neptune",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0191",
+      "category": "earth_distance",
+      "question": "How far is Neptune from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 30.833159,
+        "unit": "AU",
+        "tolerance_abs": 0.0030833159186007975
+      },
+      "memorizable": false,
+      "context": {
+        "body": "neptune",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0192",
+      "category": "earth_distance",
+      "question": "How far is Moon from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.00244,
+        "unit": "AU",
+        "tolerance_abs": 1e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "moon",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0193",
+      "category": "earth_distance",
+      "question": "How far is Moon from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.002643,
+        "unit": "AU",
+        "tolerance_abs": 1e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "moon",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0194",
+      "category": "earth_distance",
+      "question": "How far is Moon from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.002457,
+        "unit": "AU",
+        "tolerance_abs": 1e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "moon",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0195",
+      "category": "earth_distance",
+      "question": "How far is Moon from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.002658,
+        "unit": "AU",
+        "tolerance_abs": 1e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "moon",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0196",
+      "category": "earth_distance",
+      "question": "How far is Moon from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.002436,
+        "unit": "AU",
+        "tolerance_abs": 1e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "moon",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0197",
+      "category": "earth_distance",
+      "question": "How far is Sun from Earth at 2026-08-12T00:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.013416,
+        "unit": "AU",
+        "tolerance_abs": 0.00010134163582640268
+      },
+      "memorizable": false,
+      "context": {
+        "body": "sun",
+        "regime": "solar system",
+        "epoch_utc": "2026-08-12T00:00:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0198",
+      "category": "earth_distance",
+      "question": "How far is Sun from Earth at 2026-09-15T06:30:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 1.005735,
+        "unit": "AU",
+        "tolerance_abs": 0.00010057345967596316
+      },
+      "memorizable": false,
+      "context": {
+        "body": "sun",
+        "regime": "solar system",
+        "epoch_utc": "2026-09-15T06:30:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0199",
+      "category": "earth_distance",
+      "question": "How far is Sun from Earth at 2027-03-20T14:45:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.995771,
+        "unit": "AU",
+        "tolerance_abs": 9.957713576793577e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "sun",
+        "regime": "solar system",
+        "epoch_utc": "2027-03-20T14:45:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0200",
+      "category": "earth_distance",
+      "question": "How far is Sun from Earth at 2028-11-02T21:10:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.991996,
+        "unit": "AU",
+        "tolerance_abs": 9.919960572330177e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "sun",
+        "regime": "solar system",
+        "epoch_utc": "2028-11-02T21:10:00"
+      },
+      "ground_truth_source": "orekit"
+    },
+    {
+      "id": "earth_distance-0201",
+      "category": "earth_distance",
+      "question": "How far is Sun from Earth at 2030-03-20T12:00:00Z, in astronomical units? Give the apparent distance, corrected for light travel time.",
+      "answer": {
+        "value": 0.995809,
+        "unit": "AU",
+        "tolerance_abs": 9.958091443623076e-05
+      },
+      "memorizable": false,
+      "context": {
+        "body": "sun",
+        "regime": "solar system",
+        "epoch_utc": "2030-03-20T12:00:00"
       },
       "ground_truth_source": "orekit"
     }

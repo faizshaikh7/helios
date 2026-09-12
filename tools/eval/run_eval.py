@@ -33,7 +33,7 @@ from urllib import request as urlrequest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT / "backend"))
 
-from science import catalog, elements, orbit
+from science import catalog, elements, ephemeris, orbit
 
 DATASET_PATH = REPO_ROOT / "eval" / "questions.json"
 FIXTURES_PATH = REPO_ROOT / "eval" / "tle_fixtures.json"
@@ -90,6 +90,14 @@ class ToolCeilingSolver:
         """Compute an answer for a question, or None if the category is unsupported."""
         category = question["category"]
         context = question["context"]
+
+        # Planetary questions have no satellite, so this must come before the catalog lookup
+        # below -- which would otherwise raise on a missing norad_id rather than answer.
+        if category == "earth_distance":
+            when = datetime.fromisoformat(context["epoch_utc"]).replace(tzinfo=UTC)
+            apparent = ephemeris.apparent_from_earth(context["body"], when)
+            return float(apparent["distance"].value)
+
         tle = _tle_for(context["norad_id"])
 
         epoch_iso = context.get("epoch_utc")

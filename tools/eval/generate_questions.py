@@ -80,7 +80,59 @@ TOLERANCES: dict[str, dict[str, Any]] = {
     "speed": {"abs": 0.05, "unit": "km/s"},
     "pass_count": {"abs": 0, "unit": "passes"},
     "max_elevation": {"abs": 2.0, "unit": "deg"},
+    # Scaled per question rather than fixed -- see EARTH_DISTANCE_RELATIVE_TOLERANCE. A single
+    # absolute figure cannot serve a set spanning the Moon at 0.0024 AU and Neptune at 30: tight
+    # enough for Neptune is impossible for the Moon, and loose enough for Neptune makes the Moon
+    # question free.
+    "earth_distance": {"abs": None, "unit": "AU"},
 }
+
+# --- Planetary questions -----------------------------------------------------------------
+#
+# These grade `science/ephemeris.py`, which uses astropy's builtin analytic series rather than a
+# JPL binary kernel -- a deliberate trade, because a DE kernel is tens of megabytes and a
+# deployed service must not download data to boot. Orekit reads the JPL DE ephemeris from its own
+# data bundle, so this is a genuinely independent implementation of a different model.
+#
+# The quantity asked is the apparent distance from Earth, light-time corrected. The light-time
+# solution is a shared convention applied identically on both sides; what differs, and what is
+# therefore under test, is the underlying ephemeris.
+
+PLANETARY_BODIES = [
+    "mercury",
+    "venus",
+    "mars",
+    "jupiter",
+    "saturn",
+    "uranus",
+    "neptune",
+    "moon",
+    "sun",
+]
+
+# Spread across years. An analytic series is fitted over a finite interval and degrades away from
+# it, so sampling a single month would flatter it.
+PLANETARY_EPOCHS = [
+    "2026-08-12T00:00:00",
+    "2026-09-15T06:30:00",
+    "2027-03-20T14:45:00",
+    "2028-11-02T21:10:00",
+    "2030-03-20T12:00:00",
+]
+
+# Measured before it was set, as .agent/test.md requires. The worst departure from Orekit across
+# the 45 combinations is 7.05e-4 AU (Uranus), and the worst relative departure 3.6e-5. A relative
+# tolerance of 1e-4 leaves between 2.8x (Uranus) and several hundred times (Sun, Moon) headroom.
+# Never widen it to make a run pass; a disagreement here means the ephemeris moved.
+EARTH_DISTANCE_RELATIVE_TOLERANCE = 1.0e-4
+
+# Floor for the Moon, whose distance is so small that a purely relative tolerance would demand
+# metres. 1e-5 AU is about 1500 km -- still far tighter than the ~50,000 km the Moon's distance
+# actually varies by, so the question remains unanswerable from recall.
+EARTH_DISTANCE_MINIMUM_TOLERANCE_AU = 1.0e-5
+
+AU_M = 149_597_870_700.0
+C_M_PER_S = 299_792_458.0
 
 # Regimes where ground-station passes are a meaningful question. A geostationary satellite is
 # either permanently visible or permanently not, so "how many passes" is not a real question.
@@ -156,9 +208,17 @@ def generate() -> dict[str, Any]:
         unit: str,
         context: dict[str, Any],
         memorizable: bool,
+        tolerance_abs: float | None = None,
     ) -> None:
-        """Append a question with its ground-truth answer."""
+        """Append a question with its ground-truth answer.
+
+        Args:
+            tolerance_abs: Per-question tolerance, overriding the category default. Needed where
+                a category spans several orders of magnitude and one fixed figure cannot be both
+                meaningful at the small end and achievable at the large one.
+        """
         tolerance = TOLERANCES[category]
+        resolved = tolerance["abs"] if tolerance_abs is None else tolerance_abs
         questions.append(
             {
                 "id": f"{category}-{len(questions):04d}",
@@ -167,7 +227,7 @@ def generate() -> dict[str, Any]:
                 "answer": {
                     "value": round(float(answer), 6),
                     "unit": unit,
-                    "tolerance_abs": tolerance["abs"],
+                    "tolerance_abs": resolved,
                 },
                 "memorizable": memorizable,
                 "context": context,
@@ -339,6 +399,62 @@ def generate() -> dict[str, Any]:
                     context,
                     memorizable=False,
                 )
+
+    # --- Planetary distances -------------------------------------------------------------
+    #
+    # Appended last, deliberately. Question ids carry their ordinal, so inserting a category
+    # earlier would renumber everything after it and silently invalidate every stored result
+    # keyed by id.
+    from org.orekit.bodies import CelestialBodyFactory  # type: ignore[import-not-found]
+
+    # ICRF, barycentric. Orekit's GCRF is Earth-centred; the barycentric frame is what makes
+    # planetary positions comparable without an extra translation.
+    icrf = FramesFactory.getICRF()
+    orekit_earth = CelestialBodyFactory.getBody("EARTH")
+
+    for body_name in PLANETARY_BODIES:
+        orekit_body = CelestialBodyFactory.getBody(body_name.upper())
+
+        for epoch_iso in PLANETARY_EPOCHS:
+            date = AbsoluteDate(epoch_iso, utc)
+            observer = orekit_earth.getPVCoordinates(date, icrf).getPosition()
+
+            # Solve the light-time problem: find the emission time such that light arrives at
+            # `date`. Sunlight takes eight minutes and Jupiter's up to fifty, over which the body
+            # moves far more than this comparison's tolerance. Three passes converge well below
+            # it. The same convention is applied by the code under test, so what remains under
+            # test is the ephemeris rather than the correction.
+            emission = date
+            distance_m = 0.0
+            for _ in range(3):
+                target = orekit_body.getPVCoordinates(emission, icrf).getPosition()
+                dx = float(target.getX()) - float(observer.getX())
+                dy = float(target.getY()) - float(observer.getY())
+                dz = float(target.getZ()) - float(observer.getZ())
+                distance_m = (dx * dx + dy * dy + dz * dz) ** 0.5
+                emission = date.shiftedBy(-distance_m / C_M_PER_S)
+
+            distance_au = distance_m / AU_M
+
+            add(
+                "earth_distance",
+                f"How far is {body_name.capitalize()} from Earth at {epoch_iso}Z, "
+                f"in astronomical units? Give the apparent distance, corrected for light "
+                f"travel time.",
+                distance_au,
+                "AU",
+                {"body": body_name, "regime": "solar system", "epoch_utc": epoch_iso},
+                # Not recallable at this tolerance. Even the Sun, whose distance is "about 1 AU"
+                # to everyone, varies by 0.017 AU over a year against a tolerance of 1.0e-4 --
+                # so recalling the round number fails. Nothing here is a control.
+                memorizable=False,
+                tolerance_abs=max(
+                    distance_au * EARTH_DISTANCE_RELATIVE_TOLERANCE,
+                    EARTH_DISTANCE_MINIMUM_TOLERANCE_AU,
+                ),
+            )
+
+        print(f"  {body_name:9} sampled at {len(PLANETARY_EPOCHS)} epochs")
 
     memorizable_count = sum(1 for q in questions if q["memorizable"])
 

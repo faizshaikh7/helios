@@ -1,8 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="860" height="460" viewBox="0 0 860 460" font-family="system-ui,-apple-system,Segoe UI,sans-serif">
 <rect width="860" height="460" fill="#fcfcfb"/>
 <text x="60" y="34" fill="#1a1a19" font-size="17" font-weight="600">Accuracy against independently computed ground truth</text>
-<text x="60" y="56" fill="#5c5b55" font-size="12.5">gemini &#183; 157 questions &#183; ground truth from Orekit</text>
-<text x="60" y="74" fill="#5c5b55" font-size="12.5">overall 99% with tools vs 12% without &#183; on questions that cannot be recalled: 99% vs 9%</text>
+<text x="60" y="56" fill="#5c5b55" font-size="12.5">gemini &#183; 202 questions &#183; ground truth from Orekit</text>
+<text x="60" y="74" fill="#5c5b55" font-size="12.5">overall 99% with tools vs 10% without &#183; on questions that cannot be recalled: 99% vs 7%</text>
 <line x1="60" y1="364.0" x2="836" y2="364.0" stroke="#e4e3dd" stroke-width="1"/>
 <text x="50" y="368.0" fill="#5c5b55" font-size="11" text-anchor="end">0%</text>
 <line x1="60" y1="297.0" x2="836" y2="297.0" stroke="#e4e3dd" stroke-width="1"/>
