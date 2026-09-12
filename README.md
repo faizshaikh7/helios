@@ -8,11 +8,11 @@ scientific agent that reasons over it.
 
 > **Status: live.** Fifteen tools spanning Earth orbit, the solar system and literature — the
 > numerical ones checked against an independent implementation before counting as done; ten of
-> them exposed to a tool-calling agent; an evaluation harness with 157 questions whose ground
-> truth came from Orekit; and 394 tests on every push. Nothing here claims a capability that
+> them exposed to a tool-calling agent; an evaluation harness with 202 questions whose ground
+> truth came from Orekit; and 398 tests on every push. Nothing here claims a capability that
 > isn't shipped — where a measurement is incomplete, it says so.
 >
-> **[space-sim-lemon.vercel.app](https://space-sim-lemon.vercel.app)**
+> **[satpass.vercel.app](https://satpass.vercel.app)**
 
 ---
 
@@ -44,21 +44,23 @@ Every number returned carries where it came from.
 
 ## Accuracy
 
-Measured against **157 questions whose answers were computed by Orekit** — an independent
+Measured against **202 questions whose answers were computed by Orekit** — an independent
 implementation, never by the code being graded. Seven satellites spanning low Earth orbit,
-sun-synchronous, geostationary, medium Earth orbit, and a highly eccentric orbit.
+sun-synchronous, geostationary, medium Earth orbit and a highly eccentric orbit, plus the Sun,
+Moon and seven planets across five epochs from 2026 to 2030.
 
-**What this number covers:** the Earth-orbit tools, across the eight categories in the table
-below. The decay, literature and solar-system tools came later and are not in this chart — they
-are verified by their own differential tests, described under [Current scope](#current-scope),
-but they have not been through the agent-versus-bare-model comparison. Saying "99.4%" of the
-whole system would be extending a measurement past what was measured.
-
-**143 of the 157 cannot be answered from memory.** That constraint is what makes the comparison
+**188 of the 202 cannot be answered from memory.** That constraint is what makes the comparison
 mean anything: *"what is the ISS's altitude"* sits in every model's training data, so a set of
 publicly-known facts would let a bare model score well without computing anything. Sub-satellite
 longitude at `2026-08-13T14:45Z` has to be calculated. The other 14 are a deliberate control —
 values a model should get right from recall alone.
+
+**What this number covers:** the Earth-orbit tools and the planetary ephemeris. Decay and
+literature are deliberately outside it, for reasons that are not oversight — decay answers with
+a *range* rather than a point value, so scoring it against a single number would measure the
+wrong thing, and citation verification is not numeric at all. Both are verified by their own
+differential tests, described under [Current scope](#current-scope). Extending a numeric accuracy
+figure over them would be extending a measurement past what it can mean.
 
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/img/accuracy-dark.svg">
@@ -68,12 +70,13 @@ values a model should get right from recall alone.
 | | Overall | On questions that cannot be recalled |
 |---|---|---|
 | **Tool ceiling** — perfect tool selection | **100%** | **100%** |
-| **Grounded agent** — model plus tools | **99.4%** | **99.3%** |
-| **Bare model** — same model, no tools | 12.1% | 9.1% |
+| **Grounded agent** — model plus tools | **99.0%** | **98.9%** |
+| **Bare model** — same model, no tools | 9.9% | 7.4% |
 
-All 157 questions, zero transport failures. A provider rate limit is not a wrong answer, so runs
-that hit one are retried rather than scored — counting them would understate the system by
-whatever the day's quota happened to be.
+All 202 questions, zero transport failures in the scored set. A provider rate limit is not a
+wrong answer, and neither is a dropped connection, so runs that hit one are retried rather than
+scored — counting them would understate the system by whatever the day's quota and the laptop's
+memory pressure happened to be.
 
 The tool ceiling is what the tools achieve when every question reaches the right one. It is the
 upper bound on anything the agent can reach, so the gap between it and the grounded run is the
@@ -82,6 +85,7 @@ Orekit — two independent implementations — agree on every question, in every
 
 | Category | Grounded | Bare model | n |
 |---|---|---|---|
+| Distance from Earth | **98%** | 2% | 45 |
 | Sub-satellite longitude | **100%** | 0% | 28 |
 | Sub-satellite latitude | **100%** | 4% | 28 |
 | Altitude | **100%** | 11% | 28 |
@@ -102,11 +106,34 @@ The control questions are the tell. The bare model does best exactly where recal
 (57% on orbital period) and worst where it does not. That pattern is what confirms the dataset
 measures grounding rather than model quality.
 
-### The one remaining miss
+### The two remaining misses
 
 **Pass count, 94% — one off-by-one**, 17 against 18. A boundary effect: this implementation
 discards a pass already in progress when the window opens, while the reference counts every
 rise. Both are defensible; they are not the same convention.
+
+**Distance from Earth, 98% — one declined answer**, not a wrong one. On that question the agent
+returned nothing the harness could read a number out of. Asked the same question afterwards it
+answered 2.356119 AU against a reference of 2.356107, comfortably inside tolerance — so the
+failure was transient rather than systematic.
+
+It is still scored as a miss. A retry loop that runs until the number appears would be measuring
+persistence rather than accuracy, and an answer the caller cannot use is a failure whatever
+caused it. Transport failures are retried because they are not the system's output; this was.
+
+### How the planetary tolerance was set
+
+The tolerance is **relative — 1e-4 of the distance** — with a floor of 1e-5 AU, rather than one
+fixed figure. A set spanning the Moon at 0.0024 AU and Neptune at 30 cannot use a single absolute
+tolerance: tight enough to mean anything at Neptune is physically impossible at the Moon, and
+loose enough for Neptune makes the Moon question free.
+
+It was **measured before it was set**, as this project's testing rules require. Across all 45
+combinations the analytic ephemeris departs from Orekit's JPL DE by at most 7.05e-4 AU (Uranus)
+and 3.6e-5 relative, so the tolerance leaves between 2.8× and several hundred times headroom
+depending on the body. Nothing in this category is a control: at 1e-4 relative, even the Sun —
+whose distance "is about 1 AU" to everyone — cannot be answered by recalling the round number,
+because it varies by 0.017 AU over a year and the tolerance is 1.0e-4.
 
 ### What the ceiling was for
 
@@ -148,6 +175,11 @@ uv run python ../tools/eval/run_eval.py --solver baseline --provider gemini --de
 uv run python ../tools/eval/run_eval.py --solver grounded --provider gemini --delay 10
 uv run python ../tools/eval/make_chart.py
 ```
+
+The agent runs checkpoint after every question and resume from where they stopped, so an
+interrupted pass costs only the questions it had left. Results that failed in transport are
+dropped on resume and retried rather than carried forward, so a dropped connection cannot be
+baked into an accuracy figure.
 
 Pinning is not optional. Without `EVAL_FIXTURES` the catalog serves live element sets while the
 ground truth was computed from frozen ones, so the system is graded against a target it was
@@ -202,8 +234,8 @@ Checks — every one of these runs in CI on every push, alongside a production b
 ```bash
 npm run typecheck
 npm run lint
-npm run test:web   # 21 tests, Node's own runner — no framework, no build step
-npm run test:py    # 373 tests
+npm run test:web   # 22 tests, Node's own runner — no framework, no build step
+npm run test:py    # 376 tests
 npm run lint:py
 ```
 
@@ -230,7 +262,7 @@ was verified against an independent source before counting as done.
 
 | Tool | Agreement with the independent implementation |
 |---|---|
-| Planetary ephemeris | Analytic model within 1e-3 of distance against JPL, measured per body |
+| Planetary ephemeris | 3.6e-5 of distance against Orekit's JPL DE, worst of 45 samples |
 | Moons | 20 major moons from JPL Horizons elements, within 3% of orbit radius |
 | Asteroids | 763 catalogued bodies from JPL SBDB |
 | Bright stars | 8,355 stars from the Yale Bright Star Catalogue via VizieR |
@@ -246,7 +278,7 @@ Underneath all of it, time scales agree with Orekit to under a nanosecond across
 2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**394 tests** — 373 Python, 21 TypeScript — run on every push.
+**398 tests** — 376 Python, 22 TypeScript — run on every push.
 
 ### Three things worth singling out
 
