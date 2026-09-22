@@ -1,5 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
+import { omitRawTle } from "@/lib/agent/sanitize";
 
 /**
  * Where the Python science service listens.
@@ -88,7 +89,8 @@ export const scienceTools = {
       "Returns its name, the element set, its epoch, and how old the element set is in days. " +
       "Use this first when a question names a satellite, to confirm identity and data freshness.",
     inputSchema: z.object({ norad_id: noradId }),
-    execute: async ({ norad_id }) => callScience(`/api/satellite/${norad_id}`),
+    execute: async ({ norad_id }) =>
+      omitRawTle(await callScience(`/api/satellite/${norad_id}`)),
   }),
 
   findPasses: tool({
