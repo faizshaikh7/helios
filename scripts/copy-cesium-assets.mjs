@@ -20,8 +20,8 @@ const repoRoot = join(here, "..");
 const source = join(repoRoot, "node_modules", "cesium", "Build", "Cesium");
 const destination = join(repoRoot, "public", "cesium");
 
-/** Subdirectories Cesium fetches at runtime. */
-const REQUIRED = ["Workers", "Assets", "Widgets", "ThirdParty"];
+/** Runtime directories and browser bundle Cesium fetches outside Next.js. */
+const REQUIRED = ["Workers", "Assets", "Widgets", "ThirdParty", "Cesium.js"];
 
 /**
  * Report whether the destination already holds every required directory.

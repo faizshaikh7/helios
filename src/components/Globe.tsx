@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { loadCesium } from "@/lib/render/cesium";
 import { webGlAvailable } from "@/lib/render/webgl";
 import type { SatellitePass, TrackSample } from "@/lib/types";
 
@@ -41,10 +42,7 @@ export function Globe({
       }
 
       try {
-        // Tell Cesium where its workers and assets live before importing it.
-        (window as unknown as { CESIUM_BASE_URL: string }).CESIUM_BASE_URL = "/cesium";
-        const Cesium = await import("cesium");
-        await import("cesium/Build/Cesium/Widgets/widgets.css");
+        const Cesium = await loadCesium();
 
         if (cancelled || !container.current) return;
 
@@ -143,7 +141,7 @@ export function Globe({
     let cancelled = false;
 
     async function draw() {
-      const Cesium = await import("cesium");
+      const Cesium = await loadCesium();
       if (cancelled || !viewer || viewer.isDestroyed()) return;
 
       viewer.entities.removeAll();
