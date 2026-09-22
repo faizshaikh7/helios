@@ -39,6 +39,18 @@ def test_all_science_libraries_import() -> None:
         assert not version.startswith("unavailable"), f"{name} failed to import: {version}"
 
 
+def test_health_identifies_the_running_deployment() -> None:
+    """Deployment metadata is always present, even when its local values are placeholders.
+
+    A manual deployment can be healthy while still running an old commit. Keeping the identity
+    in the same response as liveness lets the launch smoke test distinguish those states.
+    """
+    deployment = client.get("/api/health").json()["deployment"]
+
+    assert set(deployment) == {"environment", "commit_sha", "deployment_url"}
+    assert all(isinstance(value, str) and value for value in deployment.values())
+
+
 def test_tt_minus_utc_offset_is_correct() -> None:
     """TT - UTC equals 69.184 s for a 2026 epoch.
 

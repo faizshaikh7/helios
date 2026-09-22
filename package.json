@@ -13,6 +13,7 @@
     "test:web": "node --test \"src/**/*.test.ts\"",
     "test:py": "cd backend && uv run pytest -q",
     "lint:py": "cd backend && uv run ruff check .",
+    "smoke": "node tools/launch-smoke.mjs",
     "cesium:assets": "node scripts/copy-cesium-assets.mjs",
     "predev": "node scripts/copy-cesium-assets.mjs",
     "predev:web": "node scripts/copy-cesium-assets.mjs",
@@ -25,7 +26,7 @@
     "@types/three": "^0.185.4",
     "ai": "^7.0.58",
     "cesium": "^1.144.0",
-    "next": "16.3.0",
+    "next": "16.3.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "three": "^0.185.1",
@@ -37,7 +38,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",
-    "eslint-config-next": "16.3.0",
+    "eslint-config-next": "16.3.5",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

@@ -18,6 +18,30 @@ const nextConfig: NextConfig = {
   agentRules: false,
 
   /**
+   * Browser hardening that is safe for both renderers and the model-backed API.
+   *
+   * A strict CSP needs nonce plumbing because Next.js emits bootstrap scripts and Cesium uses
+   * blob workers. The headers below still close framing, MIME-sniffing, referrer and ambient
+   * browser-feature risks without pretending that a brittle CSP is safer two days before launch.
+   */
+  async headers() {
+    return [
+      {
+        source: "/(.*)",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "DENY" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          {
+            key: "Permissions-Policy",
+            value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+          },
+        ],
+      },
+    ];
+  },
+
+  /**
    * Proxy `/api/*` to the Python service in development.
    *
    * The two runtimes run as separate processes locally (`next dev` plus `uvicorn`), so without

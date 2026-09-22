@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { webGlAvailable } from "@/lib/render/webgl";
 import type { SatellitePass, TrackSample } from "@/lib/types";
 
 /**
@@ -33,6 +34,11 @@ export function Globe({
 
     async function boot() {
       if (!container.current) return;
+
+      if (!webGlAvailable()) {
+        setError("this browser cannot create a WebGL context");
+        return;
+      }
 
       try {
         // Tell Cesium where its workers and assets live before importing it.

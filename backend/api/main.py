@@ -203,6 +203,20 @@ def _library_versions() -> dict[str, str]:
     return versions
 
 
+def _deployment_identity() -> dict[str, str]:
+    """Return platform-provided deployment metadata without exposing secrets.
+
+    Vercel supplies these values to deployed functions. Reporting the commit makes a manual
+    deployment verifiable: a healthy endpoint is useful, but it does not prove which revision
+    produced the running bundle.
+    """
+    return {
+        "environment": os.environ.get("VERCEL_ENV", "local"),
+        "commit_sha": os.environ.get("VERCEL_GIT_COMMIT_SHA", "unknown"),
+        "deployment_url": os.environ.get("VERCEL_URL", "local"),
+    }
+
+
 @app.get("/api/health")
 def health() -> dict[str, Any]:
     """Report liveness, environment, and a time-scale self-check.
@@ -223,6 +237,7 @@ def health() -> dict[str, Any]:
     return {
         "status": "ok" if healthy else "degraded",
         "service": "science",
+        "deployment": _deployment_identity(),
         "python": platform.python_version(),
         "platform": sys.platform,
         "libraries": versions,

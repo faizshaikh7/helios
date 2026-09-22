@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import * as THREE from "three";
 import {
   APPEARANCE,
@@ -9,6 +9,7 @@ import {
   createSurfaceMaterial,
 } from "@/lib/render/bodyMaterials";
 import { buildAsteroids, buildStars } from "@/lib/render/skyObjects";
+import { webGlAvailable } from "@/lib/render/webgl";
 import type {
   AsteroidsResponse,
   MoonsResponse,
@@ -37,6 +38,10 @@ const AU_M = 1.495978707e11;
  * a few pixels. Nothing is ever exaggerated, and nothing is ever invisible.
  */
 const MARKER_THRESHOLD_PX = 9;
+
+/** Stable explanation shown when browser policy or hardware disables GPU rendering. */
+const WEBGL_UNAVAILABLE_MESSAGE =
+  "Interactive 3D is unavailable because this browser cannot create a WebGL context.";
 
 /** A body's radius in scene units, always true to scale. */
 function trueRadius(radiusM: number): number {
@@ -104,6 +109,9 @@ export function SolarSystem({
   focus: string | null;
   onSelect: (body: string) => void;
 }) {
+  const [rendererError, setRendererError] = useState<string | null>(() =>
+    webGlAvailable() ? null : WEBGL_UNAVAILABLE_MESSAGE,
+  );
   const mountRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
   const bodyGroupRef = useRef<THREE.Group | null>(null);
@@ -139,6 +147,10 @@ export function SolarSystem({
     const overlay = overlayRef.current;
     if (!mount || !overlay) return;
 
+    if (!webGlAvailable()) {
+      return;
+    }
+
     const scene = new THREE.Scene();
 
     const camera = new THREE.PerspectiveCamera(
@@ -154,11 +166,20 @@ export function SolarSystem({
     // depth buffer across that range has so little precision that the front and back of a
     // sphere fight for the same depth values, which draws as concentric arcs across the planet.
     // Every custom shader includes the matching logdepthbuf chunks.
-    const renderer = new THREE.WebGLRenderer({
-      antialias: true,
-      alpha: false,
-      logarithmicDepthBuffer: true,
-    });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: false,
+        logarithmicDepthBuffer: true,
+      });
+    } catch (caught) {
+      const detail = caught instanceof Error ? caught.message : String(caught);
+      // Report after the effect has returned; React effects should synchronize with the
+      // renderer here rather than trigger a second render synchronously during setup.
+      queueMicrotask(() => setRendererError(`Interactive 3D could not start: ${detail}`));
+      return;
+    }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.setSize(mount.clientWidth, mount.clientHeight);
     renderer.setClearColor(0x01030a, 1);
@@ -648,6 +669,17 @@ export function SolarSystem({
         className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"
       />
       <div ref={overlayRef} className="pointer-events-none absolute inset-0 select-none" />
+      {rendererError && (
+        <div
+          role="status"
+          className="absolute inset-0 flex items-center justify-center bg-[#03050b] px-6 text-center text-xs leading-6 text-muted"
+        >
+          <span>
+            {rendererError} The computed positions and accuracy information remain available
+            below.
+          </span>
+        </div>
+      )}
     </div>
   );
 }

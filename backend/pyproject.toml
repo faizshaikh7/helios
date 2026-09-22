@@ -6,11 +6,11 @@ requires-python = ">=3.13"
 
 # Kept in sync with requirements.txt, which is what Vercel's Python runtime reads.
 dependencies = [
-    "fastapi>=0.115",       # typed routes, pydantic validation, ASGI app Vercel can serve
-    "pydantic>=2.9",        # request/response validation per rules.md
-    "astropy>=6.1",         # reference frames and time scales - the silent-failure surface
-    "skyfield>=1.49",       # satellite positions and pass geometry
-    "sgp4>=2.23",           # SGP4 propagation from TLEs
+    "fastapi==0.141.1",     # typed routes, pydantic validation, ASGI app Vercel can serve
+    "pydantic==2.13.4",     # request/response validation per rules.md
+    "astropy==8.0.1",       # reference frames and time scales - the silent-failure surface
+    "skyfield==1.54",       # satellite positions and pass geometry
+    "sgp4==2.27",           # SGP4 propagation from TLEs
 ]
 
 [project.optional-dependencies]

@@ -9,7 +9,7 @@ scientific agent that reasons over it.
 > **Status: live.** Fifteen tools spanning Earth orbit, the solar system and literature — the
 > numerical ones checked against an independent implementation before counting as done; ten of
 > them exposed to a tool-calling agent; an evaluation harness with 202 questions whose ground
-> truth came from Orekit; and 398 tests on every push. Nothing here claims a capability that
+> truth came from Orekit; and 402 tests on every push. Nothing here claims a capability that
 > isn't shipped — where a measurement is incomplete, it says so.
 >
 > **[satpass.vercel.app](https://satpass.vercel.app)**
@@ -234,9 +234,16 @@ Checks — every one of these runs in CI on every push, alongside a production b
 ```bash
 npm run typecheck
 npm run lint
-npm run test:web   # 22 tests, Node's own runner — no framework, no build step
-npm run test:py    # 376 tests
+npm run test:web   # 25 tests, Node's own runner — no framework, no build step
+npm run test:py    # 377 tests
 npm run lint:py
+```
+
+Before and after a deployment, the launch smoke exercises the homepage and every critical
+reviewer-facing science path without consuming model quota:
+
+```bash
+npm run smoke -- --base-url=https://satpass.vercel.app
 ```
 
 ## Current scope
@@ -278,7 +285,7 @@ Underneath all of it, time scales agree with Orekit to under a nanosecond across
 2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**398 tests** — 376 Python, 22 TypeScript — run on every push.
+**402 tests** — 377 Python, 25 TypeScript — run on every push.
 
 ### Three things worth singling out
 
