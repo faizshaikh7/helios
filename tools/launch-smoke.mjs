@@ -116,6 +116,22 @@ async function main() {
     assert(Array.isArray(body.intervals), "eclipse prediction is missing its interval list");
   });
 
+  await check("conjunction screening", async () => {
+    const body = await postJson("/api/conjunction", {
+      primary_norad_id: 25544,
+      secondary_norad_id: 33591,
+      duration_hours: 6,
+      step_seconds: 120,
+      screening_threshold_km: 10,
+    });
+    assert(body.miss_distance?.unit === "km", "conjunction miss distance has no km unit");
+    assert(body.receipt?.frame?.startsWith("TEME"), "conjunction screen has no TEME receipt");
+    assert(
+      body.risk_assessment?.collision_probability === null,
+      "conjunction screen fabricated collision probability",
+    );
+  });
+
   await check("solar-system datasets", async () => {
     const [snapshot, orbits, stars, moons, asteroids] = await Promise.all([
       postJson("/api/ephemeris/snapshot", {}),

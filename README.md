@@ -6,10 +6,10 @@ and sources — instead of guessed by a language model.
 Helios is the project. **Cosma** is the platform it is building toward; **Atlas** is the
 scientific agent that reasons over it.
 
-> **Status: live.** Fifteen tools spanning Earth orbit, the solar system and literature — the
-> numerical ones checked against an independent implementation before counting as done; ten of
+> **Status: live.** Sixteen tools spanning Earth orbit, the solar system and literature — the
+> numerical ones checked against an independent implementation before counting as done; eleven of
 > them exposed to a tool-calling agent; an evaluation harness with 202 questions whose ground
-> truth came from Orekit; and 404 tests on every push. Nothing here claims a capability that
+> truth came from Orekit; and 412 tests on every push. Nothing here claims a capability that
 > isn't shipped — where a measurement is incomplete, it says so.
 >
 > **[satpass.vercel.app](https://satpass.vercel.app)**
@@ -235,7 +235,7 @@ Checks — every one of these runs in CI on every push, alongside a production b
 npm run typecheck
 npm run lint
 npm run test:web   # 27 tests, Node's own runner — no framework, no build step
-npm run test:py    # 377 tests
+npm run test:py    # 385 tests
 npm run lint:py
 ```
 
@@ -248,7 +248,7 @@ npm run smoke -- --base-url=https://satpass.vercel.app
 
 ## Current scope
 
-Fifteen endpoints on the science service, ten of them exposed to the agent as typed tools. Each
+Sixteen endpoints on the science service, eleven of them exposed to the agent as typed tools. Each
 was verified against an independent source before counting as done.
 
 **Earth orbit**
@@ -262,6 +262,7 @@ was verified against an independent source before counting as done.
 | State at an instant | Sub-satellite point, altitude, speed |
 | Ground track | Sub-satellite path over a window |
 | Ground-station access | 16/16 pass counts, 15/15 peak elevations |
+| Conjunction screening | TCA within 0.2 ms, miss distance within 1 mm, relative speed within 0.001 mm/s of Orekit on fixed pair screens |
 | Eclipse and beta angle | Conical shadow, umbra and penumbra separated, boundaries to 2 s |
 | Orbital decay lifetime | Answers with a **range**, not a number — see below |
 
@@ -285,9 +286,18 @@ Underneath all of it, time scales agree with Orekit to under a nanosecond across
 2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**404 tests** — 377 Python, 27 TypeScript — run on every push.
+**412 tests** — 385 Python, 27 TypeScript — run on every push.
 
-### Three things worth singling out
+### Four things worth singling out
+
+**Conjunction screening refuses to manufacture collision risk.** The screen reports time of
+closest approach, miss distance, relative speed, and primary-centred RTN geometry after refining
+every local minimum in the requested interval. It does not report collision probability. Public
+TLEs do not carry state covariance or hard-body radius, and NASA's own conjunction workflow
+separates broad screening from covariance-based risk assessment. An inside-threshold result is a
+candidate for operator-grade follow-up, never manoeuvre advice. See
+[NASA CARA](https://www.nasa.gov/conjunction-assessment/) and
+[NASA's close-approach risk process](https://www.nasa.gov/cara/step-2-close-approach-risk-assessment/).
 
 **Decay lifetime answers with a range.** Orbital lifetime depends on solar activity, and solar
 activity is not forecastable years ahead, so a single confident number would be close to
@@ -307,11 +317,14 @@ is invisible. There is a true-scale toggle that makes the planets vanish, which 
 picture. Orbits are traced from the ephemeris, so each planet sits on its own path by
 construction rather than by adjustment.
 
-### Not built yet
+### Where this differs from an operational agency system
 
-The sandboxed code path for questions no fixed tool covers. It is deliberately last: shipping
-code generation before the evaluation harness existed would have produced a system whose errors
-could not be detected. The harness exists now, so the escape hatch can be graded by it.
+Helios now implements the public-data screening layer of a space-safety workflow. NASA and ESA
+operational systems go further: they ingest tracking observations and operator ephemerides,
+maintain covariance, estimate collision probability, exchange standard conjunction messages,
+and support staffed decision processes. Those inputs and authorities cannot be recreated from a
+public TLE. The next engineering layers are precision JPL ephemerides and CCSDS OEM/CDM exchange;
+until operator-grade covariance exists, risk probability remains intentionally unavailable.
 
 ### On the public deployment
 

@@ -151,6 +151,29 @@ export const scienceTools = {
     execute: async (input) => callScience("/api/groundtrack", input),
   }),
 
+  screenConjunction: tool({
+    description:
+      "Screen two different NORAD catalog objects for their closest geometric approach in a " +
+      "UTC interval. Returns time of closest approach, miss distance in km, relative speed in " +
+      "km/s, and radial/in-track/cross-track geometry in the primary object's RTN frame. " +
+      "This is NOT collision probability: public TLEs lack covariance and hard-body radius, " +
+      "so never describe an inside-threshold result as a likely collision or recommend a manoeuvre.",
+    inputSchema: z.object({
+      primary_norad_id: noradId,
+      secondary_norad_id: noradId,
+      from_utc: z.string().optional().describe("ISO-8601 UTC screen start. Omit for now."),
+      duration_hours: z.number().positive().max(72).default(24),
+      step_seconds: z.number().int().min(10).max(300).default(60),
+      screening_threshold_km: z
+        .number()
+        .positive()
+        .max(1000)
+        .default(10)
+        .describe("Geometric reporting threshold only, not a risk threshold."),
+    }),
+    execute: async (input) => callScience("/api/conjunction", input),
+  }),
+
   orbitalElements: tool({
     description:
       "Get a satellite's state vector and orbital elements: semi-major axis, eccentricity, " +
@@ -279,7 +302,8 @@ You are Atlas, a scientific assistant for orbital mechanics.
 
 Your defining constraint: **you do not know orbital positions, and you must never guess them.**
 Any question about where a satellite is, when it passes over somewhere, how fast it is moving,
-its orbit geometry, or its eclipses MUST be answered by calling a tool. A number you recall from
+its orbit geometry, its eclipses, or how closely two catalog objects approach MUST be answered by
+calling a tool. A number you recall from
 training is not an acceptable answer, even if it sounds right - satellite positions change every
 second and element sets are updated daily.
 
@@ -333,6 +357,11 @@ If a receipt states a known model bias, carry that across too.
 Read the tool's own notes and uncertainty fields and respect them. If a receipt says results
 ignore refraction and terrain, do not claim a pass is workable - only that it is geometrically
 visible.
+
+**Conjunction screening is not collision risk.** A geometric miss distance from public TLEs
+cannot produce a defensible collision probability because the catalog data has no state
+covariance or hard-body radius. If screenConjunction returns an inside-threshold result, report
+exactly that and the TLE uncertainty; never call it a likely collision or recommend a manoeuvre.
 
 **Carry every constraint from the question into the tool call.** If the question names a time,
 a date, a window, an elevation mask, or a location, those belong in the parameters. A tool

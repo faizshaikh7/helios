@@ -71,6 +71,33 @@ export type GroundTrackResponse = {
   notice: string;
 };
 
+/** Response from `POST /api/conjunction`: geometric screening, not collision probability. */
+export type ConjunctionResponse = {
+  primary: { norad_id: number; name: string };
+  secondary: { norad_id: number; name: string };
+  screen: {
+    start_utc: string;
+    end_utc: string;
+    duration_hours: number;
+    coarse_step_seconds: number;
+    local_minima_screened: number;
+  };
+  tca: Value;
+  miss_distance: Value;
+  relative_speed: Value;
+  relative_position_rtn: { radial: Value; in_track: Value; cross_track: Value };
+  relative_velocity_rtn: { radial: Value; in_track: Value; cross_track: Value };
+  screening: { threshold_km: number; inside_threshold: boolean; meaning: string };
+  risk_assessment: {
+    collision_probability: null;
+    status: "unavailable";
+    reason: string;
+    required_inputs: string[];
+  };
+  receipt: Receipt;
+  notice: string;
+};
+
 /** Response from `POST /api/elements`. */
 export type ElementsResponse = {
   satellite: { norad_id: number; name: string };

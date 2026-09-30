@@ -15,7 +15,7 @@ from __future__ import annotations
 import os
 import platform
 import sys
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from fastapi import FastAPI, Request
@@ -26,6 +26,7 @@ from pydantic import BaseModel, Field
 from api.ratelimit import rate_limit_middleware
 from science import (
     catalog,
+    conjunction,
     decay,
     eclipse,
     elements,
@@ -421,6 +422,143 @@ def groundtrack(request: GroundTrackRequest) -> dict[str, Any]:
         "minutes": request.minutes,
         "current": now_point,
         "samples": samples,
+        "notice": OPERATIONAL_NOTICE,
+    }
+
+
+# --------------------------------------------------------------------------------------------
+# Conjunction screening
+# --------------------------------------------------------------------------------------------
+
+
+class ConjunctionRequest(BaseModel):
+    """Parameters for a two-object closest-approach screen."""
+
+    primary_norad_id: int = Field(default=25544, ge=1)
+    secondary_norad_id: int = Field(default=20580, ge=1)
+    from_utc: str | None = Field(
+        default=None,
+        description="ISO-8601 UTC beginning of the screen. Omit to start now.",
+    )
+    duration_hours: float = Field(default=24.0, gt=0, le=72)
+    step_seconds: int = Field(
+        default=60,
+        ge=10,
+        le=300,
+        description="Coarse bracketing step; each identified local minimum is refined.",
+    )
+    screening_threshold_km: float = Field(
+        default=10.0,
+        gt=0,
+        le=1000,
+        description="Reporting threshold only; it is not a collision-risk threshold.",
+    )
+
+
+@app.post("/api/conjunction")
+def conjunction_screen(request: ConjunctionRequest) -> dict[str, Any]:
+    """Screen two public catalog objects for their closest approach in a UTC interval.
+
+    Args:
+        request: Object identifiers, search interval, sampling control, and reporting threshold.
+
+    Returns:
+        Closest-approach geometry with provenance and an explicit unavailable risk result.
+    """
+    if request.primary_norad_id == request.secondary_norad_id:
+        return _error(
+            "same_object",
+            "Primary and secondary NORAD IDs must identify different objects.",
+            status=422,
+        )
+
+    # Keep a pathological request from monopolising a serverless worker. This is a numerical-work
+    # cap, not a physics restriction: increase the step or shorten the interval.
+    sample_count = request.duration_hours * 3600.0 / request.step_seconds
+    if sample_count > 20_000:
+        return _error(
+            "screen_too_large",
+            "The interval and step exceed 20,000 coarse samples; increase step_seconds or "
+            "shorten duration_hours.",
+            status=422,
+        )
+
+    primary = catalog.get_tle(request.primary_norad_id)
+    secondary = catalog.get_tle(request.secondary_norad_id)
+    start = _parse_instant(request.from_utc, "from_utc") if request.from_utc else datetime.now(UTC)
+
+    try:
+        encounter = conjunction.screen(
+            primary,
+            secondary,
+            start,
+            duration_hours=request.duration_hours,
+            step_seconds=request.step_seconds,
+        )
+    except ValueError as exc:
+        return _error("propagation_failed", str(exc), status=422)
+
+    shared_receipt = conjunction.receipt(
+        primary,
+        secondary,
+        start,
+        request.duration_hours,
+        request.step_seconds,
+        encounter.tca_utc,
+    )
+
+    def predicted(value: float | str, unit: str) -> Value:
+        """Attach the screen's shared predicted provenance to one result value."""
+        return Value(value=value, unit=unit, tier=Tier.PREDICTED, receipt=shared_receipt)
+
+    position_r, position_t, position_n = encounter.relative_position_rtn_km
+    velocity_r, velocity_t, velocity_n = encounter.relative_velocity_rtn_km_s
+
+    return {
+        "primary": {"norad_id": primary.norad_id, "name": primary.name},
+        "secondary": {"norad_id": secondary.norad_id, "name": secondary.name},
+        "screen": {
+            "start_utc": start.isoformat(),
+            "end_utc": (start + timedelta(hours=request.duration_hours)).isoformat(),
+            "duration_hours": request.duration_hours,
+            "coarse_step_seconds": request.step_seconds,
+            "local_minima_screened": encounter.local_minima_screened,
+        },
+        "tca": predicted(encounter.tca_utc.isoformat(), "none"),
+        "miss_distance": predicted(round(encounter.miss_distance_km, 6), "km"),
+        "relative_speed": predicted(round(encounter.relative_speed_km_s, 9), "km/s"),
+        "relative_position_rtn": {
+            "radial": predicted(round(position_r, 6), "km"),
+            "in_track": predicted(round(position_t, 6), "km"),
+            "cross_track": predicted(round(position_n, 6), "km"),
+        },
+        "relative_velocity_rtn": {
+            "radial": predicted(round(velocity_r, 9), "km/s"),
+            "in_track": predicted(round(velocity_t, 9), "km/s"),
+            "cross_track": predicted(round(velocity_n, 9), "km/s"),
+        },
+        "screening": {
+            "threshold_km": request.screening_threshold_km,
+            "inside_threshold": encounter.miss_distance_km <= request.screening_threshold_km,
+            "meaning": (
+                "Geometric reporting threshold only. It is not a probability or a manoeuvre "
+                "recommendation."
+            ),
+        },
+        "risk_assessment": {
+            "collision_probability": None,
+            "status": "unavailable",
+            "reason": (
+                "Public TLEs do not provide the state covariances and hard-body radii required "
+                "for a defensible collision probability."
+            ),
+            "required_inputs": [
+                "primary state covariance at TCA",
+                "secondary state covariance at TCA",
+                "combined hard-body radius",
+            ],
+        },
+        "receipt": shared_receipt,
         "notice": OPERATIONAL_NOTICE,
     }
 

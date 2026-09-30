@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AskPanel } from "@/components/AskPanel";
+import { ConjunctionPanel } from "@/components/ConjunctionPanel";
 import { DecayPanel } from "@/components/DecayPanel";
 import dynamic from "next/dynamic";
 import { GroundTrack } from "@/components/GroundTrack";
@@ -683,6 +684,10 @@ export default function Home() {
         {/* Independent of the satellite query above: this asks about an orbit, not an object,
             which is the form the question takes during mission design. */}
         <DecayPanel />
+
+        {/* Independent of the pass query: this compares two propagated objects and keeps
+            geometric screening separate from covariance-based collision-risk assessment. */}
+        <ConjunctionPanel />
 
         {/* Also independent of the satellite query: this asks about the published record,
             not about an object in orbit. */}
