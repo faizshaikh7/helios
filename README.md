@@ -9,7 +9,7 @@ scientific agent that reasons over it.
 > **Status: live.** Sixteen tools spanning Earth orbit, the solar system and literature — the
 > numerical ones checked against an independent implementation before counting as done; eleven of
 > them exposed to a tool-calling agent; an evaluation harness with 202 questions whose ground
-> truth came from Orekit; and 412 tests on every push. Nothing here claims a capability that
+> truth came from Orekit; and 420 tests on every push. Nothing here claims a capability that
 > isn't shipped — where a measurement is incomplete, it says so.
 >
 > **[satpass.vercel.app](https://satpass.vercel.app)**
@@ -128,10 +128,12 @@ fixed figure. A set spanning the Moon at 0.0024 AU and Neptune at 30 cannot use 
 tolerance: tight enough to mean anything at Neptune is physically impossible at the Moon, and
 loose enough for Neptune makes the Moon question free.
 
-It was **measured before it was set**, as this project's testing rules require. Across all 45
-combinations the analytic ephemeris departs from Orekit's JPL DE by at most 7.05e-4 AU (Uranus)
-and 3.6e-5 relative, so the tolerance leaves between 2.8× and several hundred times headroom
-depending on the body. Nothing in this category is a control: at 1e-4 relative, even the Sun —
+It was **measured before it was set**, as this project's testing rules require. The analytic
+fallback departs from Orekit's JPL DE by at most 7.05e-4 AU (Uranus) and 3.6e-5 relative. The
+production default is now packaged JPL DE421: on the same reference set its worst absolute
+disagreement is 3,296 km (Neptune) and its worst meaningful relative disagreement is 2.51e-6
+(Mercury). The scoring tolerance remains the published 1e-4 contract, so the model upgrade does
+not move the goalposts. Nothing in this category is a control: at 1e-4 relative, even the Sun —
 whose distance "is about 1 AU" to everyone — cannot be answered by recalling the round number,
 because it varies by 0.017 AU over a year and the tolerance is 1.0e-4.
 
@@ -192,7 +194,7 @@ never given — and the error grows silently as the elements age.
 | Web | Next.js 16, React 19, TypeScript, Tailwind 4 |
 | Science | Python 3.13 — astropy, skyfield, sgp4 |
 | Rendering | Cesium for Earth orbit, three.js for the solar system |
-| Orbital data | Celestrak · JPL Horizons and SBDB · Yale Bright Star Catalogue |
+| Orbital data | Celestrak · packaged JPL DE421 · JPL Horizons and SBDB · Yale Bright Star Catalogue |
 | Hosting | Vercel — one project, two services, one domain |
 
 Python owns the science because the validated ecosystem lives there and there is no JavaScript
@@ -235,7 +237,7 @@ Checks — every one of these runs in CI on every push, alongside a production b
 npm run typecheck
 npm run lint
 npm run test:web   # 27 tests, Node's own runner — no framework, no build step
-npm run test:py    # 385 tests
+npm run test:py    # 393 tests
 npm run lint:py
 ```
 
@@ -270,7 +272,7 @@ was verified against an independent source before counting as done.
 
 | Tool | Agreement with the independent implementation |
 |---|---|
-| Planetary ephemeris | 3.6e-5 of distance against Orekit's JPL DE, worst of 45 samples |
+| Planetary ephemeris | Packaged JPL DE421 by default: 3,296 km / 2.51e-6 relative worst measured disagreement; bounded ERFA analytic fallback remains selectable |
 | Moons | 20 major moons from JPL Horizons elements, within 3% of orbit radius |
 | Asteroids | 763 catalogued bodies from JPL SBDB |
 | Bright stars | 8,355 stars from the Yale Bright Star Catalogue via VizieR |
@@ -286,7 +288,7 @@ Underneath all of it, time scales agree with Orekit to under a nanosecond across
 2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**412 tests** — 385 Python, 27 TypeScript — run on every push.
+**420 tests** — 393 Python, 27 TypeScript — run on every push.
 
 ### Four things worth singling out
 
@@ -323,8 +325,9 @@ Helios now implements the public-data screening layer of a space-safety workflow
 operational systems go further: they ingest tracking observations and operator ephemerides,
 maintain covariance, estimate collision probability, exchange standard conjunction messages,
 and support staffed decision processes. Those inputs and authorities cannot be recreated from a
-public TLE. The next engineering layers are precision JPL ephemerides and CCSDS OEM/CDM exchange;
-until operator-grade covariance exists, risk probability remains intentionally unavailable.
+public TLE. Precision JPL ephemerides are now shipped; the next engineering layer is CCSDS
+OEM/CDM exchange. Until operator-grade covariance exists, risk probability remains intentionally
+unavailable.
 
 ### On the public deployment
 

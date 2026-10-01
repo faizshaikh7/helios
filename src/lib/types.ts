@@ -245,6 +245,9 @@ export type SnapshotResponse = {
   at_tdb: string;
   frame: string;
   tier: string;
+  requested_model: "precision" | "analytic";
+  model: "precision" | "analytic";
+  dataset: Record<string, unknown>;
   bodies: SnapshotBody[];
   accuracy: string;
   notice: string;
@@ -258,6 +261,7 @@ export type SnapshotResponse = {
  */
 export type OrbitsResponse = {
   frame: string;
+  model: "analytic";
   samples: number;
   orbits: Record<string, { x_au: number; y_au: number; z_au: number }[]>;
   note: string;

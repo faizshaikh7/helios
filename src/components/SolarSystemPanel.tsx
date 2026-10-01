@@ -55,6 +55,7 @@ function dateFromOffset(days: number): Date {
  */
 export function SolarSystemPanel() {
   const [offsetDays, setOffsetDays] = useState(0);
+  const [ephemerisModel, setEphemerisModel] = useState<"precision" | "analytic">("precision");
   const [distanceMode, setDistanceMode] = useState<DistanceMode>("linear");
   const [focus, setFocus] = useState<string | null>(null);
 
@@ -154,7 +155,10 @@ export function SolarSystemPanel() {
       fetch("/api/ephemeris/snapshot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ at_utc: dateFromOffset(offsetDays).toISOString() }),
+        body: JSON.stringify({
+          at_utc: dateFromOffset(offsetDays).toISOString(),
+          model: ephemerisModel,
+        }),
         signal: controller.signal,
       })
         .then(async (response) => {
@@ -178,7 +182,7 @@ export function SolarSystemPanel() {
       controller.abort();
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [offsetDays]);
+  }, [offsetDays, ephemerisModel]);
 
   const shown = dateFromOffset(offsetDays);
 
@@ -194,9 +198,16 @@ export function SolarSystemPanel() {
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium tracking-tight text-foreground">Solar system</h2>
-        <span className="text-[11px] text-faint">
-          positions, orbits, tilts and illumination are real
-        </span>
+        <div className="flex items-center gap-2">
+          {snapshot && (
+            <span className="rounded-full border border-derived/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-derived">
+              {snapshot.model === "precision" ? "JPL DE421 precision" : "analytic fallback"}
+            </span>
+          )}
+          <span className="text-[11px] text-faint">
+            positions, orbits, tilts and illumination are real
+          </span>
+        </div>
       </header>
 
       <p className="mt-2 max-w-2xl text-xs leading-6 text-muted">
@@ -224,6 +235,26 @@ export function SolarSystemPanel() {
             aria-label="Date offset in days from today"
           />
         </label>
+
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[11px] uppercase tracking-wide text-muted">Ephemeris</span>
+          <div className="flex gap-1.5">
+            {(["precision", "analytic"] as const).map((model) => (
+              <button
+                key={model}
+                type="button"
+                onClick={() => setEphemerisModel(model)}
+                className={`rounded-md border px-2.5 py-1 text-xs ${
+                  ephemerisModel === model
+                    ? "border-derived bg-surface-inset text-foreground"
+                    : "border-edge text-muted hover:border-derived"
+                }`}
+              >
+                {model === "precision" ? "JPL precision" : "analytic fallback"}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="flex flex-col gap-1.5">
           <span className="text-[11px] uppercase tracking-wide text-muted">Distance</span>
@@ -375,10 +406,11 @@ export function SolarSystemPanel() {
         <div>
           <dt className="uppercase tracking-wide text-muted">What is real</dt>
           <dd className="mt-1 text-faint">
-            Positions and orbit paths, tiered <span className="text-derived">derived</span>, in
-            heliocentric ecliptic coordinates — each orbit is traced from the same ephemeris that
-            places the planet, so a body sits on its own path by construction. Axial tilts,
-            rotation directions and the illumination direction are real too:{" "}
+            Positions and orbit paths are tiered <span className="text-derived">derived</span> in
+            heliocentric ecliptic coordinates. Positions default to packaged JPL DE421; full
+            outer-planet paths use the measured analytic fallback because DE421 ends before one
+            Neptune revolution. Their difference is far below one rendered path sample. Axial
+            tilts, rotation directions and the illumination direction are real too:{" "}
             <span className="text-foreground">Uranus lies on its side</span> and Venus turns
             backwards because they do.
           </dd>

@@ -1,14 +1,9 @@
 """Generate planetary-position references from Orekit's JPL ephemeris.
 
-`science/ephemeris.py` uses astropy's **builtin** ephemeris -- ERFA's analytic series -- rather
-than a JPL binary kernel. That choice is deliberate: a DE kernel is tens of megabytes and would
-have to be downloaded, and a deployed service must not fetch data to boot. The lesson was
-already paid for once by the atmosphere model.
-
-The cost of that choice is accuracy, and this script measures it instead of assuming it. Orekit
-reads the JPL DE ephemeris shipped in its data bundle, which is a genuinely independent
-implementation of a different model, so the comparison establishes what the analytic series is
-actually worth.
+The reference grades both production modes: packaged JPL DE421 and the ERFA analytic fallback.
+Orekit reads the JPL ephemeris in its own data bundle through an independent implementation, so
+the comparison measures cross-release kernel disagreement for precision mode and model departure
+for analytic mode without letting either production code path grade itself.
 
 Positions are barycentric ICRF, which is what both sides can express without ambiguity.
 
@@ -119,10 +114,9 @@ def generate() -> dict[str, Any]:
             "generated_utc": datetime.now(UTC).isoformat(timespec="seconds"),
             "generator": "tools/reference/generate_ephemeris.py",
             "note": (
-                "Used to measure how far astropy's builtin analytic ephemeris departs from a "
-                "JPL numerical ephemeris. The two are not expected to agree to the metre; the "
-                "point is to know the size of the gap, state it, and confirm it is small "
-                "relative to what the positions are used for."
+                "Used to grade packaged JPL DE421 and the ERFA analytic fallback. Independent "
+                "JPL releases are not expected to agree to the metre; the point is to measure "
+                "and publish each mode's gap rather than infer precision from its model name."
             ),
         },
         "positions": entries,

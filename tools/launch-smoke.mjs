@@ -141,6 +141,13 @@ async function main() {
       postJson("/api/asteroids", {}),
     ]);
     assert(Array.isArray(snapshot.bodies) && snapshot.bodies.length >= 9, "snapshot is incomplete");
+    assert(snapshot.model === "precision", "solar-system snapshot is not using JPL precision");
+    assert(snapshot.dataset?.kernel === "de421.bsp", "snapshot is missing JPL kernel identity");
+    assert(
+      snapshot.dataset?.sha256 ===
+        "a20a7139da04cbc462454634918e9a9ca69127044e2cc9d4f9c16e238d2deedc",
+      "snapshot JPL kernel checksum is not the verified release asset",
+    );
     assert(Object.keys(orbits.orbits ?? {}).length >= 8, "orbit set is incomplete");
     assert(Array.isArray(stars.stars) && stars.stars.length > 8_000, "star catalogue is incomplete");
     assert(Array.isArray(moons.moons) && moons.moons.length >= 20, "moon catalogue is incomplete");

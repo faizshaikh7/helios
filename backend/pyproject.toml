@@ -10,6 +10,7 @@ dependencies = [
     "pydantic==2.13.4",     # request/response validation per rules.md
     "astropy==8.0.1",       # reference frames and time scales - the silent-failure surface
     "skyfield==1.54",       # satellite positions and pass geometry
+    "skyfield-data==7.0.0", # packaged JPL DE421 kernel; no runtime ephemeris download
     "sgp4==2.27",           # SGP4 propagation from TLEs
 ]
 

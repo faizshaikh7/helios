@@ -63,3 +63,14 @@ def test_tt_minus_utc_offset_is_correct() -> None:
 
     assert check["within_tolerance"], check
     assert check["measured_tt_minus_utc_s"] == EXPECTED_TT_MINUS_UTC_SECONDS
+
+
+def test_health_verifies_the_packaged_precision_ephemeris() -> None:
+    """A healthy deployment has opened and identified its immutable JPL kernel."""
+    check = client.get("/api/health").json()["checks"]["precision_ephemeris"]
+
+    assert check["available"] is True
+    assert check["identity_verified"] is True
+    assert check["kernel"] == "de421.bsp"
+    assert len(check["sha256"]) == 64
+    assert check["bytes"] == 16_788_480

@@ -1,21 +1,15 @@
 """Positions of the Sun, Moon and planets.
 
-**The ephemeris choice, and what it costs.** This uses astropy's ``builtin`` ephemeris -- ERFA's
-analytic series -- rather than a JPL DE binary kernel. A kernel is tens of megabytes and would
-have to be fetched at runtime, and a deployed service must not download data to boot. That
-lesson was already paid for once by the atmosphere model.
+The default source is JPL DE421, packaged with the deployment through ``skyfield-data``.  It is a
+numerically integrated SPK kernel rather than an analytic approximation, and it never downloads
+at runtime.  The previous ERFA analytic series remains selectable and is the automatic fallback
+if the packaged asset cannot open, so improving precision does not create a new boot dependency.
 
-The price is accuracy, and it is measured rather than assumed. `tools/reference/
-generate_ephemeris.py` compares every body against Orekit reading the JPL DE ephemeris, and the
-result is the `ACCURACY` table below: better than a kilometre-scale for the Earth and Moon,
-degrading to hundreds of thousands of kilometres at Uranus -- but never worse than 3e-4 of the
-body's own distance.
-
-**So what is this good for?** Orientation, rendering, "where is Mars tonight", relative
-geometry, scale intuition. At 3e-4 of the distance, an error is far below one pixel at any
-plausible zoom. It is emphatically **not** good for navigation, occultation or transit timing,
-spacecraft targeting, or anything where arcsecond truth matters. Every value says so, per body,
-rather than leaving a reader to assume the precision the digits imply.
+Both modes are independently measured against Orekit reading a JPL ephemeris.  The JPL mode
+reduces the largest measured outer-planet disagreement from 756,788 km to 3,296 km.  It still is
+not spacecraft navigation: different DE releases legitimately differ, apparent positions omit
+annual aberration, and topocentric parallax needs an observer location.  Every receipt identifies
+the effective model, kernel, frame, time scale, and measured bound.
 
 **Light time is corrected.** For apparent sky positions the geometric direction is wrong by up
 to tens of arcseconds -- larger than the ephemeris error itself for the inner planets -- so the
@@ -30,6 +24,9 @@ import warnings
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from functools import lru_cache
+from hashlib import sha256
+from pathlib import Path
+from typing import Literal
 
 from science.provenance import Receipt, Tier, Value
 
@@ -52,6 +49,26 @@ BODIES = (
     "neptune",
 )
 
+EphemerisModel = Literal["precision", "analytic"]
+DEFAULT_MODEL: EphemerisModel = "precision"
+KERNEL_NAME = "de421.bsp"
+KERNEL_COVERAGE = "1899-07-28 through 2053-10-08"
+KERNEL_SHA256 = "a20a7139da04cbc462454634918e9a9ca69127044e2cc9d4f9c16e238d2deedc"
+KERNEL_BYTES = 16_788_480
+
+KERNEL_BODY_NAMES = {
+    "sun": "sun",
+    "mercury": "mercury",
+    "venus": "venus",
+    "earth": "earth",
+    "moon": "moon",
+    "mars": "mars",
+    "jupiter": "jupiter barycenter",
+    "saturn": "saturn barycenter",
+    "uranus": "uranus barycenter",
+    "neptune": "neptune barycenter",
+}
+
 # Measured departure from Orekit's JPL DE ephemeris, over epochs spanning 2000-2040.
 #
 # These are not estimates or vendor claims: they are the worst observed disagreement, in
@@ -61,7 +78,7 @@ BODIES = (
 #
 # The Sun's relative figure is large only because it sits near the barycentre, so its distance is
 # small; its absolute error is the smallest of any body. Absolute is the meaningful figure there.
-ACCURACY: dict[str, dict[str, float]] = {
+ANALYTIC_ACCURACY: dict[str, dict[str, float]] = {
     "sun": {"max_error_km": 119.0, "relative": 1.03e-4},
     "mercury": {"max_error_km": 535.0, "relative": 7.99e-6},
     "venus": {"max_error_km": 2162.0, "relative": 2.00e-5},
@@ -73,6 +90,26 @@ ACCURACY: dict[str, dict[str, float]] = {
     "uranus": {"max_error_km": 756_788.0, "relative": 2.73e-4},
     "neptune": {"max_error_km": 131_629.0, "relative": 2.94e-5},
 }
+
+# Measured against the same committed Orekit/JPL reference as the analytic table, across ten
+# bodies and five epochs spanning 2000-2040. Rounded upward so the published limit is never more
+# flattering than the measurement. The common ~118 km offset reflects a difference between the
+# JPL ephemeris release in Orekit's data bundle and DE421, not numerical noise.
+PRECISION_ACCURACY: dict[str, dict[str, float]] = {
+    "sun": {"max_error_km": 120.0, "relative": 1.16e-3},
+    "mercury": {"max_error_km": 120.0, "relative": 2.52e-6},
+    "venus": {"max_error_km": 120.0, "relative": 1.09e-6},
+    "earth": {"max_error_km": 120.0, "relative": 8.05e-7},
+    "moon": {"max_error_km": 120.0, "relative": 8.07e-7},
+    "mars": {"max_error_km": 120.0, "relative": 5.71e-7},
+    "jupiter": {"max_error_km": 145.0, "relative": 1.94e-7},
+    "saturn": {"max_error_km": 125.0, "relative": 8.73e-8},
+    "uranus": {"max_error_km": 3000.0, "relative": 1.06e-6},
+    "neptune": {"max_error_km": 3400.0, "relative": 7.40e-7},
+}
+
+# Backward-compatible name used by consumers that mean the default mode.
+ACCURACY = PRECISION_ACCURACY
 
 # Equatorial radius in metres and a display colour, for rendering. Radii are IAU 2015 nominal
 # values; they are constants of the body, not computed, so they carry no uncertainty of their own.
@@ -92,6 +129,10 @@ BODY_FACTS: dict[str, dict[str, object]] = {
 
 class EphemerisError(ValueError):
     """Raised when a body is not one this module can compute."""
+
+
+class PrecisionRangeError(EphemerisError):
+    """Raised when a requested instant lies outside the packaged kernel coverage."""
 
 
 @dataclass(frozen=True)
@@ -139,8 +180,117 @@ def _check_body(body: str) -> str:
     return name
 
 
+def _kernel_path() -> Path:
+    """Return the installed DE421 path without triggering a network request.
+
+    Returns:
+        Path inside the ``skyfield-data`` wheel.
+    """
+    import skyfield_data
+
+    return Path(skyfield_data.__file__).resolve().parent / "data" / KERNEL_NAME
+
+
+@lru_cache(maxsize=1)
+def _kernel():
+    """Open and cache the packaged JPL DE421 SPK kernel.
+
+    Returns:
+        Skyfield ``SpiceKernel`` instance.
+
+    Raises:
+        OSError: If the packaged kernel is missing or unreadable.
+    """
+    from skyfield.api import load_file
+
+    path = _kernel_path()
+    if not path.is_file():
+        raise OSError(f"packaged JPL kernel is missing: {path}")
+    return load_file(str(path))
+
+
+def _file_sha256(path: Path) -> str:
+    """Hash a file incrementally so health checks do not duplicate the kernel in memory.
+
+    Args:
+        path: File whose bytes identify the deployed dataset.
+
+    Returns:
+        Lowercase hexadecimal SHA-256 digest.
+    """
+    digest = sha256()
+    with path.open("rb") as handle:
+        while chunk := handle.read(1024 * 1024):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+@lru_cache(maxsize=1)
+def kernel_metadata() -> dict[str, object]:
+    """Return auditable identity and availability for the packaged precision asset.
+
+    Returns:
+        Kernel filename, SHA-256 digest, coverage, byte size, and availability.
+    """
+    try:
+        path = _kernel_path()
+        _kernel()
+        digest = _file_sha256(path)
+        size = path.stat().st_size
+        if digest != KERNEL_SHA256 or size != KERNEL_BYTES:
+            raise ValueError(
+                f"packaged JPL kernel identity mismatch: sha256={digest}, bytes={size}"
+            )
+        return {
+            "available": True,
+            "identity_verified": True,
+            "kernel": KERNEL_NAME,
+            "sha256": digest,
+            "bytes": size,
+            "coverage": KERNEL_COVERAGE,
+            "package": "skyfield-data==7.0.0",
+        }
+    except (ImportError, OSError, ValueError) as exc:
+        return {
+            "available": False,
+            "identity_verified": False,
+            "kernel": KERNEL_NAME,
+            "error": f"{type(exc).__name__}: {exc}",
+            "coverage": KERNEL_COVERAGE,
+            "package": "skyfield-data==7.0.0",
+        }
+
+
+def effective_model(requested: EphemerisModel) -> EphemerisModel:
+    """Resolve precision to analytic when the packaged kernel cannot be verified and opened.
+
+    Args:
+        requested: Caller-selected model.
+
+    Returns:
+        Effective model. Analytic requests are unchanged; precision falls back visibly.
+    """
+    if requested == "precision" and not bool(kernel_metadata()["available"]):
+        return "analytic"
+    return requested
+
+
+def accuracy_for(model: EphemerisModel, body: str) -> dict[str, float]:
+    """Return the independently measured error bound for one model and body.
+
+    Args:
+        model: Effective ephemeris model.
+        body: Validated lowercase body name.
+
+    Returns:
+        Maximum measured absolute and relative errors.
+    """
+    table = PRECISION_ACCURACY if model == "precision" else ANALYTIC_ACCURACY
+    return table[body]
+
+
 @lru_cache(maxsize=512)
-def _barycentric(body: str, iso_tdb: str) -> Vector:
+def _barycentric(body: str, iso_tdb: str, model: EphemerisModel = DEFAULT_MODEL) -> Vector:
     """Barycentric ICRF position of a body, metres.
 
     Cached: an apparent-position solve evaluates the same body two or three times while
@@ -149,12 +299,35 @@ def _barycentric(body: str, iso_tdb: str) -> Vector:
     Args:
         body: Validated lowercase body name.
         iso_tdb: Instant as an ISO string in the TDB scale.
+        model: Effective precision or analytic model.
 
     Returns:
         Position in metres, barycentric ICRF.
     """
+    if model == "precision":
+        from astropy.time import Time
+        from skyfield.errors import EphemerisRangeError
+
+        from science.orbit import TIMESCALE
+
+        jd_tdb = float(Time(iso_tdb, scale="tdb").jd)
+        try:
+            body_position = (
+                _kernel()[KERNEL_BODY_NAMES[body]].at(TIMESCALE.tdb_jd(jd_tdb)).position
+            )
+        except EphemerisRangeError as exc:
+            raise PrecisionRangeError(
+                f"precision ephemeris covers {KERNEL_COVERAGE}; use model='analytic' outside "
+                "that interval"
+            ) from exc
+        return Vector(
+            float(body_position.m[0]),
+            float(body_position.m[1]),
+            float(body_position.m[2]),
+        )
+
     # astropy warns when it falls back for bodies the builtin series treats approximately; the
-    # resulting error is quantified in ACCURACY and reported, so the warning adds nothing.
+    # resulting error is quantified in ANALYTIC_ACCURACY and reported, so the warning adds nothing.
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
 
@@ -198,33 +371,73 @@ def _to_tdb_iso(when: datetime) -> str:
         return str(Time(normalised.replace(tzinfo=None).isoformat(), scale="utc").tdb.isot)
 
 
-def _receipt(body: str, when: datetime, *, quantity: str, extra_notes: str = "") -> Receipt:
+def _receipt(
+    body: str,
+    when: datetime,
+    *,
+    model: EphemerisModel,
+    requested_model: EphemerisModel,
+    quantity: str,
+    extra_notes: str = "",
+) -> Receipt:
     """Build the provenance record shared by every value this module returns.
 
     Args:
         body: Body name.
         when: Instant of evaluation.
+        model: Effective model used for the value.
+        requested_model: Model the caller requested, before any safe fallback.
         quantity: What was computed, for the equation field.
         extra_notes: Caveats specific to the calling function.
 
     Returns:
         The receipt.
     """
-    accuracy = ACCURACY[body]
+    accuracy = accuracy_for(model, body)
+    if model == "precision":
+        dataset = {
+            "source": "JPL DE421 numerical ephemeris",
+            **kernel_metadata(),
+            "graded_against": "Orekit reading a JPL DE ephemeris, 2000-2040",
+        }
+        fit_for = (
+            "High-precision planetary geometry, visualization, and research calculations within "
+            "the kernel coverage."
+        )
+        not_fit_for = (
+            "Navigation or spacecraft targeting without mission-specific kernels and an "
+            "independent operational pipeline."
+        )
+    else:
+        dataset = {
+            "source": "astropy builtin ephemeris (ERFA analytic series)",
+            "role": "selectable fallback requiring no binary kernel",
+            "graded_against": "Orekit reading a JPL DE ephemeris, 2000-2040",
+        }
+        fit_for = "Orientation, rendering, relative geometry, and approximate sky position."
+        not_fit_for = (
+            "Navigation, spacecraft targeting, occultation or transit timing, or anything "
+            "requiring arcsecond accuracy. Use the packaged JPL precision mode."
+        )
+
+    fallback_note = (
+        " Requested precision mode was unavailable, so the response used the labelled analytic "
+        "fallback."
+        if requested_model != model
+        else ""
+    )
 
     return Receipt(
         tool="ephemeris",
-        inputs={"body": body, "at_utc": when.isoformat()},
+        inputs={
+            "body": body,
+            "at_utc": when.isoformat(),
+            "requested_model": requested_model,
+            "effective_model": model,
+        },
         frame="ICRF (barycentric)",
         time_scale="TDB, converted from UTC",
-        dataset={
-            "source": "astropy builtin ephemeris (ERFA analytic series)",
-            "why_not_jpl_kernel": (
-                "A JPL DE kernel is tens of megabytes and would have to be downloaded at "
-                "runtime. A deployed service must not fetch data to start."
-            ),
-            "graded_against": "Orekit reading the JPL DE ephemeris, 2000-2040",
-        },
+        dataset=dataset,
         equation=quantity,
         uncertainty={
             "max_error_km": accuracy["max_error_km"],
@@ -234,27 +447,24 @@ def _receipt(body: str, when: datetime, *, quantity: str, extra_notes: str = "")
                 f"{accuracy['max_error_km']:,.0f} km, or {accuracy['relative']:.1e} of its "
                 "distance. This is a measured figure, not a specification."
             ),
-            "fit_for": (
-                "Orientation, rendering, relative geometry, and 'where is it now' questions, "
-                "where an error this small is far below one pixel."
-            ),
-            "not_fit_for": (
-                "Navigation, spacecraft targeting, occultation or transit timing, or anything "
-                "requiring arcsecond accuracy. Use a JPL kernel for those."
-            ),
+            "fit_for": fit_for,
+            "not_fit_for": not_fit_for,
         },
         notes=(
-            f"Position of {body} at {when.isoformat()}. " + extra_notes
+            f"Position of {body} at {when.isoformat()}. " + extra_notes + fallback_note
         ).strip(),
     )
 
 
-def barycentric_position(body: str, when: datetime) -> dict[str, Value]:
+def barycentric_position(
+    body: str, when: datetime, model: EphemerisModel = DEFAULT_MODEL
+) -> dict[str, Value]:
     """Position of a body relative to the solar-system barycentre.
 
     Args:
         body: One of `BODIES`.
         when: A timezone-aware instant.
+        model: Requested precision or analytic model.
 
     Returns:
         ICRF x, y, z and distance from the barycentre, each with provenance.
@@ -263,7 +473,8 @@ def barycentric_position(body: str, when: datetime) -> dict[str, Value]:
         EphemerisError: If the body is unsupported.
     """
     name = _check_body(body)
-    position = _barycentric(name, _to_tdb_iso(when))
+    selected = effective_model(model)
+    position = _barycentric(name, _to_tdb_iso(when), selected)
 
     def build(value: float, quantity: str) -> Value:
         return Value(
@@ -272,7 +483,13 @@ def barycentric_position(body: str, when: datetime) -> dict[str, Value]:
             # Derived, not observed: this is computed from a fitted model of accepted physics,
             # not measured. Nobody observed Uranus at this coordinate.
             tier=Tier.DERIVED,
-            receipt=_receipt(name, when, quantity=quantity),
+            receipt=_receipt(
+                name,
+                when,
+                model=selected,
+                requested_model=model,
+                quantity=quantity,
+            ),
         )
 
     return {
@@ -283,7 +500,9 @@ def barycentric_position(body: str, when: datetime) -> dict[str, Value]:
     }
 
 
-def apparent_from_earth(body: str, when: datetime) -> dict[str, Value]:
+def apparent_from_earth(
+    body: str, when: datetime, model: EphemerisModel = DEFAULT_MODEL
+) -> dict[str, Value]:
     """Where a body appears in Earth's sky, corrected for light travel time.
 
     Light time is not a nicety here. Sunlight takes eight minutes to arrive and Jupiter's up to
@@ -298,6 +517,7 @@ def apparent_from_earth(body: str, when: datetime) -> dict[str, Value]:
     Args:
         body: One of `BODIES`, other than earth.
         when: A timezone-aware instant of observation.
+        model: Requested precision or analytic model.
 
     Returns:
         Right ascension, declination, distance, and light travel time, with provenance.
@@ -309,18 +529,19 @@ def apparent_from_earth(body: str, when: datetime) -> dict[str, Value]:
     if name == "earth":
         raise EphemerisError("the Earth has no apparent position in Earth's own sky")
 
+    selected = effective_model(model)
     iso_tdb = _to_tdb_iso(when)
-    observer = _barycentric("earth", iso_tdb)
+    observer = _barycentric("earth", iso_tdb, selected)
 
     # Iterate the light-time solution. Two passes converge to well under a metre for every body
     # here; a third is cheap insurance and still costs nothing measurable.
     emission_iso = iso_tdb
-    separation = _barycentric(name, iso_tdb).minus(observer)
+    separation = _barycentric(name, iso_tdb, selected).minus(observer)
 
     for _ in range(3):
         light_time_s = separation.norm / C_M_PER_S
         emission_iso = _shift_iso(iso_tdb, -light_time_s)
-        separation = _barycentric(name, emission_iso).minus(observer)
+        separation = _barycentric(name, emission_iso, selected).minus(observer)
 
     distance = separation.norm
     light_time_s = distance / C_M_PER_S
@@ -339,7 +560,14 @@ def apparent_from_earth(body: str, when: datetime) -> dict[str, Value]:
             value=round(value, places),
             unit=unit,
             tier=Tier.DERIVED,
-            receipt=_receipt(name, when, quantity=quantity, extra_notes=notes),
+            receipt=_receipt(
+                name,
+                when,
+                model=selected,
+                requested_model=model,
+                quantity=quantity,
+                extra_notes=notes,
+            ),
         )
 
     return {
@@ -372,7 +600,9 @@ def _shift_iso(iso_tdb: str, seconds: float) -> str:
         return str((Time(iso_tdb, scale="tdb") + TimeDelta(seconds, format="sec")).isot)
 
 
-def snapshot(when: datetime) -> dict[str, object]:
+def snapshot(
+    when: datetime, model: EphemerisModel = DEFAULT_MODEL
+) -> dict[str, object]:
     """Positions of every supported body at one instant, for rendering.
 
     Returns plain numbers rather than tiered values: a renderer consumes ten positions at once
@@ -382,22 +612,24 @@ def snapshot(when: datetime) -> dict[str, object]:
 
     Args:
         when: A timezone-aware instant.
+        model: Requested precision or analytic model.
 
     Returns:
         One entry per body with barycentric AU coordinates, radius, and colour.
     """
+    selected = effective_model(model)
     iso_tdb = _to_tdb_iso(when)
 
     bodies = []
     for name in BODIES:
-        position = _barycentric(name, iso_tdb)
+        position = _barycentric(name, iso_tdb, selected)
         facts = BODY_FACTS[name]
 
         # Heliocentric ecliptic is what a renderer needs: orbits lie in this plane, so bodies
         # drawn from these coordinates sit on their own orbit paths. The barycentric ICRF values
         # are kept alongside because that is the frame the positions were computed in, and
         # silently replacing them would hide a frame conversion.
-        ecliptic = to_ecliptic(position.minus(_barycentric("sun", iso_tdb)))
+        ecliptic = to_ecliptic(position.minus(_barycentric("sun", iso_tdb, selected)))
 
         bodies.append(
             {
@@ -412,7 +644,7 @@ def snapshot(when: datetime) -> dict[str, object]:
                 "distance_from_barycentre_au": round(position.norm / AU_M, 9),
                 "radius_m": facts["radius_m"],
                 "colour": facts["colour"],
-                "max_error_km": ACCURACY[name]["max_error_km"],
+                "max_error_km": accuracy_for(selected, name)["max_error_km"],
             }
         )
 
@@ -421,11 +653,27 @@ def snapshot(when: datetime) -> dict[str, object]:
         "at_tdb": iso_tdb,
         "frame": "ICRF barycentric; ecliptic heliocentric coordinates supplied alongside",
         "tier": Tier.DERIVED.value,
+        "requested_model": model,
+        "model": selected,
+        "dataset": (
+            {"source": "JPL DE421 numerical ephemeris", **kernel_metadata()}
+            if selected == "precision"
+            else {
+                "source": "astropy builtin ephemeris (ERFA analytic series)",
+                "fallback": model != selected,
+            }
+        ),
         "bodies": bodies,
         "accuracy": (
-            "Positions come from an analytic series, not a JPL kernel. Worst measured "
-            "disagreement with a JPL ephemeris over 2000-2040 is 3e-4 of a body's distance - "
-            "far below one pixel at any zoom, and unusable for navigation or timing work."
+            "Positions come from packaged JPL DE421. Worst measured disagreement with the "
+            "independent Orekit/JPL reference over 2000-2040 is 3,400 km (Neptune), versus "
+            "756,788 km for the analytic fallback. Not a spacecraft-navigation product."
+            if selected == "precision"
+            else (
+                "Positions use the ERFA analytic fallback. Worst measured disagreement with a "
+                "JPL ephemeris over 2000-2040 is 3e-4 of a body's distance; use precision mode "
+                "for research geometry."
+            )
         ),
     }
 
@@ -479,7 +727,9 @@ def to_ecliptic(vector: Vector) -> Vector:
 
 
 @lru_cache(maxsize=16)
-def orbit_path(body: str, samples: int = 180) -> tuple[tuple[float, float, float], ...]:
+def orbit_path(
+    body: str, samples: int = 180, model: EphemerisModel = "analytic"
+) -> tuple[tuple[float, float, float], ...]:
     """Trace a body's actual orbit by sampling the ephemeris over one full period.
 
     The first version of the renderer drew a circle at the body's current distance. That asserts
@@ -493,6 +743,8 @@ def orbit_path(body: str, samples: int = 180) -> tuple[tuple[float, float, float
     Args:
         body: A planet name. The Sun and Moon have no heliocentric orbit to draw.
         samples: Points around the path.
+        model: Ephemeris source. Analytic is the default because DE421 ends in 2053, before one
+            full outer-planet revolution can be sampled.
 
     Returns:
         Ecliptic (x, y, z) points in AU, heliocentric, closed by the caller.
@@ -515,7 +767,9 @@ def orbit_path(body: str, samples: int = 180) -> tuple[tuple[float, float, float
         # Heliocentric, not barycentric: an orbit is drawn about the Sun, and the barycentre
         # wanders by up to a solar radius as Jupiter moves. Using it would make the inner
         # planets' paths visibly wobble for no physical reason.
-        relative = to_ecliptic(_barycentric(name, iso).minus(_barycentric("sun", iso)))
+        relative = to_ecliptic(
+            _barycentric(name, iso, model).minus(_barycentric("sun", iso, model))
+        )
         points.append(
             (relative.x / AU_M, relative.y / AU_M, relative.z / AU_M)
         )

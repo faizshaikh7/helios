@@ -6,12 +6,14 @@ Two layers:
   planets, the Sun's position at the equinoxes (checkable against the definition of the equinox
   rather than against another library), light-time actually being applied, and the time scale
   being converted rather than assumed.
-* **Tier 3** -- every body at every epoch against Orekit reading the JPL DE ephemeris.
+* **Tier 3** -- both the default packaged JPL mode and the selectable analytic fallback against
+  Orekit reading an independently supplied JPL DE ephemeris.
 
-The tier-3 bound is **relative**, at 1e-3. Measured worst departure across all ten bodies over
-2000-2040 is 3.0e-4, at Uranus. A relative bound is the right shape here because the analytic
-series' error scales with distance: an absolute bound tight enough to be meaningful for the Moon
-would reject Uranus, and one loose enough for Uranus would let a gross Moon error through.
+The precision tier-3 bound is **relative**, at 5e-6. Measured worst meaningful departure across
+all ten bodies over 2000-2040 is 2.52e-6, at Mercury. A relative bound is the right shape because
+error significance scales with distance: an absolute bound tight enough to be meaningful for the
+Moon would reject the outer planets, and one loose enough for Neptune would hide a gross Moon
+error. Each model's absolute per-body claims are separately enforced below.
 
 The Sun is graded on an absolute bound instead. The barycentre lies inside it, so its distance
 from the origin runs close to zero and a relative figure there measures the choice of origin
@@ -27,14 +29,16 @@ from itertools import pairwise
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 
+from api.main import app
 from science import ephemeris
 from science.provenance import Tier
 
 REFERENCE_PATH = Path(__file__).parent / "reference" / "ephemeris.json"
 
-# Measured worst is 3.0e-4, at Uranus; see module docstring.
-MAX_RELATIVE_ERROR = 1e-3
+# Measured worst meaningful precision-mode result is 2.52e-6, at Mercury.
+MAX_RELATIVE_ERROR = 5e-6
 
 # Below this barycentric distance a relative bound is meaningless, because the denominator is
 # near zero. Only the Sun is affected: the solar-system barycentre lies inside it, so its
@@ -43,8 +47,8 @@ MAX_RELATIVE_ERROR = 1e-3
 # measuring the choice of origin, not the ephemeris.
 RELATIVE_BOUND_MIN_DISTANCE_AU = 0.01
 
-# Absolute bound for such bodies. Measured worst for the Sun is 119 km.
-MAX_ABSOLUTE_ERROR_KM = 1000.0
+# Absolute bound for such bodies. Measured worst for the Sun is 118.2 km.
+MAX_ABSOLUTE_ERROR_KM = 200.0
 
 AU_M = ephemeris.AU_M
 
@@ -229,6 +233,107 @@ def test_positions_are_derived_and_state_their_measured_accuracy() -> None:
 
         assert value.receipt.frame == "ICRF (barycentric)"
         assert "TDB" in value.receipt.time_scale
+        assert value.receipt.dataset["kernel"] == "de421.bsp"
+        assert value.receipt.inputs["effective_model"] == "precision"
+
+
+def test_packaged_kernel_has_a_stable_auditable_identity() -> None:
+    """Precision mode uses the expected immutable DE421 asset, never a runtime download."""
+    metadata = ephemeris.kernel_metadata()
+
+    assert metadata["available"] is True
+    assert metadata["identity_verified"] is True
+    assert metadata["kernel"] == "de421.bsp"
+    assert metadata["sha256"] == ephemeris.KERNEL_SHA256
+    assert metadata["bytes"] == ephemeris.KERNEL_BYTES
+    assert metadata["package"] == "skyfield-data==7.0.0"
+
+
+def test_analytic_mode_remains_a_measured_selectable_fallback() -> None:
+    """The former analytic model remains available and publishes its own weaker bounds."""
+    when = datetime(2026, 8, 18, tzinfo=UTC)
+    result = ephemeris.barycentric_position("uranus", when, "analytic")
+
+    for value in result.values():
+        assert value.receipt.inputs["requested_model"] == "analytic"
+        assert value.receipt.inputs["effective_model"] == "analytic"
+        assert "ERFA analytic" in value.receipt.dataset["source"]
+        assert (
+            value.receipt.uncertainty["max_error_km"]
+            == ephemeris.ANALYTIC_ACCURACY["uranus"]["max_error_km"]
+        )
+
+
+def test_precision_materially_improves_the_outer_planets() -> None:
+    """JPL mode closes the largest measured analytic gap by at least an order of magnitude."""
+    for body in ("uranus", "neptune"):
+        assert (
+            ephemeris.PRECISION_ACCURACY[body]["max_error_km"]
+            < ephemeris.ANALYTIC_ACCURACY[body]["max_error_km"] / 10.0
+        )
+
+
+def test_precision_mode_falls_back_visibly_when_the_asset_is_unavailable(monkeypatch) -> None:
+    """A missing optional asset preserves service while labelling the weaker model."""
+    monkeypatch.setattr(
+        ephemeris,
+        "kernel_metadata",
+        lambda: {"available": False, "kernel": "de421.bsp", "error": "simulated"},
+    )
+
+    assert ephemeris.effective_model("precision") == "analytic"
+    result = ephemeris.barycentric_position(
+        "mars", datetime(2026, 8, 18, tzinfo=UTC), "precision"
+    )
+    receipt = result["x"].receipt
+    assert receipt.inputs["requested_model"] == "precision"
+    assert receipt.inputs["effective_model"] == "analytic"
+    assert "fallback" in receipt.notes.lower()
+
+
+def test_missing_precision_package_is_treated_as_an_unavailable_asset(monkeypatch) -> None:
+    """A packaging omission activates the labelled fallback instead of crashing health."""
+    ephemeris.kernel_metadata.cache_clear()
+    monkeypatch.setattr(
+        ephemeris,
+        "_kernel_path",
+        lambda: (_ for _ in ()).throw(ModuleNotFoundError("simulated missing package")),
+    )
+
+    try:
+        metadata = ephemeris.kernel_metadata()
+        assert metadata["available"] is False
+        assert metadata["identity_verified"] is False
+        assert "ModuleNotFoundError" in metadata["error"]
+        assert ephemeris.effective_model("precision") == "analytic"
+    finally:
+        ephemeris.kernel_metadata.cache_clear()
+
+
+def test_api_defaults_to_precision_and_bounds_kernel_coverage() -> None:
+    """The public contract selects JPL by default and rejects precision extrapolation."""
+    client = TestClient(app)
+    precise = client.post(
+        "/api/ephemeris/body",
+        json={"body": "mars", "at_utc": "2026-08-18T00:00:00Z"},
+    )
+    out_of_range = client.post(
+        "/api/ephemeris/body",
+        json={"body": "mars", "at_utc": "2100-01-01T00:00:00Z", "model": "precision"},
+    )
+    analytic = client.post(
+        "/api/ephemeris/body",
+        json={"body": "mars", "at_utc": "2100-01-01T00:00:00Z", "model": "analytic"},
+    )
+
+    assert precise.status_code == 200
+    assert precise.json()["model"] == "precision"
+    assert precise.json()["barycentric"]["x"]["receipt"]["dataset"]["kernel"] == "de421.bsp"
+    assert out_of_range.status_code == 422
+    assert out_of_range.json()["error"]["code"] == "ephemeris_out_of_range"
+    assert "2053" in out_of_range.json()["error"]["message"]
+    assert analytic.status_code == 200
+    assert analytic.json()["model"] == "analytic"
 
 
 def test_apparent_positions_disclose_what_was_not_corrected() -> None:
@@ -341,6 +446,32 @@ def test_the_published_accuracy_table_is_not_optimistic() -> None:
         assert measured_km <= published_km * 1.01, (
             f"{body}: real error {measured_km:,.0f} km exceeds the published "
             f"{published_km:,.0f} km. The stated accuracy is optimistic."
+        )
+
+
+def test_the_analytic_fallback_accuracy_table_is_not_optimistic() -> None:
+    """The selectable fallback's weaker published limits still bound independent results."""
+    if not _load():
+        pytest.skip("ephemeris.json not generated")
+
+    worst: dict[str, float] = {}
+    for case in _load():
+        position = ephemeris._barycentric(case["body"], case["epoch_tdb"], "analytic")
+        error_km = (
+            math.sqrt(
+                (position.x - case["x_m"]) ** 2
+                + (position.y - case["y_m"]) ** 2
+                + (position.z - case["z_m"]) ** 2
+            )
+            / 1000.0
+        )
+        worst[case["body"]] = max(worst.get(case["body"], 0.0), error_km)
+
+    for body, measured_km in worst.items():
+        published_km = ephemeris.ANALYTIC_ACCURACY[body]["max_error_km"]
+        assert measured_km <= published_km * 1.01, (
+            f"{body}: analytic fallback error {measured_km:,.0f} km exceeds its published "
+            f"{published_km:,.0f} km bound"
         )
 
 

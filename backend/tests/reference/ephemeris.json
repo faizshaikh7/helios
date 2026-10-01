@@ -5,9 +5,9 @@
     "frame": "ICRF, solar-system barycentre",
     "time_scale": "TDB",
     "orekit_jpype_version": "13.1.7.0",
-    "generated_utc": "2026-08-18T09:10:11+00:00",
+    "generated_utc": "2026-10-01T09:46:58+00:00",
     "generator": "tools/reference/generate_ephemeris.py",
-    "note": "Used to measure how far astropy's builtin analytic ephemeris departs from a JPL numerical ephemeris. The two are not expected to agree to the metre; the point is to know the size of the gap, state it, and confirm it is small relative to what the positions are used for."
+    "note": "Used to grade packaged JPL DE421 and the ERFA analytic fallback. Independent JPL releases are not expected to agree to the metre; the point is to measure and publish each mode's gap rather than infer precision from its model name."
   },
   "positions": [
     {

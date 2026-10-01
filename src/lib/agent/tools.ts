@@ -268,9 +268,9 @@ export const scienceTools = {
       "Get where the Sun, Moon or a planet is: barycentric position in AU, plus right " +
       "ascension, declination, distance and light travel time as seen from Earth. Use for " +
       "questions about planets, the Moon, the Sun, where a body is in the sky, or how far away " +
-      "it is. Positions come from an analytic series, accurate to between 1e-6 and 3e-4 of the " +
-      "body's distance depending on the body - good for orientation and 'where is it now', not " +
-      "for navigation or occultation timing. Report the stated accuracy alongside the answer. " +
+      "it is. Precision mode uses packaged JPL DE421 and is the default; analytic mode is the " +
+      "bounded fallback. Report the returned model, kernel/source, and stated measured accuracy. " +
+      "Neither mode is a spacecraft-navigation product. " +
       "Only the Sun, Moon and eight planets are available: no asteroids, comets or exoplanets.",
     inputSchema: z.object({
       body: z
@@ -291,6 +291,10 @@ export const scienceTools = {
         .string()
         .optional()
         .describe("ISO-8601 UTC instant, e.g. 2026-08-18T00:00:00Z. Omit for now."),
+      model: z
+        .enum(["precision", "analytic"])
+        .default("precision")
+        .describe("Use packaged JPL DE421 unless the user explicitly requests analytic fallback."),
     }),
     execute: async (input) => callScience("/api/ephemeris/body", input),
   }),

@@ -16,7 +16,7 @@ import os
 import platform
 import sys
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -139,6 +139,14 @@ async def _ephemeris_error_handler(_: Request, exc: ephemeris.EphemerisError) ->
     return _error("unsupported_body", str(exc), status=422)
 
 
+@app.exception_handler(ephemeris.PrecisionRangeError)
+async def _ephemeris_range_error_handler(
+    _: Request, exc: ephemeris.PrecisionRangeError
+) -> JSONResponse:
+    """A timestamp outside a selected kernel is valid input for the other model, so 422."""
+    return _error("ephemeris_out_of_range", str(exc), status=422)
+
+
 @app.exception_handler(RequestValidationError)
 async def _validation_error_handler(_: Request, exc: RequestValidationError) -> JSONResponse:
     """Return readable validation failures in the project's error shape.
@@ -233,7 +241,12 @@ def health() -> dict[str, Any]:
         time_check = {"error": f"{type(exc).__name__}: {exc}", "within_tolerance": False}
 
     imports_ok = not any(v.startswith("unavailable") for v in versions.values())
-    healthy = imports_ok and bool(time_check.get("within_tolerance"))
+    precision_check = ephemeris.kernel_metadata()
+    healthy = (
+        imports_ok
+        and bool(time_check.get("within_tolerance"))
+        and bool(precision_check.get("available"))
+    )
 
     return {
         "status": "ok" if healthy else "degraded",
@@ -242,7 +255,7 @@ def health() -> dict[str, Any]:
         "python": platform.python_version(),
         "platform": sys.platform,
         "libraries": versions,
-        "checks": {"time_scales": time_check},
+        "checks": {"time_scales": time_check, "precision_ephemeris": precision_check},
     }
 
 
@@ -925,14 +938,18 @@ class BodyRequest(BaseModel):
     at_utc: str | None = Field(
         default=None, description="ISO-8601 UTC instant. Omit for the current moment."
     )
+    model: Literal["precision", "analytic"] = Field(
+        default="precision",
+        description="Packaged JPL DE421 precision mode, or the ERFA analytic fallback.",
+    )
 
 
 @app.post("/api/ephemeris/body")
 def ephemeris_body(request: BodyRequest) -> dict[str, Any]:
     """Where a Sun, Moon or planet is, and where it appears from Earth.
 
-    Positions come from an analytic series rather than a JPL kernel, and every value states the
-    measured cost of that choice. See `science/ephemeris.py`.
+    Precision mode uses packaged JPL DE421; analytic mode keeps the bounded ERFA fallback. Every
+    value identifies the effective source and its independently measured disagreement.
 
     Args:
         request: Body and instant.
@@ -948,15 +965,19 @@ def ephemeris_body(request: BodyRequest) -> dict[str, Any]:
     result: dict[str, Any] = {
         "body": body,
         "at_utc": when.isoformat(),
-        "barycentric": ephemeris.barycentric_position(body, when),
-        "accuracy": ephemeris.ACCURACY.get(body),
+        "requested_model": request.model,
+        "model": ephemeris.effective_model(request.model),
+        "barycentric": ephemeris.barycentric_position(body, when, request.model),
+        "accuracy": ephemeris.accuracy_for(ephemeris.effective_model(request.model), body),
         "notice": OPERATIONAL_NOTICE,
     }
 
     # The Earth has no apparent position in its own sky, so that half is simply absent rather
     # than filled with something meaningless.
     if body != "earth":
-        result["apparent_from_earth"] = ephemeris.apparent_from_earth(body, when)
+        result["apparent_from_earth"] = ephemeris.apparent_from_earth(
+            body, when, request.model
+        )
 
     return result
 
@@ -967,6 +988,7 @@ class SnapshotRequest(BaseModel):
     at_utc: str | None = Field(
         default=None, description="ISO-8601 UTC instant. Omit for the current moment."
     )
+    model: Literal["precision", "analytic"] = Field(default="precision")
 
 
 @app.post("/api/ephemeris/snapshot")
@@ -983,7 +1005,7 @@ def ephemeris_snapshot(request: SnapshotRequest) -> dict[str, Any]:
         _parse_instant(request.at_utc, "at_utc") if request.at_utc else datetime.now(UTC)
     )
 
-    return {**ephemeris.snapshot(when), "notice": OPERATIONAL_NOTICE}
+    return {**ephemeris.snapshot(when, request.model), "notice": OPERATIONAL_NOTICE}
 
 
 class OrbitsRequest(BaseModel):
@@ -1008,6 +1030,7 @@ def ephemeris_orbits(request: OrbitsRequest) -> dict[str, Any]:
     """
     return {
         "frame": "ecliptic, heliocentric",
+        "model": "analytic",
         "samples": request.samples,
         "orbits": {
             body: [
@@ -1017,8 +1040,9 @@ def ephemeris_orbits(request: OrbitsRequest) -> dict[str, Any]:
             for body in ephemeris.ORBITAL_PERIOD_YEARS
         },
         "note": (
-            "Sampled over one sidereal period from the same ephemeris that positions the "
-            "bodies, so each planet lies on its own path by construction."
+            "Sampled from the ERFA analytic fallback over one sidereal period. DE421 ends in "
+            "2053 and cannot trace a full outer-planet revolution; precision-mode body "
+            "positions remain far inside the rendered path's sample spacing."
         ),
         "notice": OPERATIONAL_NOTICE,
     }
