@@ -165,8 +165,14 @@ export function createConceptReceipt(
       "circular orbit around an isolated star",
       "flat Sun-facing collector radiating thermally from two faces",
       "uniform optical and thermal properties; non-absorbed/non-reflected light is transmitted",
-      "no mutual shadowing or mutual heating",
-      "no solar wind, degradation, structural, control, logistics, or station-keeping model",
+    ],
+    omissions: [
+      "mutual shadowing and mutual heating",
+      "stellar variability, flares, and solar wind",
+      "material degradation and lifetime",
+      "structural loads and deployment dynamics",
+      "attitude control, orbit control, and station keeping",
+      "manufacturing, construction, logistics, and power transmission",
     ],
     formulas: {
       flux: "S_nominal * luminosity_ratio / radius_au^2",

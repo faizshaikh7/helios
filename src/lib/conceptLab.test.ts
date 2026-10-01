@@ -75,7 +75,8 @@ describe("stellar collector concept model", () => {
       if (key.endsWith("Status")) continue;
       assert.ok(key in receipt.units, `result ${key} is missing its unit`);
     }
-    assert.ok(receipt.assumptions.length >= 5);
+    assert.ok(receipt.assumptions.length >= 3);
+    assert.ok(receipt.omissions.length >= 5);
     assert.ok(receipt.sources.some((source) => source.includes("IAU")));
   });
 });
