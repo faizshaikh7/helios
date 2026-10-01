@@ -67,6 +67,8 @@ async function main() {
     assert(html.includes("See the mission."), "homepage is missing the reviewer hero");
     assert(html.includes("202 / 202"), "homepage is missing independent validation evidence");
     assert(html.includes("Ask Atlas"), "homepage is missing the agent interface");
+    assert(html.includes("Turn a wild idea"), "homepage is missing the concept-design lab");
+    assert(html.includes("Export calculation receipt"), "concept lab is missing its receipt export");
     assert(html.includes("Solar system"), "homepage is missing the solar-system interface");
     assert(html.includes("Precision lab"), "homepage is missing the ephemeris comparison lab");
   });

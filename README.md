@@ -7,17 +7,19 @@ Helios is the project. **Cosma** is the platform it is building toward; **Atlas*
 scientific agent that reasons over it.
 
 > **Status: live.** Sixteen tools spanning Earth orbit, the solar system and literature — the
-> numerical ones checked against an independent implementation before counting as done; eleven of
+> numerical ones checked against an independent implementation before counting as done; twelve
+> typed calculators exposed to a tool-calling agent (one explicitly speculative concept model);
 > them exposed to a tool-calling agent; an evaluation harness with 202 questions whose ground
-> truth came from Orekit; and 420 tests on every push. Nothing here claims a capability that
+> truth came from Orekit; and 427 tests on every push. Nothing here claims a capability that
 > isn't shipped — where a measurement is incomplete, it says so.
 >
 > **[satpass.vercel.app](https://satpass.vercel.app)**
 
 The public app opens with a guided reviewer path rather than an empty dashboard: run a live ISS
-contact analysis, ask Atlas a grounded question, screen two catalog objects, or enter the JPL
-solar-system view. The first screen shows the same evidence used as the release gate—202/202 tool
-questions, 420 automated checks, seventeen science endpoints, and eleven agent tools.
+contact analysis, ask Atlas a grounded question, turn a speculative Dyson-swarm idea into a
+bounded trade study, screen two catalog objects, or enter the JPL solar-system view. The first
+screen shows the same evidence used as the release gate—202/202 tool questions, automated checks,
+seventeen science endpoints, and twelve agent tools.
 
 ---
 
@@ -255,8 +257,9 @@ npm run smoke -- --base-url=https://satpass.vercel.app
 
 ## Current scope
 
-Sixteen endpoints on the science service, eleven of them exposed to the agent as typed tools. Each
-was verified against an independent source before counting as done.
+Sixteen endpoints on the science service feed eleven validated agent tools. A twelfth typed tool
+is the visibly speculative Concept Lab model; its closed-form reference checks are kept separate
+from the operational accuracy score.
 
 **Earth orbit**
 
@@ -293,9 +296,22 @@ Underneath all of it, time scales agree with Orekit to under a nanosecond across
 2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**420 tests** — 393 Python, 27 TypeScript — run on every push.
+**427 tests** — 393 Python, 34 TypeScript — run on every push.
 
 ### Four things worth singling out
+
+**The Concept Lab turns imagination into inspectable assumptions.** Its first template is a
+stellar-collector/Dyson-swarm trade study: orbital radius, collector area, efficiency, optical
+properties, temperature limit, areal density, stellar luminosity and stellar mass are editable.
+It derives incident flux, electrical power, two-sided radiative-equilibrium temperature, the
+nearest thermally allowable radius, orbit period, light delay, radiation pressure and material
+mass, then compares alternative positions. The exported JSON receipt includes every input, unit,
+formula, constant, source and omission. These are idealized analytical screening estimates,
+visibly tagged **Speculative**—not structural design or mission approval. Constants follow IAU
+2012/2015 resolutions and NIST/CODATA; the one-AU flux and solar orbit period are checked against
+published [IAU nominal constants](https://www.iau.org/static/resolutions/IAU2015_English.pdf),
+[NASA Earth data](https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html), and
+[NIST SI definitions](https://www.nist.gov/pml/special-publication-330/sp-330-section-2).
 
 **Conjunction screening refuses to manufacture collision risk.** The screen reports time of
 closest approach, miss distance, relative speed, and primary-centred RTN geometry after refining

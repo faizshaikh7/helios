@@ -30,6 +30,7 @@ const EXAMPLES = [
   "What is the ISS doing for power right now — how long is its longest eclipse today?",
   "Where is Hubble over the Earth at the moment, and how fast is it moving?",
   "Compare the orbital period and inclination of NOAA 19 and the ISS.",
+  "Trade power against temperature for a 1 million km² Dyson swarm near Mercury.",
 ];
 
 /**
@@ -93,7 +94,7 @@ export function AskPanel() {
           <p className="text-[10px] uppercase tracking-[0.18em] text-derived">Grounded mission copilot</p>
           <h2 className="mt-1 text-lg font-medium tracking-tight text-foreground">Ask Atlas</h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
-            Ask in plain English. Atlas chooses from eleven validated science tools, then shows
+            Ask in plain English. Atlas chooses from twelve typed calculation tools, then shows
             the calculation path beside the answer instead of asking you to trust fluent prose.
           </p>
         </div>
@@ -127,7 +128,7 @@ export function AskPanel() {
           onKeyDown={(e) => {
             if (e.key === "Enter" && !loading) ask(question);
           }}
-          placeholder="Ask about a satellite's position, passes, orbit, or eclipses…"
+          placeholder="Ask about an orbit, encounter, or speculative mission concept…"
           className="min-w-0 flex-1 bg-transparent px-2.5 py-2 text-sm text-foreground outline-none"
         />
         <button

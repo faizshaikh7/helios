@@ -1,6 +1,7 @@
 import { tool } from "ai";
 import { z } from "zod";
 import { omitRawTle } from "@/lib/agent/sanitize";
+import { calculateStellarCollector, createConceptReceipt } from "@/lib/conceptLab";
 
 /**
  * Where the Python science service listens.
@@ -263,6 +264,34 @@ export const scienceTools = {
     execute: async (input) => callScience("/api/literature/verify", input),
   }),
 
+  stellarCollectorTrade: tool({
+    description:
+      "Run an idealized Dyson-swarm or stellar-collector trade study. Use when a user asks " +
+      "how collector position affects power, temperature, orbital period, light delay, radiation " +
+      "pressure, or material mass. Every result is SPECULATIVE concept screening, not flight " +
+      "design. Report the omitted effects and do not call the nearest thermally allowable orbit " +
+      "globally optimal or safe. Copy omissions from the receipt instead of adding remembered " +
+      "hazards. Inputs and outputs carry explicit SI or astronomical units.",
+    inputSchema: z
+      .object({
+        orbitalRadiusAu: z.number().min(0.01).max(1_000),
+        collectorAreaKm2: z.number().min(0.001).max(1e18),
+        conversionEfficiencyPercent: z.number().min(0.01).max(100),
+        absorptivity: z.number().min(0.001).max(1),
+        emissivity: z.number().min(0.001).max(1),
+        maximumTemperatureK: z.number().min(10).max(10_000),
+        arealDensityKgM2: z.number().min(0.000_001).max(100_000),
+        reflectivity: z.number().min(0).max(1),
+        stellarLuminositySolar: z.number().min(0.000_1).max(1_000_000).default(1),
+        stellarMassSolar: z.number().min(0.01).max(1_000).default(1),
+      })
+      .refine((input) => input.absorptivity + input.reflectivity <= 1, {
+        message: "absorptivity plus reflectivity cannot exceed 1",
+      }),
+    execute: async (input) =>
+      createConceptReceipt(input, calculateStellarCollector(input)),
+  }),
+
   planetPosition: tool({
     description:
       "Get where the Sun, Moon or a planet is: barycentric position in AU, plus right " +
@@ -366,6 +395,14 @@ visible.
 cannot produce a defensible collision probability because the catalog data has no state
 covariance or hard-body radius. If screenConjunction returns an inside-threshold result, report
 exactly that and the TLE uncertainty; never call it a likely collision or recommend a manoeuvre.
+
+**Concept screening is not engineering validation.** stellarCollectorTrade is deliberately an
+idealized analytical model. Label its outputs Speculative, name the assumptions and omissions,
+and describe its minimum radius as thermally allowable under the stated model—not globally safe,
+optimal, buildable, or stable. A positive thermal margin means only "inside the stated thermal
+limit"; never call it safe or safely below. List only the omissions present in the tool receipt,
+without adding hazards from memory. Never merge those outputs with the independently validated
+orbital-tool accuracy score.
 
 **Carry every constraint from the question into the tool call.** If the question names a time,
 a date, a window, an elevation mask, or a location, those belong in the parameters. A tool

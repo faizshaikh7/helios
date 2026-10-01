@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AskPanel } from "@/components/AskPanel";
+import { ConceptLab } from "@/components/ConceptLab";
 import { ConjunctionPanel } from "@/components/ConjunctionPanel";
 import { DecayPanel } from "@/components/DecayPanel";
 import dynamic from "next/dynamic";
@@ -268,6 +269,10 @@ export default function Home() {
         <ReviewerHero health={health} onRunMissionDemo={runMissionDemo} />
 
         <AskPanel />
+
+        {/* Speculative concepts are isolated from operational analysis and carry their own
+            explicit assumptions, equations, omissions, and exportable receipt. */}
+        <ConceptLab />
 
         {/* Controls */}
         <section id="mission-control" className="scroll-mt-4 mt-6 rounded-2xl border border-edge bg-surface p-5 sm:p-6">

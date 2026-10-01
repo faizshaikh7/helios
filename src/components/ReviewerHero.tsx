@@ -45,6 +45,7 @@ export function ReviewerHero({
 
         <div className="hidden items-center gap-5 text-[11px] text-muted md:flex">
           <button type="button" onClick={() => moveTo("atlas")} className="hover:text-foreground">Atlas AI</button>
+          <button type="button" onClick={() => moveTo("concept-lab")} className="hover:text-foreground">Concept lab</button>
           <button type="button" onClick={() => moveTo("mission-control")} className="hover:text-foreground">Mission analysis</button>
           <button type="button" onClick={() => moveTo("conjunction-lab")} className="hover:text-foreground">Space safety</button>
           <button type="button" onClick={() => moveTo("solar-system")} className="hover:text-foreground">Deep space</button>
@@ -95,15 +96,15 @@ export function ReviewerHero({
             </button>
             <button
               type="button"
-              onClick={() => moveTo("solar-system")}
+              onClick={() => moveTo("concept-lab")}
               className="rounded-xl border border-edge-strong bg-background/60 px-5 py-3 text-sm font-medium text-foreground backdrop-blur hover:-translate-y-0.5 hover:border-accent/50"
             >
-              Explore JPL solar system
+              Design a wild concept
             </button>
           </div>
 
           <p className="mt-4 text-[10px] uppercase tracking-[0.16em] text-faint">
-            No canned dashboard · every action calls the live science service
+            No canned dashboard · assumptions, equations and sources stay visible
           </p>
         </div>
 
@@ -117,6 +118,7 @@ export function ReviewerHero({
               ["01", "Track & predict", "SGP4 · WGS84 · access windows"],
               ["02", "Screen & explain", "TCA · miss distance · RTN"],
               ["03", "Explore & verify", "JPL DE421 · Orekit · provenance"],
+              ["04", "Imagine & bound", "trade studies · constraints · receipts"],
             ].map(([number, title, detail]) => (
               <div key={number} className="group flex items-center gap-3 rounded-xl border border-transparent p-3 hover:border-edge hover:bg-surface-inset/60">
                 <span className="font-mono text-[10px] text-accent">{number}</span>
@@ -140,9 +142,9 @@ export function ReviewerHero({
       <div className="relative mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-edge bg-edge sm:grid-cols-4">
         {[
           ["202 / 202", "tool accuracy ceiling"],
-          ["420", "automated checks"],
+          ["427", "automated checks"],
           ["17", "science endpoints"],
-          ["11", "grounded AI tools"],
+          ["12", "typed AI tools"],
         ].map(([value, label]) => (
           <div key={label} className="bg-background/80 px-4 py-4 backdrop-blur">
             <p className="font-mono text-xl font-medium tracking-tight text-foreground">{value}</p>
