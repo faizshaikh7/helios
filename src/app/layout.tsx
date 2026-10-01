@@ -15,9 +15,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Helios",
+  title: "Helios — Auditable Orbital Intelligence",
   description:
-    "Orbital mechanics answers computed by real tools, with explicit assumptions and sources.",
+    "Live satellite tracking, pass prediction, conjunction screening and JPL planetary positions—with explicit sources, frames and uncertainty.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

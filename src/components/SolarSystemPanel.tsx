@@ -8,6 +8,7 @@ import type {
   AsteroidsResponse,
   MoonsResponse,
   OrbitsResponse,
+  SnapshotBody,
   SnapshotResponse,
   StarsResponse,
 } from "@/lib/types";
@@ -28,6 +29,11 @@ const SolarSystem = dynamic(
 /** Days either side of today the time control spans. */
 const RANGE_DAYS = 365 * 6;
 
+/** Astronomical unit in kilometres, used only to display a delta between two API positions. */
+const AU_KM = 149_597_870.7;
+
+type EphemerisModel = "precision" | "analytic";
+
 /** Bodies offered as camera targets, in orbital order. */
 const FOCUS_TARGETS = [
   "sun",
@@ -46,6 +52,22 @@ function dateFromOffset(days: number): Date {
   return new Date(Date.now() + days * 86_400_000);
 }
 
+/** Find one body in a rendering snapshot without weakening the response type. */
+function bodyFrom(snapshot: SnapshotResponse | undefined, name: string): SnapshotBody | undefined {
+  return snapshot?.bodies.find((body) => body.body === name);
+}
+
+/** Calculate live heliocentric separation between the two model outputs, in kilometres. */
+function modelSeparationKm(precision: SnapshotBody, analytic: SnapshotBody): number {
+  return (
+    Math.hypot(
+      precision.ecliptic_x_au - analytic.ecliptic_x_au,
+      precision.ecliptic_y_au - analytic.ecliptic_y_au,
+      precision.ecliptic_z_au - analytic.ecliptic_z_au,
+    ) * AU_KM
+  );
+}
+
 /**
  * Solar-system view: the second renderer, and a lesson about scale.
  *
@@ -55,11 +77,11 @@ function dateFromOffset(days: number): Date {
  */
 export function SolarSystemPanel() {
   const [offsetDays, setOffsetDays] = useState(0);
-  const [ephemerisModel, setEphemerisModel] = useState<"precision" | "analytic">("precision");
+  const [ephemerisModel, setEphemerisModel] = useState<EphemerisModel>("precision");
   const [distanceMode, setDistanceMode] = useState<DistanceMode>("linear");
   const [focus, setFocus] = useState<string | null>(null);
 
-  const [snapshot, setSnapshot] = useState<SnapshotResponse | null>(null);
+  const [snapshots, setSnapshots] = useState<Partial<Record<EphemerisModel, SnapshotResponse>>>({});
   const [orbits, setOrbits] = useState<OrbitsResponse | null>(null);
   const [starCatalogue, setStarCatalogue] = useState<StarsResponse | null>(null);
   const [moons, setMoons] = useState<MoonsResponse | null>(null);
@@ -152,24 +174,26 @@ export function SolarSystemPanel() {
     const controller = new AbortController();
 
     timer.current = setTimeout(() => {
-      fetch("/api/ephemeris/snapshot", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          at_utc: dateFromOffset(offsetDays).toISOString(),
-          model: ephemerisModel,
-        }),
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          if (!response.ok) {
-            const parsed = (await response.json().catch(() => null)) as ApiError | null;
-            throw new Error(parsed?.error?.message ?? `HTTP ${response.status}`);
-          }
-          return response.json() as Promise<SnapshotResponse>;
-        })
-        .then((body) => {
-          setSnapshot(body);
+      const atUtc = dateFromOffset(offsetDays).toISOString();
+
+      /** Fetch one explicitly selected model so the comparison never confuses requested/effective. */
+      const fetchSnapshot = async (model: EphemerisModel): Promise<SnapshotResponse> => {
+        const response = await fetch("/api/ephemeris/snapshot", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ at_utc: atUtc, model }),
+          signal: controller.signal,
+        });
+        if (!response.ok) {
+          const parsed = (await response.json().catch(() => null)) as ApiError | null;
+          throw new Error(parsed?.error?.message ?? `HTTP ${response.status}`);
+        }
+        return response.json() as Promise<SnapshotResponse>;
+      };
+
+      Promise.all([fetchSnapshot("precision"), fetchSnapshot("analytic")])
+        .then(([precision, analytic]) => {
+          setSnapshots({ precision, analytic });
           setError(null);
         })
         .catch((caught: unknown) => {
@@ -182,19 +206,32 @@ export function SolarSystemPanel() {
       controller.abort();
       if (timer.current) clearTimeout(timer.current);
     };
-  }, [offsetDays, ephemerisModel]);
+  }, [offsetDays]);
 
   const shown = dateFromOffset(offsetDays);
 
+  const snapshot = snapshots[ephemerisModel] ?? null;
+
   const focused = focus ? snapshot?.bodies.find((item) => item.body === focus) : undefined;
+  const comparisonBodyName = focus ?? "uranus";
+  const precisionAvailable = snapshots.precision?.model === "precision";
+  const precisionBody = bodyFrom(snapshots.precision, comparisonBodyName);
+  const analyticBody = bodyFrom(snapshots.analytic, comparisonBodyName);
+  const liveModelSeparation =
+    precisionBody && analyticBody ? modelSeparationKm(precisionBody, analyticBody) : null;
+  const boundImprovement =
+    precisionAvailable && precisionBody && analyticBody && precisionBody.max_error_km > 0
+      ? analyticBody.max_error_km / precisionBody.max_error_km
+      : null;
 
   return (
     <section
       className={
         fullscreen
           ? "fixed inset-0 z-50 overflow-auto bg-background p-5"
-          : "mt-10 rounded-lg border border-edge bg-surface p-5"
+          : "scroll-mt-4 mt-10 rounded-2xl border border-edge bg-surface p-5 sm:p-6"
       }
+      id="solar-system"
     >
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium tracking-tight text-foreground">Solar system</h2>
@@ -215,6 +252,90 @@ export function SolarSystemPanel() {
         direction. Drag to orbit, scroll to zoom, pick a body to fly to it, and move the date to
         watch the system run.
       </p>
+
+      <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_0.9fr]">
+        <button
+          type="button"
+          onClick={() => setEphemerisModel("precision")}
+          className={`rounded-xl border p-4 text-left ${
+            ephemerisModel === "precision"
+              ? "border-derived/60 bg-derived/5 shadow-[inset_0_0_30px_rgba(2,132,199,0.06)]"
+              : "border-edge bg-background/40 hover:border-derived/40"
+          }`}
+        >
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-foreground">JPL DE421 precision</span>
+            <span className="rounded-full bg-derived/10 px-2 py-0.5 text-[9px] uppercase tracking-wide text-derived">
+              {snapshots.precision && !precisionAvailable ? "fallback active" : "default"}
+            </span>
+          </span>
+          <span className="mt-2 block text-[11px] leading-5 text-muted">
+            Think high-fidelity trajectory file: numerically integrated JPL positions, packaged
+            and checksum-verified for its fixed 1899–2053 coverage window.
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setEphemerisModel("analytic")}
+          className={`rounded-xl border p-4 text-left ${
+            ephemerisModel === "analytic"
+              ? "border-predicted/60 bg-predicted/5"
+              : "border-edge bg-background/40 hover:border-predicted/40"
+          }`}
+        >
+          <span className="flex items-center justify-between gap-3">
+            <span className="text-xs font-semibold text-foreground">Analytic fallback</span>
+            <span className="rounded-full bg-predicted/10 px-2 py-0.5 text-[9px] uppercase tracking-wide text-predicted">resilience</span>
+          </span>
+          <span className="mt-2 block text-[11px] leading-5 text-muted">
+            Think compact equation set: ERFA analytical series with no kernel dependency,
+            available beyond the finite JPL window but with weaker measured bounds.
+          </span>
+        </button>
+
+        <div className="rounded-xl border border-edge bg-surface-inset/70 p-4">
+          <div className="flex items-center justify-between gap-3">
+            <span className="text-[10px] uppercase tracking-[0.15em] text-faint">Precision lab</span>
+            <span className="text-[10px] capitalize text-foreground">{comparisonBodyName}</span>
+          </div>
+          {precisionAvailable &&
+          precisionBody &&
+          analyticBody &&
+          liveModelSeparation !== null &&
+          boundImprovement ? (
+            <>
+              <p className="mt-2 font-mono text-xl text-foreground">
+                {boundImprovement.toFixed(0)}×
+                <span className="ml-2 font-sans text-[10px] uppercase tracking-wide text-observed">
+                  tighter bound
+                </span>
+              </p>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-[10px]">
+                <span className="text-derived">
+                  JPL measured max {precisionBody.max_error_km.toLocaleString()} km
+                </span>
+                <span className="text-predicted">
+                  analytic measured max {analyticBody.max_error_km.toLocaleString()} km
+                </span>
+              </div>
+              <p className="mt-2 text-[10px] leading-4 text-faint">
+                Live model separation:{" "}
+                {liveModelSeparation.toLocaleString(undefined, {
+                  maximumFractionDigits: liveModelSeparation < 10 ? 2 : 0,
+                })}{" "}
+                km. This is model spread, not ground-truth error.
+              </p>
+            </>
+          ) : (
+            <p className="mt-3 text-[11px] text-muted">
+              {snapshots.precision && !precisionAvailable
+                ? "The verified JPL asset is unavailable; both views are using the labelled analytic fallback."
+                : "Loading both independently measured models…"}
+            </p>
+          )}
+        </div>
+      </div>
 
       <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
         <label className="flex min-w-[15rem] flex-1 flex-col gap-1.5">
@@ -367,7 +488,7 @@ export function SolarSystemPanel() {
           <span className="capitalize text-foreground">{focused.body}</span> ·{" "}
           <span className="font-mono">{focused.distance_from_sun_au.toFixed(4)}</span> AU from the
           Sun · radius <span className="font-mono">{(focused.radius_m / 1000).toLocaleString()}</span>{" "}
-          km · position accurate to{" "}
+          km · independently measured max disagreement{" "}
           <span className="font-mono">{focused.max_error_km.toLocaleString()}</span> km
         </p>
       )}

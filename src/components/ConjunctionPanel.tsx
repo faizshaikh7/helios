@@ -69,7 +69,7 @@ export function ConjunctionPanel() {
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
+    <section id="conjunction-lab" className="scroll-mt-4 mt-6 rounded-2xl border border-edge bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium text-foreground">Conjunction screening lab</h2>

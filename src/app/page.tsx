@@ -7,8 +7,8 @@ import { DecayPanel } from "@/components/DecayPanel";
 import dynamic from "next/dynamic";
 import { GroundTrack } from "@/components/GroundTrack";
 import { LiteraturePanel } from "@/components/LiteraturePanel";
+import { ReviewerHero } from "@/components/ReviewerHero";
 import { SolarSystemPanel } from "@/components/SolarSystemPanel";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { TierLegend, TieredValue } from "@/components/TieredValue";
 import type {
   ApiError,
@@ -48,6 +48,8 @@ const STATION_PRESETS = [
   { name: "Quito", lat: -0.1807, lon: -78.4678, elevation: 2850 },
   { name: "Sydney", lat: -33.8688, lon: 151.2093, elevation: 58 },
 ];
+
+type GroundStation = (typeof STATION_PRESETS)[number];
 
 /**
  * Format an ISO timestamp for display, keeping UTC explicit.
@@ -168,7 +170,12 @@ export default function Home() {
       .catch(() => setHealth("unreachable"));
   }, []);
 
-  const run = useCallback(async () => {
+  const run = useCallback(async (
+    analysisNoradId: number,
+    analysisStation: GroundStation,
+    analysisMinElevation: number,
+    analysisDays: number,
+  ) => {
     setLoading(true);
     setError(null);
 
@@ -180,34 +187,34 @@ export default function Home() {
         elementsResponse,
         eclipseResponse,
       ] = await Promise.all([
-        fetch(`/api/satellite/${noradId}`),
+        fetch(`/api/satellite/${analysisNoradId}`),
         fetch("/api/passes", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            norad_id: noradId,
-            latitude_deg: station.lat,
-            longitude_deg: station.lon,
-            elevation_m: station.elevation,
-            station_name: station.name,
-            min_elevation_deg: minElevation,
-            days,
+            norad_id: analysisNoradId,
+            latitude_deg: analysisStation.lat,
+            longitude_deg: analysisStation.lon,
+            elevation_m: analysisStation.elevation,
+            station_name: analysisStation.name,
+            min_elevation_deg: analysisMinElevation,
+            days: analysisDays,
           }),
         }),
         fetch("/api/groundtrack", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ norad_id: noradId, minutes: 100, step_seconds: 30 }),
+          body: JSON.stringify({ norad_id: analysisNoradId, minutes: 100, step_seconds: 30 }),
         }),
         fetch("/api/elements", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ norad_id: noradId, at_epoch: true }),
+          body: JSON.stringify({ norad_id: analysisNoradId, at_epoch: true }),
         }),
         fetch("/api/eclipse", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ norad_id: noradId, days: 1 }),
+          body: JSON.stringify({ norad_id: analysisNoradId, days: 1 }),
         }),
       ]);
 
@@ -239,40 +246,44 @@ export default function Home() {
     } finally {
       setLoading(false);
     }
-  }, [noradId, station, minElevation, days]);
+  }, []);
+
+  /** Reset to the strongest first-run scenario, execute it, and reveal the live workspace. */
+  const runMissionDemo = useCallback(() => {
+    const demoStation = STATION_PRESETS[0];
+    setNoradId(25544);
+    setStation(demoStation);
+    setMinElevation(10);
+    setDays(2);
+    void run(25544, demoStation, 10, 2);
+    window.setTimeout(
+      () => document.getElementById("mission-control")?.scrollIntoView({ behavior: "smooth" }),
+      80,
+    );
+  }, [run]);
 
   return (
-    <div className="min-h-full bg-background px-6 py-10 text-foreground">
-      <main className="mx-auto w-full max-w-5xl">
-        <header className="flex flex-wrap items-baseline justify-between gap-3">
-          <div>
-            <h1 className="text-2xl font-medium tracking-tight text-foreground">Helios</h1>
-            <p className="mt-1 max-w-xl text-sm leading-6 text-muted">
-              Ground-station pass prediction, computed by real orbital mechanics — every value
-              carrying its frame, time scale, uncertainty, and source.
-            </p>
-          </div>
-          <div className="flex items-center gap-4">
-            <span className="inline-flex items-center gap-2 text-xs text-muted">
-              <span
-                className={`h-2 w-2 rounded-full ${
-                  health === "ok"
-                    ? "bg-ok"
-                    : health === "checking"
-                      ? "bg-faint"
-                      : "bg-danger"
-                }`}
-              />
-              science service {health}
-            </span>
-            <ThemeToggle />
-          </div>
-        </header>
+    <div className="min-h-full overflow-hidden bg-background px-4 py-4 text-foreground sm:px-6 sm:py-6">
+      <main className="mx-auto w-full max-w-6xl">
+        <ReviewerHero health={health} onRunMissionDemo={runMissionDemo} />
 
         <AskPanel />
 
         {/* Controls */}
-        <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
+        <section id="mission-control" className="scroll-mt-4 mt-6 rounded-2xl border border-edge bg-surface p-5 sm:p-6">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.18em] text-accent">Live mission analysis</p>
+              <h2 className="mt-1 text-lg font-medium tracking-tight text-foreground">Satellite contact workspace</h2>
+              <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
+                Resolve a current element set, predict station access, propagate its ground track,
+                recover orbital elements, and forecast eclipse duty cycle in one run.
+              </p>
+            </div>
+            <span className="rounded-full border border-predicted/30 bg-predicted/5 px-3 py-1 text-[10px] uppercase tracking-wide text-predicted">
+              live Celestrak data
+            </span>
+          </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Field label="Satellite">
               <select
@@ -360,7 +371,7 @@ export default function Home() {
             <div className="flex items-end sm:col-span-2">
               <button
                 type="button"
-                onClick={run}
+                onClick={() => void run(noradId, station, minElevation, days)}
                 disabled={loading}
                 className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition hover:opacity-90 disabled:opacity-50"
               >

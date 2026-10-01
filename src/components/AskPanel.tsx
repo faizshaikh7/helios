@@ -87,33 +87,40 @@ export function AskPanel() {
   const anyConfigured = status ? Object.values(status.providers).some(Boolean) : true;
 
   return (
-    <section className="mt-6 rounded-lg border border-edge bg-surface p-5">
-      <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h2 className="text-sm font-medium text-foreground">Ask Atlas</h2>
+    <section id="atlas" className="scroll-mt-4 mt-6 overflow-hidden rounded-2xl border border-edge bg-surface p-5 sm:p-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.18em] text-derived">Grounded mission copilot</p>
+          <h2 className="mt-1 text-lg font-medium tracking-tight text-foreground">Ask Atlas</h2>
+          <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
+            Ask in plain English. Atlas chooses from eleven validated science tools, then shows
+            the calculation path beside the answer instead of asking you to trust fluent prose.
+          </p>
+        </div>
 
-        {status && (
-          <select
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
-            className="rounded-md border border-edge bg-surface-inset px-2 py-1 font-mono text-xs text-foreground outline-none"
-            aria-label="Model provider"
-          >
-            {Object.entries(status.providers).map(([id, ready]) => (
-              <option key={id} value={id} className="bg-surface">
-                {id}
-                {ready ? "" : " (no key)"}
-              </option>
-            ))}
-          </select>
-        )}
+        <div className="flex items-center gap-2">
+          <span className="rounded-full border border-derived/30 bg-derived/5 px-2.5 py-1 text-[9px] uppercase tracking-wide text-derived">
+            tool trace visible
+          </span>
+          {status && (
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+              className="rounded-md border border-edge bg-surface-inset px-2 py-1 font-mono text-xs text-foreground outline-none"
+              aria-label="Model provider"
+            >
+              {Object.entries(status.providers).map(([id, ready]) => (
+                <option key={id} value={id} className="bg-surface">
+                  {id}
+                  {ready ? "" : " (no key)"}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
-      <p className="mt-1 text-[11px] leading-5 text-faint">
-        The model decides what to compute; the tools do the computing. Every answer shows which
-        tools ran, so a remembered guess is distinguishable from a calculation.
-      </p>
-
-      <div className="mt-4 flex gap-2">
+      <div className="mt-5 flex gap-2 rounded-xl border border-edge bg-surface-inset/60 p-1.5 focus-within:border-accent/60">
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -121,19 +128,20 @@ export function AskPanel() {
             if (e.key === "Enter" && !loading) ask(question);
           }}
           placeholder="Ask about a satellite's position, passes, orbit, or eclipses…"
-          className="flex-1 rounded-md border border-edge bg-surface-inset px-3 py-2 text-sm text-foreground outline-none focus:border-accent"
+          className="min-w-0 flex-1 bg-transparent px-2.5 py-2 text-sm text-foreground outline-none"
         />
         <button
           type="button"
           onClick={() => ask(question)}
           disabled={loading || !question.trim()}
-          className="rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-contrast transition hover:opacity-90 disabled:opacity-50"
+          className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-accent-contrast shadow-[0_8px_20px_rgba(2,132,199,0.18)] transition hover:opacity-90 disabled:opacity-50"
         >
           {loading ? "Thinking…" : "Ask"}
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <span className="text-[9px] uppercase tracking-[0.14em] text-faint">Try a live question</span>
         {EXAMPLES.map((example) => (
           <button
             key={example}

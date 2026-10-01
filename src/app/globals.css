@@ -137,8 +137,26 @@
 
 body {
   background: var(--background);
+  background-image:
+    radial-gradient(circle at 8% -10%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 30rem),
+    radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--tier-observed) 5%, transparent), transparent 28rem);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+  color: var(--foreground);
+}
+
+/* Fine coordinate grid: enough technical texture to establish the mission-console tone without
+   competing with the live visualisations below it. */
+.hero-grid {
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--border) 45%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 45%, transparent) 1px, transparent 1px);
+  background-size: 32px 32px;
 }
 
 /* Theme changes are instant by default, which reads as a jarring flash on a full-page repaint.

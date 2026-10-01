@@ -14,6 +14,11 @@ scientific agent that reasons over it.
 >
 > **[satpass.vercel.app](https://satpass.vercel.app)**
 
+The public app opens with a guided reviewer path rather than an empty dashboard: run a live ISS
+contact analysis, ask Atlas a grounded question, screen two catalog objects, or enter the JPL
+solar-system view. The first screen shows the same evidence used as the release gate—202/202 tool
+questions, 420 automated checks, seventeen science endpoints, and eleven agent tools.
+
 ---
 
 ## The problem
@@ -318,6 +323,13 @@ pixels of real angular size they draw as labelled markers, so nothing is exagger
 is invisible. There is a true-scale toggle that makes the planets vanish, which is the honest
 picture. Orbits are traced from the ephemeris, so each planet sits on its own path by
 construction rather than by adjustment.
+
+**The precision choice is inspectable, not a mystery toggle.** The UI explains JPL DE421 as a
+packaged, checksum-verified numerical trajectory file and the ERFA fallback as a compact analytic
+equation set that remains available beyond the kernel window. It loads both for the same TDB
+instant, shows each independently measured per-body bound, and reports their live separation as
+*model spread*, explicitly not as ground-truth error. Selecting a planet updates the comparison;
+Uranus makes the improvement easiest to see, with a roughly 252× tighter published bound.
 
 ### Where this differs from an operational agency system
 
