@@ -78,8 +78,9 @@ function modelSeparationKm(precision: SnapshotBody, analytic: SnapshotBody): num
 export function SolarSystemPanel() {
   const [offsetDays, setOffsetDays] = useState(0);
   const [ephemerisModel, setEphemerisModel] = useState<EphemerisModel>("precision");
-  const [distanceMode, setDistanceMode] = useState<DistanceMode>("linear");
+  const [distanceMode, setDistanceMode] = useState<DistanceMode>("log");
   const [focus, setFocus] = useState<string | null>(null);
+  const [resetViewKey, setResetViewKey] = useState(0);
 
   const [snapshots, setSnapshots] = useState<Partial<Record<EphemerisModel, SnapshotResponse>>>({});
   const [orbits, setOrbits] = useState<OrbitsResponse | null>(null);
@@ -91,6 +92,12 @@ export function SolarSystemPanel() {
   const [error, setError] = useState<string | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  /** Return to the elevated whole-system camera and clear any highlighted body. */
+  const resetSystemView = (): void => {
+    setFocus(null);
+    setResetViewKey((current) => current + 1);
+  };
 
   // Orbit paths are fetched once. They are the same curves whatever date is shown, and tracing
   // Neptune's costs 180 ephemeris evaluations.
@@ -402,6 +409,13 @@ export function SolarSystemPanel() {
           <div className="flex gap-1.5">
             <button
               type="button"
+              onClick={resetSystemView}
+              className="rounded-md border border-edge px-2.5 py-1 text-xs text-muted hover:border-accent"
+            >
+              reset camera
+            </button>
+            <button
+              type="button"
               onClick={() => setShowAsteroids((previous) => !previous)}
               className={`rounded-md border px-2.5 py-1 text-xs ${
                 showAsteroids
@@ -435,7 +449,7 @@ export function SolarSystemPanel() {
         <span className="mr-1 text-[11px] uppercase tracking-wide text-muted">Fly to</span>
         <button
           type="button"
-          onClick={() => setFocus(null)}
+          onClick={resetSystemView}
           className={`rounded-md border px-2 py-1 text-[11px] ${
             focus === null
               ? "border-accent bg-surface-inset text-foreground"
@@ -479,18 +493,25 @@ export function SolarSystemPanel() {
           asteroids={showAsteroids ? asteroids : null}
           distanceMode={distanceMode}
           focus={focus}
+          resetViewKey={resetViewKey}
           onSelect={setFocus}
         />
       </div>
 
       {focused && (
-        <p className="mt-2 text-[11px] leading-5 text-muted">
-          <span className="capitalize text-foreground">{focused.body}</span> ·{" "}
-          <span className="font-mono">{focused.distance_from_sun_au.toFixed(4)}</span> AU from the
-          Sun · radius <span className="font-mono">{(focused.radius_m / 1000).toLocaleString()}</span>{" "}
-          km · independently measured max disagreement{" "}
-          <span className="font-mono">{focused.max_error_km.toLocaleString()}</span> km
-        </p>
+        <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] leading-5 text-muted">
+          <p>
+            <span className="capitalize text-foreground">{focused.body}</span> ·{" "}
+            <span className="font-mono">{focused.distance_from_sun_au.toFixed(4)}</span> AU from
+            the Sun · radius{" "}
+            <span className="font-mono">{(focused.radius_m / 1000).toLocaleString()}</span> km ·
+            independently measured max disagreement{" "}
+            <span className="font-mono">{focused.max_error_km.toLocaleString()}</span> km
+          </p>
+          {focused.body !== "sun" && focused.body !== "moon" && (
+            <span className="text-derived">Own trajectory highlighted · body centred on path</span>
+          )}
+        </div>
       )}
 
       {/* What the picture is, and what it is not. */}
@@ -528,10 +549,13 @@ export function SolarSystemPanel() {
           <dt className="uppercase tracking-wide text-muted">What is real</dt>
           <dd className="mt-1 text-faint">
             Positions and orbit paths are tiered <span className="text-derived">derived</span> in
-            heliocentric ecliptic coordinates. Positions default to packaged JPL DE421; full
+            heliocentric ecliptic coordinates. Every planet is centred on its own coloured
+            trajectory; the paths intentionally occupy different planes because real orbital
+            inclinations are not zero. Positions default to packaged JPL DE421; full
             outer-planet paths use the measured analytic fallback because DE421 ends before one
-            Neptune revolution. Their difference is far below one rendered path sample. Axial
-            tilts, rotation directions and the illumination direction are real too:{" "}
+            Neptune revolution. The live JPL position is inserted as an exact path vertex, while
+            the model difference remains far below one rendered path sample. Axial tilts,
+            rotation directions and the illumination direction are real too:{" "}
             <span className="text-foreground">Uranus lies on its side</span> and Venus turns
             backwards because they do.
           </dd>

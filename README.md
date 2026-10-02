@@ -338,9 +338,10 @@ the tool was failing — which is when it counts.
 
 **The solar system states its own distortion.** Bodies are always true to scale; below nine
 pixels of real angular size they draw as labelled markers, so nothing is exaggerated and nothing
-is invisible. There is a true-scale toggle that makes the planets vanish, which is the honest
-picture. Orbits are traced from the ephemeris, so each planet sits on its own path by
-construction rather than by adjustment.
+is invisible. The default overview compresses radial distance logarithmically while preserving
+direction, and a true-scale toggle exposes the physically honest inner-system knot. Orbits are
+traced from the ephemeris, with the live selected-model position inserted as an exact path vertex,
+so each planet is visibly centred on its own inclined trajectory without moving the body.
 
 **The precision choice is inspectable, not a mystery toggle.** The UI explains JPL DE421 as a
 packaged, checksum-verified numerical trajectory file and the ERFA fallback as a compact analytic

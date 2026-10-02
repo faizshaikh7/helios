@@ -8,6 +8,7 @@ import {
   createRingMaterial,
   createSurfaceMaterial,
 } from "@/lib/render/bodyMaterials";
+import { anchorOrbitPath } from "@/lib/render/orbitPath";
 import { buildAsteroids, buildStars } from "@/lib/render/skyObjects";
 import { webGlAvailable } from "@/lib/render/webgl";
 import type {
@@ -38,6 +39,9 @@ const AU_M = 1.495978707e11;
  * a few pixels. Nothing is ever exaggerated, and nothing is ever invisible.
  */
 const MARKER_THRESHOLD_PX = 9;
+
+/** Camera angles for a readable system overview rather than an edge-on pile of orbit lines. */
+const SYSTEM_VIEW: { theta: number; phi: number } = { theta: 0.72, phi: 0.56 };
 
 /** Stable explanation shown when browser policy or hardware disables GPU rendering. */
 const WEBGL_UNAVAILABLE_MESSAGE =
@@ -98,6 +102,7 @@ export function SolarSystem({
   asteroids,
   distanceMode,
   focus,
+  resetViewKey,
   onSelect,
 }: {
   snapshot: SnapshotResponse | null;
@@ -107,6 +112,7 @@ export function SolarSystem({
   asteroids: AsteroidsResponse | null;
   distanceMode: DistanceMode;
   focus: string | null;
+  resetViewKey: number;
   onSelect: (body: string) => void;
 }) {
   const [rendererError, setRendererError] = useState<string | null>(() =>
@@ -134,10 +140,10 @@ export function SolarSystem({
   }, [onSelect]);
 
   const view = useRef({
-    theta: 0.9,
-    phi: 1.05,
-    radius: 12,
-    targetRadius: 12,
+    theta: SYSTEM_VIEW.theta,
+    phi: SYSTEM_VIEW.phi,
+    radius: 84,
+    targetRadius: 84,
     centre: new THREE.Vector3(),
     targetCentre: new THREE.Vector3(),
   });
@@ -441,23 +447,36 @@ export function SolarSystem({
     if (!group || !orbits) return;
 
     disposeChildren(group);
+    const hasSelectedOrbit = Boolean(focus && orbits.orbits[focus]);
 
     for (const [body, path] of Object.entries(orbits.orbits)) {
-      const points = path.map((point) => place(point.x_au, point.y_au, point.z_au, distanceMode));
-      points.push(points[0].clone());
-
-      group.add(
-        new THREE.Line(
-          new THREE.BufferGeometry().setFromPoints(points),
-          new THREE.LineBasicMaterial({
-            color: new THREE.Color(APPEARANCE[body]?.colour ?? "#7f8ea8"),
-            transparent: true,
-            opacity: 0.34,
-          }),
-        ),
+      const liveBody = snapshot?.bodies.find((entry) => entry.body === body);
+      const livePosition = liveBody
+        ? place(
+            liveBody.ecliptic_x_au,
+            liveBody.ecliptic_y_au,
+            liveBody.ecliptic_z_au,
+            distanceMode,
+          )
+        : undefined;
+      const points = anchorOrbitPath(
+        path.map((point) => place(point.x_au, point.y_au, point.z_au, distanceMode)),
+        livePosition,
       );
+
+      const line = new THREE.Line(
+        new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineBasicMaterial({
+          color: new THREE.Color(APPEARANCE[body]?.colour ?? "#7f8ea8"),
+          transparent: true,
+          opacity:
+            focus === "sun" ? 0.025 : hasSelectedOrbit ? (body === focus ? 0.92 : 0.08) : 0.38,
+        }),
+      );
+      line.userData.body = body;
+      group.add(line);
     }
-  }, [orbits, distanceMode]);
+  }, [orbits, snapshot, distanceMode, focus]);
 
   // Bodies, labels and markers.
   useEffect(() => {
@@ -514,8 +533,10 @@ export function SolarSystem({
       const extraMaterials: THREE.ShaderMaterial[] = [];
 
       if (body.body === "sun") {
-        const corona = createGlowMaterial("#ffb347", 0.9, 2.6, false);
-        const coronaMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 2.4, 48, 32), corona);
+        // A corona is a limb treatment, not a second body. The former 2.4-radius shell created
+        // an enormous translucent bubble around the Sun and overwhelmed every close view.
+        const corona = createGlowMaterial("#ffb347", 0.58, 2.35, false);
+        const coronaMesh = new THREE.Mesh(new THREE.SphereGeometry(radius * 1.09, 64, 48), corona);
         pivot.add(coronaMesh);
         shells.push(coronaMesh);
         extraMaterials.push(corona);
@@ -559,10 +580,10 @@ export function SolarSystem({
       const marker = document.createElement("button");
       marker.type = "button";
       marker.className =
-        "pointer-events-auto absolute left-0 top-0 h-2.5 w-2.5 rounded-full border " +
-        "opacity-90 hover:opacity-100";
+        "pointer-events-auto absolute left-0 top-0 h-2.5 w-2.5 rounded-full border-2 " +
+        "opacity-95 shadow-[0_0_0_3px_rgba(1,3,10,0.72)] hover:scale-125 hover:opacity-100";
       marker.style.borderColor = appearance.colour;
-      marker.style.background = "transparent";
+      marker.style.background = appearance.colour;
       marker.setAttribute("aria-label", body.body);
       marker.addEventListener("click", () => selectRef.current(body.body));
 
@@ -633,7 +654,7 @@ export function SolarSystem({
 
     if (!focus || !snapshot) {
       state.targetCentre.set(0, 0, 0);
-      state.targetRadius = distanceMode === "linear" ? 12 : 34;
+      state.targetRadius = distanceMode === "linear" ? 92 : 84;
       return;
     }
 
@@ -655,12 +676,27 @@ export function SolarSystem({
     // at, and arriving on a body's night side shows an unlit disc against a black sky - which
     // looks exactly like the flight having failed. The offset keeps a terminator in view rather
     // than presenting a flat fully-lit face.
-    if (position.lengthSq() > 0) {
+    if (body.body === "sun") {
+      // The equirectangular source image is weakest at its poles. An equatorial three-quarter
+      // view avoids stretching those polar texels into bands and reads like a solar surface.
+      state.phi = 1.34;
+      state.theta = 0.72;
+    } else if (position.lengthSq() > 0) {
       const sunward = position.clone().negate().normalize();
       state.phi = Math.min(Math.PI - 0.25, Math.max(0.25, Math.acos(sunward.y) + 0.12));
       state.theta = Math.atan2(sunward.z, sunward.x) + 0.6;
     }
   }, [focus, snapshot, distanceMode]);
+
+  // Explicit resets are separate from snapshot updates so moving the date never steals a camera
+  // angle the user chose. The overview favours orbit readability and frames Neptune in both
+  // distance modes.
+  useEffect(() => {
+    const state = view.current;
+    state.theta = SYSTEM_VIEW.theta;
+    state.phi = SYSTEM_VIEW.phi;
+    state.targetCentre.set(0, 0, 0);
+  }, [resetViewKey]);
 
   return (
     <div className="relative h-[560px] w-full overflow-hidden">

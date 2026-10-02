@@ -135,7 +135,6 @@ void main(){
 /** The Sun: emissive, unlit, with limb darkening so it is not a flat disc. */
 const SUN_FRAGMENT_GLSL = /* glsl */ `
 uniform sampler2D uMap;
-uniform float uTime;
 
 varying vec2 vUv;
 varying vec3 vNormalW;
@@ -147,7 +146,7 @@ varying vec3 vWorld;
 void main(){
   #include <logdepthbuf_fragment>
 
-  vec3 surface = texture2D(uMap, vec2(vUv.x + uTime * 0.004, vUv.y)).rgb;
+  vec3 surface = texture2D(uMap, vUv).rgb;
 
   vec3 viewDir = normalize(cameraPosition - vWorld);
   float facing = abs(dot(normalize(vNormalW), viewDir));
@@ -330,7 +329,6 @@ export function createSurfaceMaterial(body: string): THREE.ShaderMaterial {
       fragmentShader: SUN_FRAGMENT_GLSL,
       uniforms: {
         uMap: { value: texture("sun.jpg") },
-        uTime: { value: 0 },
       },
     });
   }
