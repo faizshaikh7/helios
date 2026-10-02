@@ -15,11 +15,13 @@ scientific agent that reasons over it.
 >
 > **[satpass.vercel.app](https://satpass.vercel.app)**
 
-The public app opens with a guided reviewer path rather than an empty dashboard: run a live ISS
-contact analysis, ask Atlas a grounded question, turn a speculative Dyson-swarm idea into a
-bounded trade study, screen two catalog objects, or enter the JPL solar-system view. The first
-screen shows the same evidence used as the release gate—202/202 tool questions, automated checks,
-seventeen science endpoints, and twelve agent tools.
+The public app uses a full-width mission workspace rather than a demo landing page: persistent
+navigation keeps live analysis, Atlas, space safety, concept design and deep space one action
+away without flattening them into one dashboard. The primary path runs a real ISS contact
+analysis; alternative paths ask Atlas a grounded question, build a bounded Dyson-swarm trade,
+screen two catalog objects, or enter the JPL solar-system view. The first screen shows the same
+evidence used as the release gate—202/202 tool questions, automated checks, seventeen science
+endpoints, and twelve agent tools.
 
 ---
 

@@ -153,12 +153,12 @@ export function ConceptLab() {
   return (
     <section
       id="concept-lab"
-      className="scroll-mt-4 mt-10 overflow-hidden rounded-2xl border border-edge bg-surface"
+      className="scroll-mt-16 mt-8 overflow-hidden rounded-xl border border-edge bg-surface"
     >
-      <div className="border-b border-edge bg-[radial-gradient(circle_at_85%_0%,color-mix(in_srgb,var(--tier-speculative)_14%,transparent),transparent_40%)] p-5 sm:p-7">
+      <div className="border-b border-edge p-5 sm:p-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-speculative">
+            <p className="text-[11px] font-medium text-speculative">
               Concept design · speculative tier
             </p>
             <h2 className="mt-2 text-2xl font-medium tracking-tight text-foreground">
@@ -171,8 +171,9 @@ export function ConceptLab() {
               orbit—with the equations and omissions attached.
             </p>
           </div>
-          <span className="rounded-full border border-speculative/30 bg-speculative/5 px-3 py-1 text-[10px] uppercase tracking-wide text-speculative">
-            concept screening · not flight design
+          <span className="flex items-center gap-2 text-[10px] text-speculative">
+            <span className="h-1.5 w-1.5 rounded-full bg-speculative" />
+            Concept screening · not flight design
           </span>
         </div>
 
@@ -186,7 +187,7 @@ export function ConceptLab() {
                 setInputs(preset.inputs);
                 setActivePreset(preset.name);
               }}
-              className={`rounded-lg border px-3 py-2 text-left text-[11px] ${
+              className={`rounded-md border px-3 py-2 text-left text-[11px] ${
                 activePreset === preset.name
                   ? "border-speculative/50 bg-speculative/10 text-foreground"
                   : "border-edge bg-background/50 text-muted hover:border-speculative/30"
@@ -199,8 +200,8 @@ export function ConceptLab() {
         </div>
       </div>
 
-      <div className="grid gap-0 lg:grid-cols-[0.78fr_1.22fr]">
-        <div className="border-b border-edge p-5 sm:p-6 lg:border-b-0 lg:border-r">
+      <div className="grid min-w-0 gap-0 lg:grid-cols-[0.78fr_1.22fr]">
+        <div className="min-w-0 border-b border-edge p-5 sm:p-6 lg:border-b-0 lg:border-r">
           <div className="flex items-center justify-between">
             <h3 className="text-xs font-medium text-foreground">Architecture assumptions</h3>
             <span className="font-mono text-[10px] text-faint">{activePreset}</span>
@@ -299,7 +300,7 @@ export function ConceptLab() {
           </div>
         </div>
 
-        <div className="p-5 sm:p-6">
+        <div className="min-w-0 p-5 sm:p-6">
           {!results ? (
             <div className="rounded-xl border border-danger/30 bg-danger/5 p-4 text-xs text-danger">
               One or more assumptions are outside the supported conceptual-design bounds.
@@ -307,7 +308,7 @@ export function ConceptLab() {
           ) : (
             <>
               <div
-                className={`rounded-xl border p-4 ${
+                className={`rounded-lg border p-4 ${
                   results.thermalStatus === "inside-limit"
                     ? "border-observed/30 bg-observed/5"
                     : "border-danger/30 bg-danger/5"
@@ -354,7 +355,7 @@ export function ConceptLab() {
                   ["Collector mass", engineering(results.collectorMassKg, "kg")],
                   ["Starlight intercepted", engineering(results.interceptedLuminosityPercent, "%")],
                 ].map(([label, value]) => (
-                  <div key={label} className="rounded-xl border border-edge bg-background/50 p-3">
+                  <div key={label} className="rounded-lg border border-edge bg-background p-3">
                     <p className="text-[9px] uppercase tracking-wide text-faint">{label}</p>
                     <p className="mt-2 break-words font-mono text-sm text-foreground">{value}</p>
                   </div>
@@ -362,14 +363,14 @@ export function ConceptLab() {
               </div>
 
               {results.coverageStatus === "overlapping-area" && (
-                <p className="mt-3 rounded-xl border border-danger/30 bg-danger/5 p-3 text-[10px] leading-5 text-danger">
+                <p className="mt-3 rounded-lg border border-danger/30 bg-danger/5 p-3 text-[10px] leading-5 text-danger">
                   The requested collector area exceeds the surface area of a sphere at this
                   radius. A non-overlapping single-layer swarm cannot intercept that area; reduce
                   area, increase radius, or explicitly model multiple shadowing layers.
                 </p>
               )}
 
-              <div className="mt-5 overflow-hidden rounded-xl border border-edge">
+              <div className="mt-5 overflow-hidden rounded-lg border border-edge">
                 <div className="flex items-center justify-between border-b border-edge bg-surface-inset/50 px-4 py-3">
                   <h3 className="text-xs font-medium text-foreground">Position trade</h3>
                   <span className="text-[9px] uppercase tracking-wide text-faint">

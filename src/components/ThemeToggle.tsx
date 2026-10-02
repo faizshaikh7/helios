@@ -91,10 +91,10 @@ function serverSnapshot(): ThemeChoice {
   return "system";
 }
 
-const OPTIONS: { value: ThemeChoice; label: string; icon: string }[] = [
-  { value: "light", label: "Light", icon: "☀" },
-  { value: "system", label: "System", icon: "◐" },
-  { value: "dark", label: "Dark", icon: "☾" },
+const OPTIONS: { value: ThemeChoice; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "system", label: "Auto" },
+  { value: "dark", label: "Dark" },
 ];
 
 /**
@@ -130,14 +130,13 @@ export function ThemeToggle() {
             onClick={() => select(option.value)}
             aria-pressed={active}
             title={`${option.label} theme`}
-            className={`rounded px-2 py-1 text-xs transition-colors ${
+            className={`rounded px-2 py-1 text-[10px] transition-colors ${
               active
                 ? "bg-accent text-accent-contrast"
                 : "text-faint hover:text-foreground"
             }`}
           >
-            <span aria-hidden>{option.icon}</span>
-            <span className="sr-only">{option.label}</span>
+            {option.label}
           </button>
         );
       })}

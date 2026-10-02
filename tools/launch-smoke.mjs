@@ -64,7 +64,7 @@ async function main() {
     const response = await fetch(`${BASE_URL}/`, { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
     const html = await response.text();
     assert(response.ok, `homepage returned ${response.status}`);
-    assert(html.includes("See the mission."), "homepage is missing the reviewer hero");
+    assert(html.includes("Mission analysis,"), "homepage is missing the reviewer hero");
     assert(html.includes("202 / 202"), "homepage is missing independent validation evidence");
     assert(html.includes("Ask Atlas"), "homepage is missing the agent interface");
     assert(html.includes("Turn a wild idea"), "homepage is missing the concept-design lab");

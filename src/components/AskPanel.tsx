@@ -88,10 +88,10 @@ export function AskPanel() {
   const anyConfigured = status ? Object.values(status.providers).some(Boolean) : true;
 
   return (
-    <section id="atlas" className="scroll-mt-4 mt-6 overflow-hidden rounded-2xl border border-edge bg-surface p-5 sm:p-6">
+    <section id="atlas" className="scroll-mt-16 mt-8 overflow-hidden rounded-xl border border-edge bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.18em] text-derived">Grounded mission copilot</p>
+          <p className="text-[11px] font-medium text-derived">Grounded mission copilot</p>
           <h2 className="mt-1 text-lg font-medium tracking-tight text-foreground">Ask Atlas</h2>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-muted">
             Ask in plain English. Atlas chooses from twelve typed calculation tools, then shows
@@ -100,9 +100,7 @@ export function AskPanel() {
         </div>
 
         <div className="flex items-center gap-2">
-          <span className="rounded-full border border-derived/30 bg-derived/5 px-2.5 py-1 text-[9px] uppercase tracking-wide text-derived">
-            tool trace visible
-          </span>
+          <span className="hidden text-[10px] text-faint sm:inline">Execution trace included</span>
           {status && (
             <select
               value={provider}
@@ -121,7 +119,7 @@ export function AskPanel() {
         </div>
       </div>
 
-      <div className="mt-5 flex gap-2 rounded-xl border border-edge bg-surface-inset/60 p-1.5 focus-within:border-accent/60">
+      <div className="mt-5 flex gap-2 rounded-lg border border-edge-strong bg-background p-1.5 focus-within:border-accent">
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
@@ -135,28 +133,31 @@ export function AskPanel() {
           type="button"
           onClick={() => ask(question)}
           disabled={loading || !question.trim()}
-          className="rounded-lg bg-accent px-5 py-2 text-sm font-medium text-accent-contrast shadow-[0_8px_20px_rgba(2,132,199,0.18)] transition hover:opacity-90 disabled:opacity-50"
+          className="rounded-md bg-foreground px-5 py-2 text-sm font-medium text-background hover:opacity-85 disabled:opacity-50"
         >
           {loading ? "Thinking…" : "Ask"}
         </button>
       </div>
 
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <span className="text-[9px] uppercase tracking-[0.14em] text-faint">Try a live question</span>
-        {EXAMPLES.map((example) => (
-          <button
-            key={example}
-            type="button"
-            onClick={() => {
-              setQuestion(example);
-              ask(example);
-            }}
-            disabled={loading}
-            className="rounded-full border border-edge px-3 py-1 text-[11px] text-muted transition hover:text-foreground disabled:opacity-50"
-          >
-            {example}
-          </button>
-        ))}
+      <div className="mt-5 border-t border-edge pt-3">
+        <span className="text-[10px] font-medium text-faint">Suggested questions</span>
+        <div className="mt-2 grid gap-x-6 sm:grid-cols-2">
+          {EXAMPLES.map((example) => (
+            <button
+              key={example}
+              type="button"
+              onClick={() => {
+                setQuestion(example);
+                ask(example);
+              }}
+              disabled={loading}
+              className="group flex items-start justify-between gap-3 border-b border-edge py-3 text-left text-[11px] leading-5 text-muted hover:text-foreground disabled:opacity-50"
+            >
+              <span>{example}</span>
+              <span className="text-faint group-hover:text-foreground">→</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {!anyConfigured && (

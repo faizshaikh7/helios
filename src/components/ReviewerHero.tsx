@@ -4,12 +4,20 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Health = "ok" | "degraded" | "unreachable" | "checking";
 
-/** Scroll to a product workspace while respecting reduced-motion preferences. */
+/** Scroll to a product workspace while respecting the browser's native focus and history. */
 function moveTo(id: string): void {
   document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
-/** Reviewer-facing first screen that makes the product and its evidence legible at a glance. */
+/** Translate service health into concise reviewer-facing language. */
+function healthLabel(health: Health): string {
+  if (health === "ok") return "All systems operational";
+  if (health === "checking") return "Checking systems";
+  if (health === "degraded") return "Service degraded";
+  return "Service unreachable";
+}
+
+/** Product header and first-run workflow selector for technical and non-technical reviewers. */
 export function ReviewerHero({
   health,
   onRunMissionDemo,
@@ -20,138 +28,164 @@ export function ReviewerHero({
   const healthy = health === "ok";
 
   return (
-    <section
-      id="top"
-      className="hero-grid relative overflow-hidden rounded-[2rem] border border-edge bg-surface px-5 pb-7 pt-4 shadow-[0_24px_80px_rgba(2,132,199,0.10)] sm:px-8 sm:pb-9"
-    >
-      <div className="pointer-events-none absolute -right-24 -top-28 h-80 w-80 rounded-full bg-accent/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-36 left-1/3 h-72 w-72 rounded-full bg-observed/10 blur-3xl" />
-
-      <nav className="relative flex items-center justify-between gap-4" aria-label="Product navigation">
-        <button
-          type="button"
-          onClick={() => moveTo("top")}
-          className="group flex items-center gap-2.5 text-left"
-          aria-label="Back to top"
-        >
-          <span className="grid h-8 w-8 place-items-center rounded-xl border border-accent/30 bg-accent/10 text-sm text-accent shadow-[inset_0_0_20px_rgba(2,132,199,0.12)]">
-            ◉
-          </span>
-          <span>
-            <span className="block text-sm font-semibold tracking-[0.18em] text-foreground">HELIOS</span>
-            <span className="block text-[9px] uppercase tracking-[0.2em] text-faint">orbital intelligence</span>
-          </span>
-        </button>
-
-        <div className="hidden items-center gap-5 text-[11px] text-muted md:flex">
-          <button type="button" onClick={() => moveTo("atlas")} className="hover:text-foreground">Atlas AI</button>
-          <button type="button" onClick={() => moveTo("concept-lab")} className="hover:text-foreground">Concept lab</button>
-          <button type="button" onClick={() => moveTo("mission-control")} className="hover:text-foreground">Mission analysis</button>
-          <button type="button" onClick={() => moveTo("conjunction-lab")} className="hover:text-foreground">Space safety</button>
-          <button type="button" onClick={() => moveTo("solar-system")} className="hover:text-foreground">Deep space</button>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <span className="hidden items-center gap-2 text-[10px] uppercase tracking-wide text-muted sm:inline-flex">
-            <span
-              className={`h-1.5 w-1.5 rounded-full ${
-                healthy
-                  ? "bg-ok shadow-[0_0_10px_var(--ok)]"
-                  : health === "checking"
-                    ? "bg-faint"
-                    : "bg-danger"
-              }`}
-            />
-            {health === "checking" ? "checking" : healthy ? "systems nominal" : health}
-          </span>
-          <ThemeToggle />
-        </div>
-      </nav>
-
-      <div className="relative mt-12 grid items-center gap-10 lg:grid-cols-[1.3fr_0.7fr] lg:gap-14">
-        <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-derived/30 bg-derived/5 px-3 py-1 text-[10px] font-medium uppercase tracking-[0.18em] text-derived">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-derived" />
-            independently verified space science
-          </div>
-          <h1 className="mt-5 max-w-3xl text-4xl font-semibold leading-[0.98] tracking-[-0.045em] text-foreground sm:text-6xl">
-            See the mission.
-            <span className="block bg-gradient-to-r from-accent via-derived to-observed bg-clip-text text-transparent">
-              Trust the math.
-            </span>
-          </h1>
-          <p className="mt-5 max-w-2xl text-sm leading-7 text-muted sm:text-base">
-            A live orbital-intelligence workspace that turns public space data into pass windows,
-            encounter geometry, eclipse forecasts and a precision solar system—with the source,
-            frame, time scale and uncertainty attached to every result.
-          </p>
-
-          <div className="mt-7 flex flex-wrap gap-3">
+    <>
+      <header id="top" className="border-b border-edge bg-background">
+        <div className="mx-auto max-w-[1600px] px-5 sm:px-8">
+          <div className="flex min-h-16 items-center justify-between gap-5 border-b border-edge">
             <button
               type="button"
-              onClick={onRunMissionDemo}
-              className="group rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-accent-contrast shadow-[0_12px_30px_rgba(2,132,199,0.24)] hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(2,132,199,0.32)]"
+              onClick={() => moveTo("top")}
+              className="flex items-center gap-3 text-left"
+              aria-label="Back to overview"
             >
-              Run live ISS analysis <span className="ml-1 inline-block group-hover:translate-x-0.5">→</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => moveTo("concept-lab")}
-              className="rounded-xl border border-edge-strong bg-background/60 px-5 py-3 text-sm font-medium text-foreground backdrop-blur hover:-translate-y-0.5 hover:border-accent/50"
-            >
-              Design a wild concept
-            </button>
-          </div>
-
-          <p className="mt-4 text-[10px] uppercase tracking-[0.16em] text-faint">
-            No canned dashboard · assumptions, equations and sources stay visible
-          </p>
-        </div>
-
-        <div className="relative rounded-2xl border border-edge bg-background/65 p-4 shadow-2xl backdrop-blur-xl">
-          <div className="flex items-center justify-between border-b border-edge pb-3">
-            <span className="text-[10px] uppercase tracking-[0.2em] text-faint">Capability stack</span>
-            <span className="font-mono text-[10px] text-observed">LIVE</span>
-          </div>
-          <div className="mt-2 space-y-1.5">
-            {[
-              ["01", "Track & predict", "SGP4 · WGS84 · access windows"],
-              ["02", "Screen & explain", "TCA · miss distance · RTN"],
-              ["03", "Explore & verify", "JPL DE421 · Orekit · provenance"],
-              ["04", "Imagine & bound", "trade studies · constraints · receipts"],
-            ].map(([number, title, detail]) => (
-              <div key={number} className="group flex items-center gap-3 rounded-xl border border-transparent p-3 hover:border-edge hover:bg-surface-inset/60">
-                <span className="font-mono text-[10px] text-accent">{number}</span>
-                <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-medium text-foreground">{title}</span>
-                  <span className="block truncate font-mono text-[10px] text-faint">{detail}</span>
+              <span className="grid h-8 w-8 place-items-center border border-foreground bg-foreground text-[10px] font-bold text-background">
+                H
+              </span>
+              <span>
+                <span className="block text-sm font-semibold tracking-[0.12em] text-foreground">
+                  HELIOS
                 </span>
-                <span className="text-xs text-faint group-hover:translate-x-0.5 group-hover:text-accent">↗</span>
+                <span className="block text-[9px] tracking-wide text-faint">
+                  Mission intelligence
+                </span>
+              </span>
+            </button>
+
+            <div className="flex items-center gap-4">
+              <span className="hidden items-center gap-2 text-[11px] text-muted sm:inline-flex">
+                <span
+                  className={`h-2 w-2 rounded-full ${
+                    healthy
+                      ? "bg-ok"
+                      : health === "checking"
+                        ? "bg-faint"
+                        : "bg-danger"
+                  }`}
+                />
+                {healthLabel(health)}
+              </span>
+              <ThemeToggle />
+            </div>
+          </div>
+
+          <div className="grid gap-10 py-12 lg:grid-cols-12 lg:items-end lg:py-16">
+            <div className="lg:col-span-7">
+              <p className="text-xs font-medium text-derived">Auditable orbital analysis</p>
+              <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-[1.02] tracking-[-0.045em] text-foreground sm:text-6xl lg:text-7xl">
+                Mission analysis,
+                <span className="block text-muted">with the evidence attached.</span>
+              </h1>
+              <p className="mt-6 max-w-2xl text-base leading-7 text-muted">
+                Compute satellite access, encounter geometry, eclipse exposure and speculative
+                concept trades. Every result keeps its source, units, assumptions and trust
+                boundary visible.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={onRunMissionDemo}
+                  className="rounded-lg bg-foreground px-5 py-3 text-sm font-medium text-background hover:opacity-85"
+                >
+                  Run the ISS example
+                </button>
+                <button
+                  type="button"
+                  onClick={() => moveTo("mission-control")}
+                  className="rounded-lg border border-edge-strong px-5 py-3 text-sm font-medium text-foreground hover:bg-surface-inset"
+                >
+                  Open mission workspace
+                </button>
+              </div>
+            </div>
+
+            <div className="lg:col-span-5 lg:pl-8">
+              <div className="border-t border-edge-strong">
+                {[
+                  [
+                    "01",
+                    "Analyze a live mission",
+                    "Passes, orbit, ground track and eclipse",
+                    "mission-control",
+                  ],
+                  [
+                    "02",
+                    "Ask the mission copilot",
+                    "Typed tools with a visible execution trace",
+                    "atlas",
+                  ],
+                  [
+                    "03",
+                    "Explore a new concept",
+                    "Editable constraints and exportable calculations",
+                    "concept-lab",
+                  ],
+                ].map(([number, title, detail, target]) => (
+                  <button
+                    key={number}
+                    type="button"
+                    onClick={() => moveTo(target)}
+                    className="group grid w-full grid-cols-[2rem_1fr_auto] items-center gap-3 border-b border-edge py-4 text-left"
+                  >
+                    <span className="font-mono text-[10px] text-faint">{number}</span>
+                    <span>
+                      <span className="block text-sm font-medium text-foreground">{title}</span>
+                      <span className="mt-0.5 block text-[11px] text-muted">{detail}</span>
+                    </span>
+                    <span className="text-sm text-faint group-hover:translate-x-1 group-hover:text-foreground">
+                      →
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid border-t border-edge sm:grid-cols-4">
+            {[
+              ["202 / 202", "verified tool ceiling"],
+              ["427", "automated checks"],
+              ["17", "science endpoints"],
+              ["12", "typed agent tools"],
+            ].map(([value, label]) => (
+              <div
+                key={label}
+                className="border-b border-edge py-4 sm:border-b-0 sm:border-r sm:px-5 sm:first:pl-0 sm:last:border-r-0"
+              >
+                <span className="font-mono text-base font-medium text-foreground">{value}</span>
+                <span className="ml-2 text-[10px] text-faint">{label}</span>
               </div>
             ))}
           </div>
-          <div className="mt-3 rounded-xl border border-observed/20 bg-observed/5 px-3 py-2.5">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-observed">Trust boundary</p>
-            <p className="mt-1 text-[11px] leading-5 text-muted">
-              The system shows what it knows, how it knows it, and where public data stops.
-            </p>
-          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="relative mt-10 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-edge bg-edge sm:grid-cols-4">
-        {[
-          ["202 / 202", "tool accuracy ceiling"],
-          ["427", "automated checks"],
-          ["17", "science endpoints"],
-          ["12", "typed AI tools"],
-        ].map(([value, label]) => (
-          <div key={label} className="bg-background/80 px-4 py-4 backdrop-blur">
-            <p className="font-mono text-xl font-medium tracking-tight text-foreground">{value}</p>
-            <p className="mt-1 text-[9px] uppercase tracking-[0.15em] text-faint">{label}</p>
-          </div>
-        ))}
-      </div>
-    </section>
+      <nav
+        className="sticky top-0 z-40 border-b border-edge bg-background/95 backdrop-blur"
+        aria-label="Workspace navigation"
+      >
+        <div className="mx-auto flex max-w-[1600px] items-center gap-1 overflow-x-auto px-5 py-2 sm:px-8">
+          {[
+            ["Overview", "top"],
+            ["Mission analysis", "mission-control"],
+            ["Atlas", "atlas"],
+            ["Space safety", "conjunction-lab"],
+            ["Concept lab", "concept-lab"],
+            ["Deep space", "solar-system"],
+          ].map(([label, target]) => (
+            <button
+              key={target}
+              type="button"
+              onClick={() => moveTo(target)}
+              className="shrink-0 rounded-md px-3 py-2 text-[11px] font-medium text-muted hover:bg-surface-inset hover:text-foreground"
+            >
+              {label}
+            </button>
+          ))}
+          <span className="ml-auto hidden whitespace-nowrap text-[10px] text-faint lg:block">
+            Research use · assumptions remain visible
+          </span>
+        </div>
+      </nav>
+    </>
   );
 }

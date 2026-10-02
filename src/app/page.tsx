@@ -88,7 +88,7 @@ function Field({
 }
 
 const inputClass =
-  "rounded-md border border-edge bg-surface px-2.5 py-1.5 font-mono text-sm " +
+  "rounded-md border border-edge bg-background px-2.5 py-1.5 font-mono text-sm " +
   "text-foreground outline-none focus:border-accent focus:bg-surface-inset";
 
 /**
@@ -264,18 +264,12 @@ export default function Home() {
   }, [run]);
 
   return (
-    <div className="min-h-full overflow-hidden bg-background px-4 py-4 text-foreground sm:px-6 sm:py-6">
-      <main className="mx-auto w-full max-w-6xl">
-        <ReviewerHero health={health} onRunMissionDemo={runMissionDemo} />
-
-        <AskPanel />
-
-        {/* Speculative concepts are isolated from operational analysis and carry their own
-            explicit assumptions, equations, omissions, and exportable receipt. */}
-        <ConceptLab />
+    <div className="min-h-full overflow-hidden bg-background text-foreground">
+      <ReviewerHero health={health} onRunMissionDemo={runMissionDemo} />
+      <main className="mx-auto w-full max-w-[1600px] px-5 pb-8 sm:px-8">
 
         {/* Controls */}
-        <section id="mission-control" className="scroll-mt-4 mt-6 rounded-2xl border border-edge bg-surface p-5 sm:p-6">
+        <section id="mission-control" className="scroll-mt-16 mt-8 rounded-xl border border-edge bg-surface p-5 sm:p-6">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="text-[10px] uppercase tracking-[0.18em] text-accent">Live mission analysis</p>
@@ -285,7 +279,8 @@ export default function Home() {
                 recover orbital elements, and forecast eclipse duty cycle in one run.
               </p>
             </div>
-            <span className="rounded-full border border-predicted/30 bg-predicted/5 px-3 py-1 text-[10px] uppercase tracking-wide text-predicted">
+            <span className="flex items-center gap-2 text-[10px] text-predicted">
+              <span className="h-1.5 w-1.5 rounded-full bg-predicted" />
               live Celestrak data
             </span>
           </div>
@@ -697,13 +692,21 @@ export default function Home() {
           </section>
         )}
 
-        {/* Independent of the satellite query above: this asks about an orbit, not an object,
-            which is the form the question takes during mission design. */}
-        <DecayPanel />
+        <AskPanel />
 
-        {/* Independent of the pass query: this compares two propagated objects and keeps
-            geometric screening separate from covariance-based collision-risk assessment. */}
-        <ConjunctionPanel />
+        <div className="grid items-start gap-6 xl:grid-cols-2">
+          {/* Independent of the satellite query above: this asks about an orbit, not an object,
+              which is the form the question takes during mission design. */}
+          <DecayPanel />
+
+          {/* Independent of the pass query: this compares two propagated objects and keeps
+              geometric screening separate from covariance-based collision-risk assessment. */}
+          <ConjunctionPanel />
+        </div>
+
+        {/* Speculative concepts are isolated from operational analysis and carry their own
+            explicit assumptions, equations, omissions, and exportable receipt. */}
+        <ConceptLab />
 
         {/* Also independent of the satellite query: this asks about the published record,
             not about an object in orbit. */}

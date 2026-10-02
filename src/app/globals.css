@@ -14,28 +14,28 @@
  */
 
 :root {
-  --background: #ffffff;
-  --surface: #fafafa;
-  --surface-inset: #f4f4f5;
-  --border: rgb(0 0 0 / 0.1);
-  --border-strong: rgb(0 0 0 / 0.16);
+  --background: #f6f7f8;
+  --surface: #ffffff;
+  --surface-inset: #f0f2f4;
+  --border: rgb(15 23 42 / 0.11);
+  --border-strong: rgb(15 23 42 / 0.2);
 
   --foreground: #18181b;
   --muted: #52525b;
   --faint: #71717a;
 
-  --accent: #0284c7;
+  --accent: #2563eb;
   --accent-contrast: #ffffff;
 
   /* Trust tiers. Line style carries the distinction; these only reinforce it, so they must be
      legible on both grounds rather than merely pretty on one. */
   --tier-observed: #047857;
-  --tier-derived: #0369a1;
+  --tier-derived: #1d4ed8;
   --tier-predicted: #b45309;
   --tier-speculative: #be123c;
 
   /* Data visualisation */
-  --track: #0284c7;
+  --track: #2563eb;
   --station: #047857;
   --satellite: #b45309;
   --sunlit: #f59e0b;
@@ -47,9 +47,9 @@
 /* System preference, only when no explicit choice has been stamped. */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --background: #000000;
-    --surface: rgb(255 255 255 / 0.02);
-    --surface-inset: rgb(0 0 0 / 0.4);
+    --background: #0b0d0f;
+    --surface: #111418;
+    --surface-inset: #171b20;
     --border: rgb(255 255 255 / 0.1);
     --border-strong: rgb(255 255 255 / 0.16);
 
@@ -57,7 +57,7 @@
     --muted: #a1a1aa;
     --faint: #71717a;
 
-    --accent: #0ea5e9;
+    --accent: #60a5fa;
     --accent-contrast: #000000;
 
     --tier-observed: #6ee7b7;
@@ -77,9 +77,9 @@
 
 /* Explicit dark choice wins in both directions. */
 :root[data-theme="dark"] {
-  --background: #000000;
-  --surface: rgb(255 255 255 / 0.02);
-  --surface-inset: rgb(0 0 0 / 0.4);
+  --background: #0b0d0f;
+  --surface: #111418;
+  --surface-inset: #171b20;
   --border: rgb(255 255 255 / 0.1);
   --border-strong: rgb(255 255 255 / 0.16);
 
@@ -87,7 +87,7 @@
   --muted: #a1a1aa;
   --faint: #71717a;
 
-  --accent: #0ea5e9;
+  --accent: #60a5fa;
   --accent-contrast: #000000;
 
   --tier-observed: #6ee7b7;
@@ -137,10 +137,6 @@
 
 body {
   background: var(--background);
-  background-image:
-    radial-gradient(circle at 8% -10%, color-mix(in srgb, var(--accent) 9%, transparent), transparent 30rem),
-    radial-gradient(circle at 92% 20%, color-mix(in srgb, var(--tier-observed) 5%, transparent), transparent 28rem);
-  background-attachment: fixed;
   color: var(--foreground);
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
@@ -150,13 +146,16 @@ body {
   color: var(--foreground);
 }
 
-/* Fine coordinate grid: enough technical texture to establish the mission-console tone without
-   competing with the live visualisations below it. */
-.hero-grid {
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--border) 45%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--border) 45%, transparent) 1px, transparent 1px);
-  background-size: 32px 32px;
+button,
+input,
+select,
+textarea {
+  min-width: 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* Theme changes are instant by default, which reads as a jarring flash on a full-page repaint.

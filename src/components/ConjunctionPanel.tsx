@@ -5,7 +5,7 @@ import { ReceiptPanel, TieredValue } from "@/components/TieredValue";
 import type { ApiError, ConjunctionResponse, Value } from "@/lib/types";
 
 const inputClass =
-  "rounded-md border border-edge bg-surface px-2.5 py-1.5 font-mono text-sm " +
+  "rounded-md border border-edge bg-background px-2.5 py-1.5 font-mono text-sm " +
   "text-foreground outline-none focus:border-accent focus:bg-surface-inset";
 
 /** Format an API UTC timestamp without allowing the browser to silently switch time zones. */
@@ -69,7 +69,7 @@ export function ConjunctionPanel() {
   }
 
   return (
-    <section id="conjunction-lab" className="scroll-mt-4 mt-6 rounded-2xl border border-edge bg-surface p-5 sm:p-6">
+    <section id="conjunction-lab" className="scroll-mt-16 mt-8 rounded-xl border border-edge bg-surface p-5 sm:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-sm font-medium text-foreground">Conjunction screening lab</h2>
@@ -78,12 +78,12 @@ export function ConjunctionPanel() {
             full interval and refines every candidate minimum in TEME.
           </p>
         </div>
-        <span className="rounded-full border border-predicted/40 px-2.5 py-1 text-[10px] uppercase tracking-wide text-predicted">
+        <span className="text-[10px] text-predicted">
           screening · not manoeuvre advice
         </span>
       </div>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
         <label className="flex flex-col gap-1">
           <span className="text-[11px] uppercase tracking-wide text-muted">Primary NORAD</span>
           <input

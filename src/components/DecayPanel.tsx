@@ -284,7 +284,7 @@ export function DecayPanel() {
   const spread = useMemo(() => result?.spread_factor ?? null, [result]);
 
   return (
-    <section className="mt-10 rounded-lg border border-edge bg-surface p-5">
+    <section className="mt-8 rounded-xl border border-edge bg-surface p-5 sm:p-6">
       <header className="flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-sm font-medium tracking-tight text-foreground">Orbital lifetime</h2>
         <span className="text-[11px] text-faint">

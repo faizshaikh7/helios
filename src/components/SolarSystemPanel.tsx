@@ -229,7 +229,7 @@ export function SolarSystemPanel() {
       className={
         fullscreen
           ? "fixed inset-0 z-50 overflow-auto bg-background p-5"
-          : "scroll-mt-4 mt-10 rounded-2xl border border-edge bg-surface p-5 sm:p-6"
+          : "scroll-mt-16 mt-8 rounded-xl border border-edge bg-surface p-5 sm:p-6"
       }
       id="solar-system"
     >
@@ -237,7 +237,7 @@ export function SolarSystemPanel() {
         <h2 className="text-sm font-medium tracking-tight text-foreground">Solar system</h2>
         <div className="flex items-center gap-2">
           {snapshot && (
-            <span className="rounded-full border border-derived/40 px-2 py-0.5 text-[10px] uppercase tracking-wide text-derived">
+            <span className="text-[10px] font-medium text-derived">
               {snapshot.model === "precision" ? "JPL DE421 precision" : "analytic fallback"}
             </span>
           )}
@@ -257,9 +257,9 @@ export function SolarSystemPanel() {
         <button
           type="button"
           onClick={() => setEphemerisModel("precision")}
-          className={`rounded-xl border p-4 text-left ${
+          className={`rounded-lg border p-4 text-left ${
             ephemerisModel === "precision"
-              ? "border-derived/60 bg-derived/5 shadow-[inset_0_0_30px_rgba(2,132,199,0.06)]"
+              ? "border-derived/60 bg-derived/5"
               : "border-edge bg-background/40 hover:border-derived/40"
           }`}
         >
@@ -278,7 +278,7 @@ export function SolarSystemPanel() {
         <button
           type="button"
           onClick={() => setEphemerisModel("analytic")}
-          className={`rounded-xl border p-4 text-left ${
+          className={`rounded-lg border p-4 text-left ${
             ephemerisModel === "analytic"
               ? "border-predicted/60 bg-predicted/5"
               : "border-edge bg-background/40 hover:border-predicted/40"
@@ -294,7 +294,7 @@ export function SolarSystemPanel() {
           </span>
         </button>
 
-        <div className="rounded-xl border border-edge bg-surface-inset/70 p-4">
+        <div className="rounded-lg border border-edge bg-surface-inset/70 p-4">
           <div className="flex items-center justify-between gap-3">
             <span className="text-[10px] uppercase tracking-[0.15em] text-faint">Precision lab</span>
             <span className="text-[10px] capitalize text-foreground">{comparisonBodyName}</span>
