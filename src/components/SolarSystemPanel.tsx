@@ -92,6 +92,7 @@ export function SolarSystemPanel() {
   const [error, setError] = useState<string | null>(null);
 
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const panelRef = useRef<HTMLElement | null>(null);
 
   /** Return to the elevated whole-system camera and clear any highlighted body. */
   const resetSystemView = (): void => {
@@ -165,16 +166,55 @@ export function SolarSystemPanel() {
     };
   }, [offsetDays]);
 
-  // Escape leaves fullscreen, which is what every viewer will try first.
+  // Keep React state synchronized with the browser Fullscreen API, including an Escape exit.
   useEffect(() => {
-    if (!fullscreen) return;
+    const onFullscreenChange = (): void => {
+      if (document.fullscreenElement === panelRef.current) {
+        setFullscreen(true);
+      } else if (document.fullscreenElement === null) {
+        setFullscreen(false);
+      }
+    };
+    document.addEventListener("fullscreenchange", onFullscreenChange);
+    return () => document.removeEventListener("fullscreenchange", onFullscreenChange);
+  }, []);
 
-    const onKey = (event: KeyboardEvent) => {
+  // The CSS fallback needs its own Escape handling and page-scroll lock.
+  useEffect(() => {
+    if (!fullscreen || document.fullscreenElement === panelRef.current) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (event: KeyboardEvent): void => {
       if (event.key === "Escape") setFullscreen(false);
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
   }, [fullscreen]);
+
+  /** Enter real browser fullscreen, falling back to a viewport overlay when unavailable. */
+  const toggleFullscreen = async (): Promise<void> => {
+    const panel = panelRef.current;
+    if (!panel) return;
+
+    if (document.fullscreenElement === panel) {
+      await document.exitFullscreen();
+      return;
+    }
+    if (fullscreen) {
+      setFullscreen(false);
+      return;
+    }
+
+    try {
+      await panel.requestFullscreen();
+    } catch {
+      setFullscreen(true);
+    }
+  };
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
@@ -233,9 +273,10 @@ export function SolarSystemPanel() {
 
   return (
     <section
+      ref={panelRef}
       className={
         fullscreen
-          ? "fixed inset-0 z-50 overflow-auto bg-background p-5"
+          ? "fixed inset-0 z-50 flex h-[100dvh] w-screen flex-col overflow-hidden bg-background p-3 sm:p-4"
           : "scroll-mt-16 mt-8 rounded-xl border border-edge bg-surface p-5 sm:p-6"
       }
       id="solar-system"
@@ -254,13 +295,13 @@ export function SolarSystemPanel() {
         </div>
       </header>
 
-      <p className="mt-2 max-w-2xl text-xs leading-6 text-muted">
+      <p className={`${fullscreen ? "hidden" : "mt-2"} max-w-2xl text-xs leading-6 text-muted`}>
         Where the planets actually are, on their real traced orbits, lit by the Sun from its real
         direction. Drag to orbit, scroll to zoom, pick a body to fly to it, and move the date to
         watch the system run.
       </p>
 
-      <div className="mt-5 grid gap-3 lg:grid-cols-[1fr_1fr_0.9fr]">
+      <div className={`${fullscreen ? "hidden" : "mt-5 grid"} gap-3 lg:grid-cols-[1fr_1fr_0.9fr]`}>
         <button
           type="button"
           onClick={() => setEphemerisModel("precision")}
@@ -344,7 +385,7 @@ export function SolarSystemPanel() {
         </div>
       </div>
 
-      <div className="mt-4 flex flex-wrap items-end gap-x-6 gap-y-3">
+      <div className={`${fullscreen ? "mt-2" : "mt-4"} flex flex-wrap items-end gap-x-6 gap-y-2`}>
         <label className="flex min-w-[15rem] flex-1 flex-col gap-1.5">
           <span className="flex items-baseline justify-between text-[11px] uppercase tracking-wide text-muted">
             <span>Date</span>
@@ -427,7 +468,8 @@ export function SolarSystemPanel() {
             </button>
             <button
               type="button"
-              onClick={() => setFullscreen((previous) => !previous)}
+              onClick={() => void toggleFullscreen()}
+              aria-pressed={fullscreen}
               className="rounded-md border border-edge px-2.5 py-1 text-xs text-muted hover:border-accent"
             >
               {fullscreen ? "exit full screen" : "full screen"}
@@ -481,8 +523,8 @@ export function SolarSystemPanel() {
       )}
 
       <div
-        className={`mt-4 overflow-hidden rounded-lg border border-edge ${
-          fullscreen ? "h-[calc(100vh-19rem)]" : ""
+        className={`overflow-hidden rounded-lg border border-edge ${
+          fullscreen ? "mt-2 min-h-0 flex-1" : "mt-4"
         }`}
       >
         <SolarSystem
@@ -495,10 +537,11 @@ export function SolarSystemPanel() {
           focus={focus}
           resetViewKey={resetViewKey}
           onSelect={setFocus}
+          fillAvailable={fullscreen}
         />
       </div>
 
-      {focused && (
+      {focused && !fullscreen && (
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-[11px] leading-5 text-muted">
           <p>
             <span className="capitalize text-foreground">{focused.body}</span> ·{" "}
@@ -515,7 +558,7 @@ export function SolarSystemPanel() {
       )}
 
       {/* What the picture is, and what it is not. */}
-      <dl className="mt-4 grid gap-3 text-[11px] leading-5 sm:grid-cols-2">
+      <dl className={`${fullscreen ? "hidden" : "mt-4 grid"} gap-3 text-[11px] leading-5 sm:grid-cols-2`}>
         <div>
           <dt className="uppercase tracking-wide text-muted">Body size</dt>
           <dd className="mt-1 text-faint">

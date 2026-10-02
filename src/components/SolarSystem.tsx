@@ -104,6 +104,7 @@ export function SolarSystem({
   focus,
   resetViewKey,
   onSelect,
+  fillAvailable = false,
 }: {
   snapshot: SnapshotResponse | null;
   orbits: OrbitsResponse | null;
@@ -114,6 +115,7 @@ export function SolarSystem({
   focus: string | null;
   resetViewKey: number;
   onSelect: (body: string) => void;
+  fillAvailable?: boolean;
 }) {
   const [rendererError, setRendererError] = useState<string | null>(() =>
     webGlAvailable() ? null : WEBGL_UNAVAILABLE_MESSAGE,
@@ -699,7 +701,7 @@ export function SolarSystem({
   }, [resetViewKey]);
 
   return (
-    <div className="relative h-[560px] w-full overflow-hidden">
+    <div className={`relative w-full overflow-hidden ${fillAvailable ? "h-full" : "h-[560px]"}`}>
       <div
         ref={mountRef}
         className="absolute inset-0 cursor-grab touch-none active:cursor-grabbing"

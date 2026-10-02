@@ -352,6 +352,8 @@ is invisible. The default overview compresses radial distance logarithmically wh
 direction, and a true-scale toggle exposes the physically honest inner-system knot. Orbits are
 traced from the ephemeris, with the live selected-model position inserted as an exact path vertex,
 so each planet is visibly centred on its own inclined trajectory without moving the body.
+The full-screen control uses the browser Fullscreen API and lets the WebGL canvas consume the
+remaining viewport; browsers that deny the API fall back to an equivalent scroll-locked overlay.
 
 **The precision choice is inspectable, not a mystery toggle.** The UI explains JPL DE421 as a
 packaged, checksum-verified numerical trajectory file and the ERFA fallback as a compact analytic
