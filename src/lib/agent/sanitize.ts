@@ -139,3 +139,98 @@ export function normalizeAgentAnswer(answer: string): string {
     .replace(/\n{3,}/g, "\n\n")
     .trim();
 }
+
+/** Minimal tool-call evidence needed to build a response from computed results. */
+type GroundedCall = {
+  tool: string;
+  output: unknown;
+};
+
+/** Read an object-valued property without trusting provider or service payload shapes. */
+function recordProperty(value: unknown, property: string): Record<string, unknown> | null {
+  if (!value || typeof value !== "object") return null;
+  const child = (value as Record<string, unknown>)[property];
+  return child && typeof child === "object" && !Array.isArray(child)
+    ? (child as Record<string, unknown>)
+    : null;
+}
+
+/** Read a string-array property while rejecting mixed or malformed arrays. */
+function stringArrayProperty(value: unknown, property: string): string[] {
+  if (!value || typeof value !== "object") return [];
+  const child = (value as Record<string, unknown>)[property];
+  return Array.isArray(child) && child.every((item) => typeof item === "string") ? child : [];
+}
+
+/**
+ * Build the stellar-collector brief directly from calculator output.
+ *
+ * The model chooses the tool and its inputs, but must not transcribe numerical evidence: even a
+ * single dropped group of three zeros changes a concept decision. Keeping this formatter at the
+ * API boundary makes the returned prose and the inspectable tool trace share one source of truth.
+ */
+function stellarCollectorAssessment(output: unknown): string | null {
+  const results = recordProperty(output, "results");
+  if (!results) return null;
+
+  const required = [
+    "incidentFluxWm2",
+    "electricalPowerW",
+    "equilibriumTemperatureK",
+    "thermalMarginK",
+    "minimumThermalRadiusAu",
+    "powerAtMinimumThermalRadiusW",
+    "orbitalPeriodDays",
+    "oneWayLightTimeSeconds",
+    "interceptedLuminosityPercent",
+    "collectorMassKg",
+    "radiationPressurePa",
+    "radiationAccelerationMmS2",
+  ] as const;
+  if (required.some((field) => typeof results[field] !== "number")) return null;
+
+  const status = results.thermalStatus === "inside-limit" ? "inside" : "outside";
+  const lines = [
+    "Mission assessment",
+    `Under the idealized calculator, this collector is ${status} the stated thermal limit. This is speculative concept screening, not flight design.`,
+    "",
+    "Decisive values",
+    `• incidentFluxWm2: ${results.incidentFluxWm2} W/m²`,
+    `• electricalPowerW: ${results.electricalPowerW} W`,
+    `• equilibriumTemperatureK: ${results.equilibriumTemperatureK} K`,
+    `• thermalMarginK: ${results.thermalMarginK} K`,
+    `• thermalStatus: ${String(results.thermalStatus)}`,
+    `• collectorMassKg: ${results.collectorMassKg} kg`,
+    `• minimumThermalRadiusAu: ${results.minimumThermalRadiusAu} au`,
+    `• powerAtMinimumThermalRadiusW: ${results.powerAtMinimumThermalRadiusW} W`,
+    `• orbitalPeriodDays: ${results.orbitalPeriodDays} day`,
+    `• oneWayLightTimeSeconds: ${results.oneWayLightTimeSeconds} s`,
+    `• interceptedLuminosityPercent: ${results.interceptedLuminosityPercent} %`,
+    `• radiationPressurePa: ${results.radiationPressurePa} Pa`,
+    `• radiationAccelerationMmS2: ${results.radiationAccelerationMmS2} mm/s²`,
+  ];
+
+  const assumptions = stringArrayProperty(output, "assumptions");
+  if (assumptions.length) lines.push("", "Assumptions", ...assumptions.map((item) => `• ${item}`));
+
+  const omissions = stringArrayProperty(output, "omissions");
+  if (omissions.length) lines.push("", "Omissions", ...omissions.map((item) => `• ${item}`));
+
+  const sources = stringArrayProperty(output, "sources");
+  if (sources.length) lines.push("", "Sources", ...sources.map((item) => `• ${item}`));
+
+  if (output && typeof output === "object" && typeof (output as Record<string, unknown>).warning === "string") {
+    lines.push("", "Decision boundary", String((output as Record<string, unknown>).warning));
+  }
+
+  return lines.join("\n");
+}
+
+/**
+ * Normalize a model answer, replacing supported numerical briefs with deterministic tool evidence.
+ */
+export function presentGroundedAgentAnswer(answer: string, calls: GroundedCall[]): string {
+  const collectorCall = [...calls].reverse().find((call) => call.tool === "stellarCollectorTrade");
+  const deterministic = collectorCall ? stellarCollectorAssessment(collectorCall.output) : null;
+  return normalizeAgentAnswer(deterministic ?? answer);
+}

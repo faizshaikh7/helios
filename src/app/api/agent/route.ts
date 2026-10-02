@@ -8,7 +8,7 @@ import {
   rateLimitingEnabled,
 } from "@/lib/agent/rateLimit";
 import { AGENT_INSTRUCTIONS, type CollectedCall, scienceTools } from "@/lib/agent/tools";
-import { normalizeAgentAnswer } from "@/lib/agent/sanitize";
+import { presentGroundedAgentAnswer } from "@/lib/agent/sanitize";
 
 /**
  * Requests are proxied to the Python service for every other `/api` path, but this route is a
@@ -122,7 +122,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     return NextResponse.json({
-      answer: normalizeAgentAnswer(result.text),
+      answer: presentGroundedAgentAnswer(result.text, calls),
       provider,
       model,
       mode: parsed.data.mode,

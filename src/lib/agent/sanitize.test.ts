@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { normalizeAgentAnswer, omitRawTle } from "./sanitize.ts";
+import { normalizeAgentAnswer, omitRawTle, presentGroundedAgentAnswer } from "./sanitize.ts";
 
 describe("model-facing satellite lookup", () => {
   it("removes raw TLE lines while retaining structured provenance", () => {
@@ -42,6 +42,41 @@ describe("agent answer presentation boundary", () => {
         "• Power: 4.083 × 10⁸ W",
       ].join("\n"),
     );
+  });
+
+  it("uses stellar-collector tool evidence instead of a model-transcribed number", () => {
+    const answer = "Electrical power is 1.361 × 10¹¹ W.";
+    const presented = presentGroundedAgentAnswer(answer, [
+      {
+        tool: "stellarCollectorTrade",
+        output: {
+          results: {
+            incidentFluxWm2: 1361,
+            electricalPowerW: 136100000000000,
+            equilibriumTemperatureK: 191.092424614895,
+            thermalMarginK: 208.907575385105,
+            thermalStatus: "inside-limit",
+            collectorMassKg: 10000000000,
+            minimumThermalRadiusAu: 0.228226967157496,
+            powerAtMinimumThermalRadiusW: 2612908532275200,
+            orbitalPeriodDays: 365.256898384042,
+            oneWayLightTimeSeconds: 499.004783836156,
+            interceptedLuminosityPercent: 3.55581626282282e-10,
+            radiationPressurePa: 8.62563393772901e-6,
+            radiationAccelerationMmS2: 0.862563393772901,
+          },
+          assumptions: ["circular orbit around an isolated star"],
+          omissions: ["mutual shadowing and mutual heating"],
+          sources: ["IAU nominal constants"],
+          warning: "Concept screening only; not validated for mission operations.",
+        },
+      },
+    ]);
+
+    assert.match(presented, /Electrical power — 1\.361 × 10¹⁴ W/);
+    assert.doesNotMatch(presented, /10¹¹ W/);
+    assert.match(presented, /Assumptions\n• circular orbit/);
+    assert.match(presented, /Decision boundary\nConcept screening only/);
   });
 
   it("turns common LaTeX units and exponents into plain scientific notation", () => {

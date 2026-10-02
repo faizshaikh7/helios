@@ -298,7 +298,7 @@ Underneath all of it, time scales agree with Orekit to under a nanosecond across
 2017 leap seconds — because a 69-second confusion between UTC and TT moves a low-orbit satellite
 about 500 km along-track, and nothing raises when it happens.
 
-**434 tests** — 393 Python, 41 TypeScript — run on every push.
+**435 tests** — 393 Python, 42 TypeScript — run on every push.
 
 ### Four things worth singling out
 
@@ -309,6 +309,8 @@ LaTeX into safe semantic paragraphs, labels, Unicode units and bullet rows, so i
 instructions cannot leak `**`, `###`, `$...$` or `\\text{}` into the interface. Displayed
 engineering quantities are labelled and rounded to six significant digits; the computed values,
 tool data and provenance remain unchanged and the complete execution trace stays inspectable.
+For Concept Lab assessments, decisive values and evidence sections are assembled directly from
+the calculator output, so a model cannot corrupt a result while transcribing it into prose.
 
 **The Concept Lab turns imagination into inspectable assumptions.** Its first template is a
 stellar-collector/Dyson-swarm trade study: orbital radius, collector area, efficiency, optical
