@@ -37,10 +37,19 @@ function superscript(value: string): string {
 
 /** Human-readable labels for the structured fields most often returned by Atlas tools. */
 const AGENT_FIELD_LABELS: Record<string, string> = {
+  orbitalRadiusAu: "Orbital radius",
+  collectorAreaKm2: "Collector area",
+  conversionEfficiencyPercent: "Conversion efficiency",
+  absorptivity: "Absorptivity",
+  emissivity: "Emissivity",
+  maximumTemperatureK: "Maximum temperature",
+  arealDensityKgM2: "Areal density",
+  reflectivity: "Reflectivity",
+  stellarLuminositySolar: "Stellar luminosity ratio",
+  stellarMassSolar: "Stellar mass ratio",
   incidentFluxWm2: "Incident flux",
   electricalPowerW: "Electrical power",
   equilibriumTemperatureK: "Equilibrium temperature",
-  maximumTemperatureK: "Maximum temperature",
   thermalMarginK: "Thermal margin",
   thermalStatus: "Thermal status",
   collectorMassKg: "Collector mass",
@@ -73,10 +82,15 @@ function formatDisplayNumber(value: string): string {
 
 /** Format numeric quantities for a decision brief while retaining their explicit units. */
 function formatQuantities(value: string): string {
-  return value.replace(
-    /(?<![\w.,])(-?\d+(?:\.\d+)?)(?=\s*(?:W\/m\^?2|mm\/s\^?2|W|K|kg|days?|Pa|au|%|s)\b)/g,
-    (_, number: string) => formatDisplayNumber(number),
-  );
+  return value
+    .replace(
+      /(?<![\w.,])(-?\d+(?:\.\d+)?)(?=\s*×\s*10[⁻⁺⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g,
+      (_, number: string) => formatDisplayNumber(number),
+    )
+    .replace(
+      /(?<![\w.,])(-?\d+(?:\.\d+)?)(?=\s*(?:W\/m\^?2|mm\/s\^?2|kg\/m\^?2|km\^?2|W|K|kg|days?|Pa|au|%|s)(?:\s|$|[.,;]))/g,
+      (_, number: string) => formatDisplayNumber(number),
+    );
 }
 
 /** Turn a camel-case tool field into a compact engineering label. */
@@ -126,7 +140,11 @@ export function normalizeAgentAnswer(answer: string): string {
       return `• ${formatAgentField(field)} — ${formatQuantities(readableValue)}`;
     })
     .replace(
-      /(?<![\w.,])(-?\d+(?:\.\d+)?)(?=\s*(?:W\/m²|mm\/s²|W|K|kg|days?|Pa|au|%|s)\b)/g,
+      /(?<![\w.,])(-?\d+(?:\.\d+)?)(?=\s*×\s*10[⁻⁺⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g,
+      (_, number: string) => formatDisplayNumber(number),
+    )
+    .replace(
+      /(?<![\w.,])(-?\d+(?:\.\d+)?)(?=\s*(?:W\/m²|mm\/s²|kg\/m²|km²|W|K|kg|days?|Pa|au|%|s)(?:\s|$|[.,;]))/g,
       (_, number: string) => formatDisplayNumber(number),
     )
     .replace(
@@ -171,6 +189,7 @@ function stringArrayProperty(value: unknown, property: string): string[] {
  */
 function stellarCollectorAssessment(output: unknown): string | null {
   const results = recordProperty(output, "results");
+  const inputs = recordProperty(output, "inputs");
   if (!results) return null;
 
   const required = [
@@ -209,6 +228,35 @@ function stellarCollectorAssessment(output: unknown): string | null {
     `• radiationPressurePa: ${results.radiationPressurePa} Pa`,
     `• radiationAccelerationMmS2: ${results.radiationAccelerationMmS2} mm/s²`,
   ];
+
+  const inputFields = [
+    "orbitalRadiusAu",
+    "collectorAreaKm2",
+    "conversionEfficiencyPercent",
+    "absorptivity",
+    "reflectivity",
+    "emissivity",
+    "maximumTemperatureK",
+    "arealDensityKgM2",
+    "stellarLuminositySolar",
+    "stellarMassSolar",
+  ] as const;
+  if (inputs && inputFields.every((field) => typeof inputs[field] === "number")) {
+    lines.push(
+      "",
+      "Model inputs",
+      `• orbitalRadiusAu: ${String(inputs.orbitalRadiusAu)} au`,
+      `• collectorAreaKm2: ${String(inputs.collectorAreaKm2)} km²`,
+      `• conversionEfficiencyPercent: ${String(inputs.conversionEfficiencyPercent)} %`,
+      `• absorptivity: ${String(inputs.absorptivity)}`,
+      `• reflectivity: ${String(inputs.reflectivity)}`,
+      `• emissivity: ${String(inputs.emissivity)}`,
+      `• maximumTemperatureK: ${String(inputs.maximumTemperatureK)} K`,
+      `• arealDensityKgM2: ${String(inputs.arealDensityKgM2)} kg/m²`,
+      `• stellarLuminositySolar: ${String(inputs.stellarLuminositySolar)}`,
+      `• stellarMassSolar: ${String(inputs.stellarMassSolar)}`,
+    );
+  }
 
   const assumptions = stringArrayProperty(output, "assumptions");
   if (assumptions.length) lines.push("", "Assumptions", ...assumptions.map((item) => `• ${item}`));

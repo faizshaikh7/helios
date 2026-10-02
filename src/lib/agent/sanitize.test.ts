@@ -50,6 +50,18 @@ describe("agent answer presentation boundary", () => {
       {
         tool: "stellarCollectorTrade",
         output: {
+          inputs: {
+            orbitalRadiusAu: 1,
+            collectorAreaKm2: 1000000,
+            conversionEfficiencyPercent: 10,
+            absorptivity: 0.1,
+            reflectivity: 0.9,
+            emissivity: 0.9,
+            maximumTemperatureK: 400,
+            arealDensityKgM2: 0.01,
+            stellarLuminositySolar: 1,
+            stellarMassSolar: 1,
+          },
           results: {
             incidentFluxWm2: 1361,
             electricalPowerW: 136100000000000,
@@ -75,6 +87,10 @@ describe("agent answer presentation boundary", () => {
 
     assert.match(presented, /Electrical power — 1\.361 × 10¹⁴ W/);
     assert.doesNotMatch(presented, /10¹¹ W/);
+    assert.match(presented, /Collector area — 1 × 10⁶ km²/);
+    assert.match(presented, /Conversion efficiency — 10 %/);
+    assert.match(presented, /Radiation pressure — 8\.62563 × 10⁻⁶ Pa/);
+    assert.match(presented, /Radiation acceleration — 0\.862563 mm\/s²/);
     assert.match(presented, /Assumptions\n• circular orbit/);
     assert.match(presented, /Decision boundary\nConcept screening only/);
   });
