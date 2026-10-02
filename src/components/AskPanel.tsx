@@ -33,6 +33,43 @@ const EXAMPLES = [
   "Trade power against temperature for a 1 million km² Dyson swarm near Mercury.",
 ];
 
+/** Render normalized Atlas prose as semantic paragraphs and bullet rows without executing HTML. */
+function ExpertAnswer({ text }: { text: string }) {
+  const lines = text.split("\n");
+
+  return (
+    <div className="space-y-2.5 text-sm leading-6 text-foreground">
+      {lines.map((line, index) => {
+        const content = line.trim();
+        if (!content) return <div key={index} className="h-1" aria-hidden="true" />;
+
+        if (content.startsWith("• ")) {
+          return (
+            <div key={index} className="grid grid-cols-[0.65rem_1fr] gap-2.5 pl-1">
+              <span className="pt-px text-derived" aria-hidden="true">•</span>
+              <span>{content.slice(2)}</span>
+            </div>
+          );
+        }
+
+        const next = lines[index + 1]?.trim() ?? "";
+        const sectionLike =
+          content.length <= 64 &&
+          !/[.!?]$/.test(content) &&
+          (next.startsWith("• ") || lines[index - 1]?.trim() === "");
+
+        return sectionLike ? (
+          <p key={index} className="pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-muted">
+            {content.replace(/:$/, "")}
+          </p>
+        ) : (
+          <p key={index}>{content}</p>
+        );
+      })}
+    </div>
+  );
+}
+
 /**
  * Natural-language interface to the science tools.
  *
@@ -175,33 +212,42 @@ export function AskPanel() {
       )}
 
       {answer && (
-        <div className="mt-5">
-          <div className="mb-3 flex flex-wrap items-center gap-3 text-[11px]">
-            <span
-              className={`rounded-full px-2 py-0.5 ${
-                answer.grounded
-                  ? "bg-ok/15 text-observed"
-                  : "bg-danger/15 text-danger"
-              }`}
-            >
-              {answer.grounded
-                ? `grounded — ${answer.tool_calls.length} tool call${
-                    answer.tool_calls.length === 1 ? "" : "s"
-                  }`
-                : "ungrounded — answered without computing"}
-            </span>
-            <span className="font-mono text-faint">
-              {answer.provider} · {answer.model} · {answer.steps} step
-              {answer.steps === 1 ? "" : "s"}
-            </span>
+        <div className="mt-6 overflow-hidden rounded-lg border border-edge-strong bg-background">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-edge px-4 py-3 sm:px-5">
+            <div className="flex items-center gap-3">
+              <span className="grid h-8 w-8 place-items-center border border-derived/50 bg-derived/10 font-mono text-xs font-semibold text-derived">
+                A
+              </span>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-foreground">
+                  Atlas mission assessment
+                </p>
+                <p className="mt-0.5 text-[10px] text-faint">
+                  Tool-grounded analysis with explicit limits
+                </p>
+              </div>
+            </div>
+            <div className="text-right text-[10px]">
+              <p className={answer.grounded ? "text-observed" : "text-danger"}>
+                {answer.grounded
+                  ? `${answer.tool_calls.length} verified tool call${
+                      answer.tool_calls.length === 1 ? "" : "s"
+                    }`
+                  : "No calculation tool used"}
+              </p>
+              <p className="mt-0.5 font-mono text-faint">
+                {answer.provider} · {answer.model} · {answer.steps} step
+                {answer.steps === 1 ? "" : "s"}
+              </p>
+            </div>
           </div>
 
-          <div className="whitespace-pre-wrap text-sm leading-6 text-foreground">
-            {answer.answer}
+          <div className="border-l-2 border-derived px-4 py-5 sm:px-6">
+            <ExpertAnswer text={answer.answer} />
           </div>
 
           {answer.tool_calls.length > 0 && (
-            <details className="mt-4">
+            <details className="border-t border-edge px-4 py-3 sm:px-5">
               <summary className="cursor-pointer text-xs text-muted hover:text-foreground">
                 Tool trace — what was actually computed
               </summary>
